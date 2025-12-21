@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Leveling</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="intro.css" />
+  </head>
+
+  <body>
+    <div class="app-wrapper">
+      <!-- Top bar: logo + brand + system status -->
+      <header class="header">
+        <div class="brand">
+          <div class="logo">
+            <div class="logo-inner-ring"></div>
+            <img
+              src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+              alt="AuraK Leveling Logo"
+            />
+          </div>
+
+          <!-- Brand text to the right of logo -->
+          <div class="brand-text">
+            <span class="title">AURAK LEVELING</span>
+            <span class="subtitle">REAL-WORLD LEVEL PROGRESSION</span>
+          </div>
+        </div>
+
+        <!-- Right side: system status pill -->
+        <div class="status">
+          <span class="status-dot"></span>
+          <span class="status-text">SYSTEM ONLINE</span>
+          <span class="status-divider"></span>
+          <span class="status-meta">V1.0 • SOLO MODE</span>
+        </div>
+      </header>
+
+      <!-- Right-side vertical navigation dots (scroll to sections) -->
+      <nav class="slide-nav">
+        <!-- Dot jumps to intro section -->
+        <a href="#hero" class="slide-dot" data-label="Intro"></a>
+        <!-- Dot jumps to stats section -->
+        <a href="#stats" class="slide-dot" data-label="Stats"></a>
+      </nav>
+
+      <main class="main">
+        <!-- Slide 1: Intro section -->
+        <section class="slide section-intro" id="hero">
+          <!-- Card-like container for hero content -->
+          <div class="section-box intro-box">
+
+            <!-- Top row: small label + mode text -->
+            <div class="intro-header">
+              <p class="eyebrow">WELCOME, OPERATOR</p>
+              <p class="hero-code">MODE: PROGRESS TRACKING • SELF IMPROVEMENT</p>
+            </div>
+
+            <!-- Main heading text -->
+            <h1 class="intro-title">
+              Turn your real life
+              <span>into a live stats screen.</span>
+            </h1>
+            <p class="intro-description">
+              AuraK Leveling is a system to track your progress, build habits,
+              and see your development like a game. Every workout, study block,
+              and decision becomes data you can actually read.
+            </p>
+
+            <!--  List of main focus areas -->
+            <div class="tag-container">
+              <div class="tag-box">
+                <span class="pill-name">Physical</span>
+                <span class="pill-desc">Strength, endurance, performance.</span>
+              </div>
+              <div class="tag-box">
+                <span class="pill-name">Intellectual</span>
+                <span class="pill-desc">Learning, problem solving, skills.</span>
+              </div>
+              <div class="tag-box">
+                <span class="pill-name">Discipline</span>
+                <span class="pill-desc">Consistency, routines, execution.</span>
+              </div>
+              <div class="tag-box">
+                <span class="pill-name">Confidence</span>
+                <span class="pill-desc">Presence, identity, self-belief.</span>
+              </div>
+              <div class="tag-box">
+                <span class="pill-name">Mental</span>
+                <span class="pill-desc">Focus, stress control, clarity.</span>
+              </div>
+            </div>
+
+            <div class="buttons">
+              <a href="login.html" class="btn-primary">Enter System</a>
+            </div>
+
+            <div class="intro-footer">
+              <p class="tagline">
+                TRACK. IMPROVE. REPEAT.
+              </p>
+              <div class="scroll-indicator">
+                <span class="scroll-line"></span>
+                <span class="scroll-text">Scroll to view </span>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Slide 2: Stats preview / dashboard-style section -->
+        <section class="slide section-stats" id="stats">
+          <div class="section-box">
+            <!-- Section header: label + title + small description -->
+            <div class="section-header">
+              <p class="eyebrow small">YOUR BUILD</p>
+              <h2 class="section-title">See your progress like a character.</h2>
+              <p class="section-subtitle">
+                AuraK Leveling turns your days into numbers you can track, compare, and upgrade.
+              </p>
+            </div>
+
+            <!--  attributes / streaks / trends -->
+            <div class="feature-grid stats-layout">
+              <!-- Card 1: Attribute bars -->
+              <div class="card card-attributes">
+                <span class="card-tag">ATTRIBUTES</span>
+                <h2 class="card-title">Attribute overview.</h2>
+
+                <!-- Single stat row: label, bar, value -->
+                <div class="stat-row">
+                  <span class="stat-label">Physical</span>
+                  <div class="stat-bar">
+                    <!-- Set width% here -> change bar length -->
+                    <div class="stat-bar-fill" style="width: 68%"></div>
+                  </div>
+                  <span class="stat-value">68</span>
+                </div>
+
+                <div class="stat-row">
+                  <span class="stat-label">Intellectual</span>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill" style="width: 74%"></div>
+                  </div>
+                  <span class="stat-value">74</span>
+                </div>
+
+                <div class="stat-row">
+                  <span class="stat-label">Discipline</span>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill" style="width: 59%"></div>
+                  </div>
+                  <span class="stat-value">59</span>
+                </div>
+
+                <div class="stat-row">
+                  <span class="stat-label">Confidence</span>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill" style="width: 63%"></div>
+                  </div>
+                  <span class="stat-value">63</span>
+                </div>
+
+                <div class="stat-row">
+                  <span class="stat-label">Mental</span>
+                  <div class="stat-bar">
+                    <div class="stat-bar-fill" style="width: 52%"></div>
+                  </div>
+                  <span class="stat-value">52</span>
+                </div>
+              </div>
+
+              <!--  Streaks, actions, habits -->
+              <div class="card card-streak">
+                <span class="card-tag">PROGRESS SIGNALS</span>
+                <h2 class="card-title">Streaks and XP.</h2>
+
+                <!-- KPIs: streak days, actions, habits -->
+                <div class="kpi-row">
+                  <div class="kpi">
+                    <span class="kpi-number">14</span>
+                    <span class="kpi-label">day streak</span>
+                  </div>
+                  <div class="kpi">
+                    <span class="kpi-number">327</span>
+                    <span class="kpi-label">actions logged</span>
+                  </div>
+                  <div class="kpi">
+                    <span class="kpi-number">4</span>
+                    <span class="kpi-label">active habits</span>
+                  </div>
+                </div>
+                <p class="card-text compact">
+                  Use streaks to stay consistent, not perfect. Your job: do something
+                  small every day that moves a stat.
+                </p>
+
+                <!-- Mini 7-day streak  -->
+                <div class="mini-timeline">
+                  <!-- Add/remove mini-day--hit or mini-day--miss to change pattern -->
+                  <div class="mini-day mini-day--hit"></div>
+                  <div class="mini-day mini-day--hit"></div>
+                  <div class="mini-day mini-day--miss"></div>
+                  <div class="mini-day mini-day--hit"></div>
+                  <div class="mini-day mini-day--hit"></div>
+                  <div class="mini-day mini-day--hit"></div>
+                  <div class="mini-day mini-day--hit"></div>
+                </div>
+                <span class="mini-caption">Last 7 days: 6 / 7 days logged</span>
+              </div>
+
+              <!-- Trend / season history -->
+              <div class="card card-history-data">
+                <span class="card-tag">TREND VIEW</span>
+                <h2 class="card-title">Short history. Clear trend.</h2>
+                <p class="card-text compact">
+                  Each season shows where you were and where you are now, so
+                  you can actually see if your life is moving up or staying flat.
+                </p>
+
+                <!-- key for the trend color -->
+                <div class="trend-legend">
+                  <span class="trend-dot trend-dot--up"></span>
+                  <span class="trend-label">Current season up</span>
+                </div>
+
+                <!-- Season-by-season bars -->
+                <div class="trend-bars">
+                  <div class="trend-bar">
+                    <span class="trend-label-small">Season 01</span>
+                    <div class="trend-line">
+                      <span class="trend-fill" style="width: 45%"></span>
+                    </div>
+                  </div>
+                  <div class="trend-bar">
+                    <span class="trend-label-small">Season 02</span>
+                    <div class="trend-line">
+                      <span class="trend-fill" style="width: 63%"></span>
+                    </div>
+                  </div>
+                  <div class="trend-bar">
+                    <span class="trend-label-small">Season 03</span>
+                    <div class="trend-line">
+                      <span class="trend-fill trend-fill--accent" style="width: 78%"></span>
+                    </div>
+                  </div>
+                </div>
+                <p class="card-text micro">
+                  Goal: 1% better this season than the last.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <span>© 2025 AURAK LEVELING</span>
+        <span class="mid-dot">•</span>
+        <span>INTRO MODULE</span>
+      </footer>
+    </div>
+  </body>
+</html>
