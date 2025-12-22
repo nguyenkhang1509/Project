@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraK Levelling – Register</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+   <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+<a href="login.html" class="back-btn">← Back</a>
+
+  <main class="auth-screen">
+    <div class="auth-bg-orbit"></div>
+    <div class="auth-bg-glow"></div>
+
+    <section class="auth-card-wrap">
+
+      <div class="auth-brand">
+        <div class="auth-brand-text">
+          <span class="auth-brand-kicker">AuraK System</span>
+          <h1 class="auth-brand-title">Create Access Profile</h1>
+          <p class="auth-brand-sub">
+            Register your <span>physical</span>, <span>intellectual</span>, 
+            <span>discipline</span>, and <span>social</span> profile to enter the system.
+          </p>
+        </div>
+      </div>
+
+      <!-- REGISTER CARD -->
+      <form id="register-form" class="auth-card" novalidate>
+        <div class="auth-card-header">
+          <p class="auth-pill">Create Account</p>
+          <h2 class="auth-heading">Initialize new player.</h2>
+          <p class="auth-body">
+            Provide your details to generate a new AuraK Levelling profile.
+          </p>
+        </div>
+
+        <!-- DISPLAY NAME -->
+        <div class="auth-field">
+          <label for="display-name">Display name</label>
+          <div class="auth-input-shell">
+            <input
+              id="display-name"
+              type="text"
+              name="displayName"
+              placeholder="Player name"
+              autocomplete="name"
+              required
+            />
+          </div>
+          <div class="field-error" id="name-error"></div>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="auth-field">
+          <label for="reg-email">Email</label>
+          <div class="auth-input-shell">
+            <input
+              id="reg-email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="field-error" id="reg-email-error"></div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="auth-field">
+          <label for="reg-pass">Password</label>
+          <div class="auth-input-shell auth-input-with-btn">
+            <input
+              id="reg-pass"
+              type="password"
+              name="password"
+              placeholder="Create a strong password"
+              autocomplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-pass-btn"
+              id="toggle-reg-pass"
+              aria-label="Show or hide password"
+            >
+              Show
+            </button>
+          </div>
+          <div class="field-error" id="reg-pass-error"></div>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div class="auth-field">
+          <label for="reg-pass-confirm">Confirm password</label>
+          <div class="auth-input-shell">
+            <input
+              id="reg-pass-confirm"
+              type="password"
+              name="passwordConfirm"
+              placeholder="Repeat your password"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <div class="field-error" id="reg-pass-confirm-error"></div>
+        </div>
+
+        <!-- TERMS CHECKBOX -->
+        <div class="auth-field">
+          <label class="auth-checkbox-row">
+            <input type="checkbox" id="terms-checkbox" />
+            <span>I agree to the AuraK system protocol and data policy.</span>
+          </label>
+          <div class="field-error" id="terms-error"></div>
+        </div>
+
+        <!-- FORM-LEVEL ERROR -->
+        <div class="field-error" id="register-form-error"></div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" class="auth-primary-btn">
+          <span class="btn-label">Create Profile</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="auth-footer-links">
+          <span class="auth-small-text">
+            Already registered?
+            <a href="login.html">Back to log in</a>
+          </span>
+        </div>
+      </form>
+
+    </section>
+  </main>
+
+  <script src="register.js"></script>
+</body>
+</html>
