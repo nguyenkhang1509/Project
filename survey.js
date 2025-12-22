@@ -1,3 +1,49 @@
+function scoreFromAnswer(ans) {
+  if (!ans) return 0;
+  if (ans.code === "A") return 0;
+  if (ans.code === "B") return 0.5;
+  if (ans.code === "C") return 1;
+  return 0;
+}
+
+function calculateStats(survey) {
+  const exercise = scoreFromAnswer(survey.exerciseLevel);
+  const sleep = scoreFromAnswer(survey.sleepPerNight);
+  const work = scoreFromAnswer(survey.workHoursPerWeek);
+  const study = scoreFromAnswer(survey.studyTrainingPerWeek);
+  const discipline = scoreFromAnswer(survey.habitConsistency);
+  const happiness = scoreFromAnswer(survey.happiness);
+  const social = scoreFromAnswer(survey.socialLife);
+  const stress = scoreFromAnswer(survey.stressLevel);
+
+  const physical =
+    0.5 * exercise + 0.3 * work + 0.2 * sleep;
+
+  const intellectual = study;
+
+  const disciplineStat = discipline;
+
+  const confidence =
+    0.5 * happiness + 0.5 * social;
+
+  const mental =
+    0.5 * stress + 0.5 * sleep;
+
+  function scale(v) {
+    return Math.round(10 + v * 10);
+  }
+
+  return {
+    Physical: scale(physical),
+    Intellectual: scale(intellectual),
+    Discipline: scale(disciplineStat),
+    Confidence: scale(confidence),
+    Mental: scale(mental)
+  };
+}
+
+
+
 function getCurrentUser() {
   try {
     const raw = localStorage.getItem("aurakCurrentUser");
@@ -114,20 +160,28 @@ document.addEventListener("DOMContentLoaded", () => {
         socialLife: getRadioAnswer("q7"),
         stressLevel: getRadioAnswer("q8"),
         updatedAt: new Date().toISOString()
-      };
+    };
 
-      const users = getStoredUsers();
-      const idx = users.findIndex(
+        const stats = calculateStats(surveyData);
+
+        const users = getStoredUsers();
+        const idx = users.findIndex(
         (u) => u.email && u.email.toLowerCase() === user.email.toLowerCase()
       );
-
       if (idx !== -1) {
         users[idx].survey = surveyData;
+        users[idx].stats = stats;
         saveUsers(users);
       }
-
-      const updatedUser = { ...user, survey: surveyData };
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
+      const updatedUser = {
+        ...user,
+        survey: surveyData,
+        stats: stats
+      };
+      localStorage.setItem(
+      "aurakCurrentUser",
+      JSON.stringify(updatedUser)
+    );
 
       window.location.href = "loading.html";
     });
