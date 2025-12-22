@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>System Initialization</title>
+
+<style>
+body {
+    margin: 0;
+    background: radial-gradient(circle at top, #0a0f1f, #000);
+    color: #00eaff;
+    font-family: "Orbitron", sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 420px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid #00eaff55;
+    padding: 30px;
+    box-shadow: 0 0 20px #00eaff44;
+}
+
+h1 {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 25px;
+}
+
+.stat {
+    margin-bottom: 18px;
+}
+
+.stat-label {
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.bar-bg {
+    width: 100%;
+    height: 8px;
+    background: #111;
+    border: 1px solid #00eaff33;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00eaff, #008cff);
+    transition: width 1.2s ease;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 11px;
+    opacity: 0.6;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SYSTEM INITIALIZING</h1>
+    <div class="subtitle">Analyzing Player Data...</div>
+
+    <div id="stats"></div>
+
+    <div class="footer">Welcome, Player.</div>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem("aurakCurrentUser"));
+
+if (!user || !user.stats) {
+    document.querySelector(".subtitle").innerText = "No data found.";
+} else {
+    const statsDiv = document.getElementById("stats");
+
+    Object.entries(user.stats).forEach(([stat, value], index) => {
+        const percentage = value; 
+
+        const statDiv = document.createElement("div");
+        statDiv.className = "stat";
+
+        statDiv.innerHTML = `
+            <div class="stat-label">
+                <span>${stat}</span>
+                <span>${value} / 100</span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar-fill"></div>
+            </div>
+        `;
+
+        statsDiv.appendChild(statDiv);
+
+        setTimeout(() => {
+            statDiv.querySelector(".bar-fill").style.width = percentage + "%";
+        }, 300 + index * 200);
+    });
+}
+</script>
+
+</body>
+</html>
