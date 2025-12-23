@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling — Your Stats</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+
+    <link rel="stylesheet" href="stats.css" />
+  </head>
+
+  <body>
+    <main class="screen">
+      <div class="bg-aurora"></div>
+      <div class="bg-grid"></div>
+      <div class="bg-vignette"></div>
+
+      <section class="panel">
+        <header class="head">
+          <div class="brand-line">
+            <span class="dot"></span><span class="dot"></span
+            ><span class="dot"></span>
+            <span class="brand">AURAK LEVELLING</span>
+          </div>
+
+          <h1 class="title">BASELINE STATS</h1>
+          <p class="subtitle" id="subtitle">
+            Your starting profile based on your survey.
+          </p>
+        </header>
+
+        <div class="divider"></div>
+
+        <div class="grid">
+          <div class="stats" id="stats"></div>
+
+          <aside class="summary">
+            <h2 class="summary-title">Summary</h2>
+            <p class="summary-text" id="summaryText">
+              Calculating your strengths…
+            </p>
+
+            <div class="mini" id="topStats"></div>
+
+            <div class="actions">
+              <a class="primary-btn" href="dashboard.html">Enter Dashboard →</a>
+              <a class="ghost-btn" href="survey.html">Retake Survey</a>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <script src="stats.js"></script>
+  </body>
+</html>

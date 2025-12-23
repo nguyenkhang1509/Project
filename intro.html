@@ -18,7 +18,6 @@
 
   <body>
     <div class="app-wrapper">
-      <!-- Top bar: logo + brand + system status -->
       <header class="header">
         <div class="brand">
           <div class="logo">
@@ -29,14 +28,12 @@
             />
           </div>
 
-          <!-- Brand text to the right of logo -->
           <div class="brand-text">
             <span class="title">AURAK LEVELLING</span>
             <span class="subtitle">REAL-WORLD LEVEL PROGRESSION</span>
           </div>
         </div>
 
-        <!-- Right side: system status pill -->
         <div class="status">
           <span class="status-dot"></span>
           <span class="status-text">SYSTEM ONLINE</span>
@@ -45,20 +42,15 @@
         </div>
       </header>
 
-      <!-- Right-side vertical navigation dots (scroll to sections) -->
       <nav class="slide-nav">
-        <!-- Dot jumps to intro section -->
         <a href="#hero" class="slide-dot" data-label="Intro"></a>
-        <!-- Dot jumps to stats section -->
         <a href="#stats" class="slide-dot" data-label="Stats"></a>
       </nav>
 
       <main class="main">
         <!-- Slide 1: Intro section -->
         <section class="slide section-intro" id="hero">
-          <!-- Card-like container for hero content -->
           <div class="section-box intro-box">
-            <!-- Top row: small label + mode text -->
             <div class="intro-header">
               <p class="eyebrow">WELCOME, PLAYER</p>
               <p class="hero-code">
@@ -77,7 +69,6 @@
               and decision becomes data you can actually read.
             </p>
 
-            <!--  List of main focus areas -->
             <div class="tag-container">
               <div class="tag-box">
                 <span class="pill-name">Physical</span>
@@ -120,7 +111,6 @@
         <!-- Slide 2: Stats preview / dashboard-style section -->
         <section class="slide section-stats" id="stats">
           <div class="section-box">
-            <!-- Section header: label + title + small description -->
             <div class="section-header">
               <p class="eyebrow small">YOUR BUILD</p>
               <h2 class="section-title">See your progress like a character.</h2>
@@ -130,18 +120,14 @@
               </p>
             </div>
 
-            <!--  attributes / streaks / trends -->
             <div class="feature-grid stats-layout">
-              <!-- Card 1: Attribute bars -->
               <div class="card card-attributes">
                 <span class="card-tag">ATTRIBUTES</span>
                 <h2 class="card-title">Attribute overview.</h2>
 
-                <!-- Single stat row: label, bar, value -->
                 <div class="stat-row">
                   <span class="stat-label">Physical</span>
                   <div class="stat-bar">
-                    <!-- Set width% here -> change bar length -->
                     <div class="stat-bar-fill" style="width: 68%"></div>
                   </div>
                   <span class="stat-value">68</span>
@@ -185,7 +171,6 @@
                 <span class="card-tag">PROGRESS SIGNALS</span>
                 <h2 class="card-title">Streaks and XP.</h2>
 
-                <!-- KPIs: streak days, actions, habits -->
                 <div class="kpi-row">
                   <div class="kpi">
                     <span class="kpi-number">14</span>
@@ -207,7 +192,6 @@
 
                 <!-- Mini 7-day streak  -->
                 <div class="mini-timeline">
-                  <!-- Add/remove mini-day--hit or mini-day--miss to change pattern -->
                   <div class="mini-day mini-day--hit"></div>
                   <div class="mini-day mini-day--hit"></div>
                   <div class="mini-day mini-day--miss"></div>
@@ -228,13 +212,11 @@
                   can actually see if your life is moving up or staying flat.
                 </p>
 
-                <!-- key for the trend color -->
                 <div class="trend-legend">
                   <span class="trend-dot trend-dot--up"></span>
                   <span class="trend-label">Current season up</span>
                 </div>
 
-                <!-- Season-by-season bars -->
                 <div class="trend-bars">
                   <div class="trend-bar">
                     <span class="trend-label-small">Season 01</span>

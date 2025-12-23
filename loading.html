@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AuraK Levelling — System Initialization</title>
+    <title>AuraK Levelling — Initializing</title>
+
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
@@ -19,10 +20,6 @@
 
   <body>
     <main class="screen">
-      <div class="bg-aurora"></div>
-      <div class="bg-grid"></div>
-      <div class="bg-vignette"></div>
-
       <section class="panel" aria-label="System Initialization Panel">
         <header class="panel-head">
           <div class="brand-line">
@@ -32,21 +29,33 @@
             <span class="brand">AURAK</span>
           </div>
 
-          <h1 class="title">SYSTEM INITIALIZING</h1>
-          <p class="subtitle" id="subtitle">Analyzing Player Data...</p>
+          <h1 class="title">INITIALIZING</h1>
+          <p class="subtitle" id="subtitle">Preparing your baseline…</p>
         </header>
 
         <div class="divider"></div>
 
-        <div id="stats" class="stats" aria-live="polite"></div>
+        <div class="loader" aria-hidden="true">
+          <div class="spinner" aria-hidden="true"></div>
+
+          <div class="loader-meta">
+            <p class="loader-line" id="loadingText">Calibrating</p>
+
+            <div class="dots" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+
+            <div class="progress" aria-hidden="true">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+          </div>
+        </div>
 
         <footer class="panel-foot">
-          <div class="foot-left">
-            <span class="status-pill" id="statusPill">
-              <span class="status-led"></span>
-              <span class="status-text" id="statusText">ONLINE</span>
-            </span>
-          </div>
+          <span class="status-pill" id="statusPill">
+            <span class="status-led"></span>
+            <span class="status-text" id="statusText">ONLINE</span>
+          </span>
 
           <div class="foot-right" id="welcomeText">Welcome, Player.</div>
         </footer>
