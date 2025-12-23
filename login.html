@@ -1,110 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AuraK Levelling – Log In</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling – Log In</title>
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
-   <link
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
       rel="icon"
       type="image/png"
       href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
     />
-  <link rel="stylesheet" href="login.css" />
-</head>
-<body>
-<a href="getstarted.html" class="back-btn">← Back</a>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <a href="getstarted.html" class="back-btn">← Back</a>
 
-  <main class="auth-screen">
-    <div class="auth-bg-orbit"></div>
-    <div class="auth-bg-glow"></div>
+    <main class="auth-screen">
+      <div class="auth-bg-orbit"></div>
+      <div class="auth-bg-glow"></div>
 
-    <section class="auth-card-wrap">
-
-      <div class="auth-brand">
-        <div class="auth-brand-text">
-          <span class="auth-brand-kicker">AuraK Levelling</span>
-          <h1 class="auth-brand-title">Access Control</h1>
-          <p class="auth-brand-sub">
-            Log in to start tracking your <span>physical</span>, <span>intellectual</span>, 
-            <span>discipline</span> ,<span>confidence</span>, and <span>social</span> stats.
-          </p>
-        </div>
-      </div>
-
-      <!-- LOGIN CARD ONLY -->
-      <form id="signin-form" class="auth-card" novalidate>
-        <div class="auth-card-header">
-          <p class="auth-pill">Sign In</p>
-          <h2 class="auth-heading">Welcome back, Player.</h2>
-          <p class="auth-body">
-            Enter your credentials to continue your AuraK Levelling session.
-          </p>
-        </div>
-
-        <!-- EMAIL -->
-        <div class="auth-field">
-          <label for="email">Email</label>
-          <div class="auth-input-shell">
-            <input
-              id="email"
-              type="email"
-              name="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              required
-            />
+      <section class="auth-card-wrap">
+        <div class="auth-brand">
+          <div class="auth-brand-text">
+            <span class="auth-brand-kicker">AuraK Levelling</span>
+            <h1 class="auth-brand-title">Access Control</h1>
+            <p class="auth-brand-sub">
+              Log in to start tracking your <span>physical</span>,
+              <span>intellectual</span>,
+              <span>discipline</span> ,<span>confidence</span>, and
+              <span>social</span> stats.
+            </p>
           </div>
-          <div class="field-error" id="email-error"></div>
         </div>
 
-        <!-- PASSWORD -->
-        <div class="auth-field">
-          <label for="pass">Password</label>
-          <div class="auth-input-shell auth-input-with-btn">
-            <input
-              id="pass"
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-              required
-            />
-            <button
-              type="button"
-              class="toggle-pass-btn"
-              id="toggle-pass"
-              aria-label="Show or hide password"
-            >
-              Show
-            </button>
+        <!-- LOGIN CARD ONLY -->
+        <form id="signin-form" class="auth-card" novalidate>
+          <div class="auth-card-header">
+            <p class="auth-pill">Sign In</p>
+            <h2 class="auth-heading">Welcome back, Player.</h2>
+            <p class="auth-body">
+              Enter your credentials to continue your AuraK Levelling session.
+            </p>
           </div>
-          <div class="field-error" id="password-error"></div>
-        </div>
 
-        <div class="field-error" id="form-error"></div>
+          <!-- EMAIL -->
+          <div class="auth-field">
+            <label for="email">Email</label>
+            <div class="auth-input-shell">
+              <input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+            <div class="field-error" id="email-error"></div>
+          </div>
 
-        <!-- SUBMIT BUTTON -->
-        <button type="submit" class="auth-primary-btn" id="login-button">
-          <span class="btn-label">Enter System</span>
-          <span class="btn-spinner" aria-hidden="true"></span>
-        </button>
+          <!-- PASSWORD -->
+          <div class="auth-field">
+            <label for="pass">Password</label>
+            <div class="auth-input-shell auth-input-with-btn">
+              <input
+                id="pass"
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                class="toggle-pass-btn"
+                id="toggle-pass"
+                aria-label="Show or hide password"
+              >
+                Show
+              </button>
+            </div>
+            <div class="field-error" id="password-error"></div>
+          </div>
 
-        <div class="auth-footer-links">
-          <span class="auth-small-text">
-            New to AuraK?
-            <a href="register.html">Create an account</a>
-          </span>
-        </div>
-      </form>
+          <div class="field-error" id="form-error"></div>
 
-    </section>
-  </main>
+          <!-- SUBMIT BUTTON -->
+          <button type="submit" class="auth-primary-btn" id="login-button">
+            <span class="btn-label">Enter System</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
 
-  <script src="login.js"></script>
-</body>
+          <div class="auth-footer-links">
+            <span class="auth-small-text">
+              New to AuraK?
+              <a href="register.html">Create an account</a>
+            </span>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script src="login.js"></script>
+  </body>
 </html>

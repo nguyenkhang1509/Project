@@ -1,4 +1,3 @@
-// ---------- DOM ELEMENTS ----------
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("pass");
@@ -7,8 +6,6 @@ const togglePassBtn = document.getElementById("toggle-pass");
 const emailError = document.getElementById("email-error");
 const passwordError = document.getElementById("password-error");
 const formError = document.getElementById("form-error");
-
-// ---------- HELPERS ----------
 
 // Basic email format
 function isValidEmail(email) {
@@ -44,7 +41,6 @@ function getStoredUsers() {
   }
 }
 
-// ---------- TOGGLE PASSWORD ----------
 if (togglePassBtn && passwordInput) {
   togglePassBtn.addEventListener("click", () => {
     const hidden = passwordInput.type === "password";
@@ -53,7 +49,6 @@ if (togglePassBtn && passwordInput) {
   });
 }
 
-// ---------- FORM SUBMIT ----------
 if (form) {
   form.addEventListener("submit", (e) => {
     clearErrors();
@@ -63,7 +58,6 @@ if (form) {
 
     let valid = true;
 
-    // 1) Front-end validation
     if (!isValidEmail(emailValue)) {
       emailError.textContent = "Enter a valid email address.";
       valid = false;
@@ -84,7 +78,6 @@ if (form) {
       return;
     }
 
-    // 2) Check against registered users in localStorage
     const users = getStoredUsers();
 
     const matchedUser = users.find(
@@ -98,12 +91,10 @@ if (form) {
       return;
     }
 
-    // 3) Successful login: optionally store current user + redirect
-    // Save current user (optional)
     localStorage.setItem("aurakCurrentUser", JSON.stringify(matchedUser));
 
     // Redirect to your main interface
-    e.preventDefault();      // prevent form default
+    e.preventDefault();
     window.location.href = "sequence.html";
   });
 }

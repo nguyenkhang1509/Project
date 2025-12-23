@@ -16,18 +16,15 @@ function calculateStats(survey) {
   const social = scoreFromAnswer(survey.socialLife);
   const stress = scoreFromAnswer(survey.stressLevel);
 
-  const physical =
-    0.5 * exercise + 0.3 * work + 0.2 * sleep;
+  const physical = 0.5 * exercise + 0.3 * work + 0.2 * sleep;
 
   const intellectual = study;
 
   const disciplineStat = discipline;
 
-  const confidence =
-    0.5 * happiness + 0.5 * social;
+  const confidence = 0.5 * happiness + 0.5 * social;
 
-  const mental =
-    0.5 * stress + 0.5 * sleep;
+  const mental = 0.5 * stress + 0.5 * sleep;
 
   function scale(v) {
     return Math.round(10 + v * 10);
@@ -38,11 +35,9 @@ function calculateStats(survey) {
     Intellectual: scale(intellectual),
     Discipline: scale(disciplineStat),
     Confidence: scale(confidence),
-    Mental: scale(mental)
+    Mental: scale(mental),
   };
 }
-
-
 
 function getCurrentUser() {
   try {
@@ -75,7 +70,7 @@ function getRadioAnswer(name) {
   if (!checked) return null;
   return {
     code: checked.value,
-    label: checked.dataset.label || ""
+    label: checked.dataset.label || "",
   };
 }
 
@@ -109,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateStep(stepNumber) {
-    if (stepNumber === 0) return true; 
+    if (stepNumber === 0) return true;
 
     const qName = `q${stepNumber}`;
     const ans = getRadioAnswer(qName);
@@ -159,13 +154,13 @@ document.addEventListener("DOMContentLoaded", () => {
         happiness: getRadioAnswer("q6"),
         socialLife: getRadioAnswer("q7"),
         stressLevel: getRadioAnswer("q8"),
-        updatedAt: new Date().toISOString()
-    };
+        updatedAt: new Date().toISOString(),
+      };
 
-        const stats = calculateStats(surveyData);
+      const stats = calculateStats(surveyData);
 
-        const users = getStoredUsers();
-        const idx = users.findIndex(
+      const users = getStoredUsers();
+      const idx = users.findIndex(
         (u) => u.email && u.email.toLowerCase() === user.email.toLowerCase()
       );
       if (idx !== -1) {
@@ -176,12 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const updatedUser = {
         ...user,
         survey: surveyData,
-        stats: stats
+        stats: stats,
       };
-      localStorage.setItem(
-      "aurakCurrentUser",
-      JSON.stringify(updatedUser)
-    );
+      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
 
       window.location.href = "loading.html";
     });

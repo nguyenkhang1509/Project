@@ -1,118 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>System Initialization</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling — System Initialization</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
 
-<style>
-body {
-    margin: 0;
-    background: radial-gradient(circle at top, #0a0f1f, #000);
-    color: #00eaff;
-    font-family: "Orbitron", sans-serif;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    <link rel="stylesheet" href="loading.css" />
+  </head>
 
-.container {
-    width: 420px;
-    background: rgba(0,0,0,0.75);
-    border: 1px solid #00eaff55;
-    padding: 30px;
-    box-shadow: 0 0 20px #00eaff44;
-}
+  <body>
+    <main class="screen">
+      <div class="bg-aurora"></div>
+      <div class="bg-grid"></div>
+      <div class="bg-vignette"></div>
 
-h1 {
-    text-align: center;
-    font-size: 22px;
-    margin-bottom: 8px;
-}
+      <section class="panel" aria-label="System Initialization Panel">
+        <header class="panel-head">
+          <div class="brand-line">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="brand">AURAK</span>
+          </div>
 
-.subtitle {
-    text-align: center;
-    font-size: 12px;
-    opacity: 0.8;
-    margin-bottom: 25px;
-}
+          <h1 class="title">SYSTEM INITIALIZING</h1>
+          <p class="subtitle" id="subtitle">Analyzing Player Data...</p>
+        </header>
 
-.stat {
-    margin-bottom: 18px;
-}
+        <div class="divider"></div>
 
-.stat-label {
-    font-size: 14px;
-    margin-bottom: 4px;
-    display: flex;
-    justify-content: space-between;
-}
+        <div id="stats" class="stats" aria-live="polite"></div>
 
-.bar-bg {
-    width: 100%;
-    height: 8px;
-    background: #111;
-    border: 1px solid #00eaff33;
-}
+        <footer class="panel-foot">
+          <div class="foot-left">
+            <span class="status-pill" id="statusPill">
+              <span class="status-led"></span>
+              <span class="status-text" id="statusText">ONLINE</span>
+            </span>
+          </div>
 
-.bar-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #00eaff, #008cff);
-    transition: width 1.2s ease;
-}
+          <div class="foot-right" id="welcomeText">Welcome, Player.</div>
+        </footer>
+      </section>
+    </main>
 
-.footer {
-    text-align: center;
-    margin-top: 25px;
-    font-size: 11px;
-    opacity: 0.6;
-}
-</style>
-</head>
-<body>
-
-<div class="container">
-    <h1>SYSTEM INITIALIZING</h1>
-    <div class="subtitle">Analyzing Player Data...</div>
-
-    <div id="stats"></div>
-
-    <div class="footer">Welcome, Player.</div>
-</div>
-
-<script>
-const user = JSON.parse(localStorage.getItem("aurakCurrentUser"));
-
-if (!user || !user.stats) {
-    document.querySelector(".subtitle").innerText = "No data found.";
-} else {
-    const statsDiv = document.getElementById("stats");
-
-    Object.entries(user.stats).forEach(([stat, value], index) => {
-        const percentage = value; 
-
-        const statDiv = document.createElement("div");
-        statDiv.className = "stat";
-
-        statDiv.innerHTML = `
-            <div class="stat-label">
-                <span>${stat}</span>
-                <span>${value} / 100</span>
-            </div>
-            <div class="bar-bg">
-                <div class="bar-fill"></div>
-            </div>
-        `;
-
-        statsDiv.appendChild(statDiv);
-
-        setTimeout(() => {
-            statDiv.querySelector(".bar-fill").style.width = percentage + "%";
-        }, 300 + index * 200);
-    });
-}
-</script>
-
-</body>
+    <script src="loading.js"></script>
+  </body>
 </html>

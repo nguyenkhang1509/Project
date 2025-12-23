@@ -1,308 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AuraK Lvelling – Survey</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Lvelling – Survey</title>
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="survey.css" />
-</head>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+    <link rel="stylesheet" href="survey.css" />
+  </head>
 
-<body>
-  <main class="survey-screen">
-    <div class="bg-glow glow1"></div>
-    <div class="bg-glow glow2"></div>
+  <body>
+    <main class="survey-screen">
+      <div class="bg-glow glow1"></div>
+      <div class="bg-glow glow2"></div>
 
-    <section class="step active" data-step="0">
-      <div class="step-inner">
-        <p class="kicker">AuraK Survey</p>
-        <h1 class="title">
-          Before your dashboard loads, we need to understand how you live right now.
-        </h1>
-        <p class="subtitle">
-          Answer 8 quick questions so AuraK can calibrate your
-          <span>Physical</span>, <span>Intellectual</span>, <span>Mental</span>,
-          <span>Confidence</span>, and <span>Discipline</span> stats.
-        </p>
-
-        <div class="pill-row">
-          <span class="pill">Physical</span>
-          <span class="pill">Intellectual</span>
-          <span class="pill">Mental</span>
-          <span class="pill">Confidence</span>
-          <span class="pill">Discipline</span>
-        </div>
-
-        <button class="primary-btn" id="startBtn">Begin Survey →</button>
-      </div>
-    </section>
-
-    <form id="survey-form">
-      <!-- Q1 -->
-      <section class="step" data-step="1">
+      <section class="step active" data-step="0">
         <div class="step-inner">
-          <p class="kicker">Question 1 of 8 · Physical</p>
-          <h2 class="question">
-            Exercise level – how would you describe your current exercise routine?
-          </h2>
+          <p class="kicker">AuraK Survey</p>
+          <h1 class="title">
+            Before your dashboard loads, we need to understand how you live
+            right now.
+          </h1>
+          <p class="subtitle">
+            Answer 8 quick questions so AuraK can calibrate your
+            <span>Physical</span>, <span>Intellectual</span>,
+            <span>Mental</span>, <span>Confidence</span>, and
+            <span>Discipline</span> stats.
+          </p>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q1" value="A" data-label="Low (Rarely or no exercise)" />
-              <span class="option-chip">A — Low (Rarely or no exercise)</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q1" value="B" data-label="Moderate (Exercise 1–3 times per week)" />
-              <span class="option-chip">B — Moderate (Exercise 1–3 times per week)</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q1" value="C" data-label="High (Exercise 4+ times per week)" />
-              <span class="option-chip">C — High (Exercise 4+ times per week)</span>
-            </label>
+          <div class="pill-row">
+            <span class="pill">Physical</span>
+            <span class="pill">Intellectual</span>
+            <span class="pill">Mental</span>
+            <span class="pill">Confidence</span>
+            <span class="pill">Discipline</span>
           </div>
 
-          <div class="nav-row">
-            <button type="button" class="primary-btn next-btn">Next →</button>
-          </div>
+          <button class="primary-btn" id="startBtn">Begin Survey →</button>
         </div>
       </section>
 
-      <!-- Q2 -->
-      <section class="step" data-step="2">
-        <div class="step-inner">
-          <p class="kicker">Question 2 of 8 · Recovery</p>
-          <h2 class="question">
-            Average sleep – on average, how many hours do you sleep per night?
-          </h2>
+      <form id="survey-form">
+        <!-- Q1 -->
+        <section class="step" data-step="1">
+          <div class="step-inner">
+            <p class="kicker">Question 1 of 8 · Physical</p>
+            <h2 class="question">
+              Exercise level – How would you describe your current exercise
+              routine?
+            </h2>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q2" value="A" data-label="Less than 5 hours" />
-              <span class="option-chip">A — Less than 5 hours</span>
-            </label>
+            <div class="options">
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q1"
+                  value="A"
+                  data-label="Low (Rarely or no exercise)"
+                />
+                <span class="option-chip">A — Low (Rarely or no exercise)</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q2" value="B" data-label="Between 5 and 7 hours" />
-              <span class="option-chip">B — Between 5 and 7 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q1"
+                  value="B"
+                  data-label="Moderate (Exercise 1–3 times per week)"
+                />
+                <span class="option-chip"
+                  >B — Moderate (Exercise 1–3 times per week)</span
+                >
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q2" value="C" data-label="More than 7 hours" />
-              <span class="option-chip">C — More than 7 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q1"
+                  value="C"
+                  data-label="High (Exercise 4+ times per week)"
+                />
+                <span class="option-chip"
+                  >C — High (Exercise 4+ times per week)</span
+                >
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
+        </section>
 
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
+        <!-- Q2 -->
+        <section class="step" data-step="2">
+          <div class="step-inner">
+            <p class="kicker">Question 2 of 8 · Recovery</p>
+            <h2 class="question">
+              Average sleep – On average, how many hours do you sleep per night?
+            </h2>
+
+            <div class="options">
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q2"
+                  value="A"
+                  data-label="Less than 5 hours"
+                />
+                <span class="option-chip">A — Less than 5 hours</span>
+              </label>
+
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q2"
+                  value="B"
+                  data-label="Between 5 and 7 hours"
+                />
+                <span class="option-chip">B — Between 5 and 7 hours</span>
+              </label>
+
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q2"
+                  value="C"
+                  data-label="More than 7 hours"
+                />
+                <span class="option-chip">C — More than 7 hours</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Q3 -->
-      <section class="step" data-step="3">
-        <div class="step-inner">
-          <p class="kicker">Question 3 of 8 · Load</p>
-          <h2 class="question">
-            Work / task hours – how many hours per week do you spend on work, school, or major responsibilities?
-          </h2>
+        <!-- Q3 -->
+        <section class="step" data-step="3">
+          <div class="step-inner">
+            <p class="kicker">Question 3 of 8 · Load</p>
+            <h2 class="question">
+              Work / task hours – How many hours per week do you spend on work,
+              school, or major responsibilities?
+            </h2>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q3" value="A" data-label="Less than 20 hours" />
-              <span class="option-chip">A — Less than 20 hours</span>
-            </label>
+            <div class="options">
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q3"
+                  value="A"
+                  data-label="Less than 20 hours"
+                />
+                <span class="option-chip">A — Less than 20 hours</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q3" value="B" data-label="Between 20 and 40 hours" />
-              <span class="option-chip">B — Between 20 and 40 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q3"
+                  value="B"
+                  data-label="Between 20 and 40 hours"
+                />
+                <span class="option-chip">B — Between 20 and 40 hours</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q3" value="C" data-label="More than 40 hours" />
-              <span class="option-chip">C — More than 40 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q3"
+                  value="C"
+                  data-label="More than 40 hours"
+                />
+                <span class="option-chip">C — More than 40 hours</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
+        </section>
 
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
+        <!-- Q4 -->
+        <section class="step" data-step="4">
+          <div class="step-inner">
+            <p class="kicker">Question 4 of 8 · Intellectual</p>
+            <h2 class="question">
+              Study / training – How much time do you spend studying or
+              improving your skills each week?
+            </h2>
+
+            <div class="options">
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q4"
+                  value="A"
+                  data-label="Less than 2 hours"
+                />
+                <span class="option-chip">A — Less than 2 hours</span>
+              </label>
+
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q4"
+                  value="B"
+                  data-label="Between 2 and 5 hours"
+                />
+                <span class="option-chip">B — Between 2 and 5 hours</span>
+              </label>
+
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q4"
+                  value="C"
+                  data-label="More than 5 hours"
+                />
+                <span class="option-chip">C — More than 5 hours</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Q4 -->
-      <section class="step" data-step="4">
-        <div class="step-inner">
-          <p class="kicker">Question 4 of 8 · Intellectual</p>
-          <h2 class="question">
-            Study / training – how much time do you spend studying or improving your skills each week?
-          </h2>
+        <!-- Q5 -->
+        <section class="step" data-step="5">
+          <div class="step-inner">
+            <p class="kicker">Question 5 of 8 · Discipline</p>
+            <h2 class="question">
+              Habit consistency – How consistent are you with your daily habits?
+            </h2>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q4" value="A" data-label="Less than 2 hours" />
-              <span class="option-chip">A — Less than 2 hours</span>
-            </label>
+            <div class="options">
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q5"
+                  value="A"
+                  data-label="Not consistent"
+                />
+                <span class="option-chip">A — Not consistent</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q4" value="B" data-label="Between 2 and 5 hours" />
-              <span class="option-chip">B — Between 2 and 5 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q5"
+                  value="B"
+                  data-label="Somewhat consistent"
+                />
+                <span class="option-chip">B — Somewhat consistent</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q4" value="C" data-label="More than 5 hours" />
-              <span class="option-chip">C — More than 5 hours</span>
-            </label>
+              <label class="option">
+                <input
+                  type="radio"
+                  name="q5"
+                  value="C"
+                  data-label="Very consistent"
+                />
+                <span class="option-chip">C — Very consistent</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
+        </section>
 
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
+        <!-- Q6 -->
+        <section class="step" data-step="6">
+          <div class="step-inner">
+            <p class="kicker">Question 6 of 8 · Mental</p>
+            <h2 class="question">
+              Overall happiness – How would you rate your overall happiness
+              recently?
+            </h2>
+
+            <div class="options">
+              <label class="option">
+                <input type="radio" name="q6" value="A" data-label="Unhappy" />
+                <span class="option-chip">A — Unhappy</span>
+              </label>
+
+              <label class="option">
+                <input type="radio" name="q6" value="B" data-label="Neutral" />
+                <span class="option-chip">B — Neutral</span>
+              </label>
+
+              <label class="option">
+                <input type="radio" name="q6" value="C" data-label="Happy" />
+                <span class="option-chip">C — Happy</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Q5 -->
-      <section class="step" data-step="5">
-        <div class="step-inner">
-          <p class="kicker">Question 5 of 8 · Discipline</p>
-          <h2 class="question">
-            Habit consistency – how consistent are you with your daily habits?
-          </h2>
+        <!-- Q7 -->
+        <section class="step" data-step="7">
+          <div class="step-inner">
+            <p class="kicker">Question 7 of 8 · Social</p>
+            <h2 class="question">
+              Social life – How would you describe your social life?
+            </h2>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q5" value="A" data-label="Not consistent" />
-              <span class="option-chip">A — Not consistent</span>
-            </label>
+            <div class="options">
+              <label class="option">
+                <input type="radio" name="q7" value="A" data-label="Poor" />
+                <span class="option-chip">A — Poor</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q5" value="B" data-label="Somewhat consistent" />
-              <span class="option-chip">B — Somewhat consistent</span>
-            </label>
+              <label class="option">
+                <input type="radio" name="q7" value="B" data-label="Average" />
+                <span class="option-chip">B — Average</span>
+              </label>
 
-            <label class="option">
-              <input type="radio" name="q5" value="C" data-label="Very consistent" />
-              <span class="option-chip">C — Very consistent</span>
-            </label>
+              <label class="option">
+                <input type="radio" name="q7" value="C" data-label="Good" />
+                <span class="option-chip">C — Good</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="button" class="primary-btn next-btn">Next →</button>
+            </div>
           </div>
+        </section>
 
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
+        <!-- Q8 -->
+        <section class="step" data-step="8">
+          <div class="step-inner">
+            <p class="kicker">Question 8 of 8 · Stress</p>
+            <h2 class="question">
+              Stress level – How would you describe your current stress level?
+            </h2>
+
+            <div class="options">
+              <label class="option">
+                <input type="radio" name="q8" value="A" data-label="High" />
+                <span class="option-chip">A — High</span>
+              </label>
+
+              <label class="option">
+                <input type="radio" name="q8" value="B" data-label="Medium" />
+                <span class="option-chip">B — Medium</span>
+              </label>
+
+              <label class="option">
+                <input type="radio" name="q8" value="C" data-label="Low" />
+                <span class="option-chip">C — Low</span>
+              </label>
+            </div>
+
+            <div class="nav-row">
+              <button type="button" class="ghost-btn back-btn">← Back</button>
+              <button type="submit" class="primary-btn finish-btn">
+                Finish & enter dashboard →
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </form>
 
-      <!-- Q6 -->
-      <section class="step" data-step="6">
-        <div class="step-inner">
-          <p class="kicker">Question 6 of 8 · Mental</p>
-          <h2 class="question">
-            Overall happiness – how would you rate your overall happiness recently?
-          </h2>
+      <p id="error" class="error"></p>
+    </main>
 
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q6" value="A" data-label="Unhappy" />
-              <span class="option-chip">A — Unhappy</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q6" value="B" data-label="Neutral" />
-              <span class="option-chip">B — Neutral</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q6" value="C" data-label="Happy" />
-              <span class="option-chip">C — Happy</span>
-            </label>
-          </div>
-
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Q7 -->
-      <section class="step" data-step="7">
-        <div class="step-inner">
-          <p class="kicker">Question 7 of 8 · Social</p>
-          <h2 class="question">
-            Social life – how would you describe your social life?
-          </h2>
-
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q7" value="A" data-label="Poor" />
-              <span class="option-chip">A — Poor</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q7" value="B" data-label="Average" />
-              <span class="option-chip">B — Average</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q7" value="C" data-label="Good" />
-              <span class="option-chip">C — Good</span>
-            </label>
-          </div>
-
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="button" class="primary-btn next-btn">Next →</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Q8 -->
-      <section class="step" data-step="8">
-        <div class="step-inner">
-          <p class="kicker">Question 8 of 8 · Stress</p>
-          <h2 class="question">
-            Stress level – how would you describe your current stress level?
-          </h2>
-
-          <div class="options">
-            <label class="option">
-              <input type="radio" name="q8" value="A" data-label="High" />
-              <span class="option-chip">A — High</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q8" value="B" data-label="Medium" />
-              <span class="option-chip">B — Medium</span>
-            </label>
-
-            <label class="option">
-              <input type="radio" name="q8" value="C" data-label="Low" />
-              <span class="option-chip">C — Low</span>
-            </label>
-          </div>
-
-          <div class="nav-row">
-            <button type="button" class="ghost-btn back-btn">← Back</button>
-            <button type="submit" class="primary-btn finish-btn">
-              Finish & enter dashboard →
-            </button>
-          </div>
-        </div>
-      </section>
-    </form>
-
-    <p id="error" class="error"></p>
-  </main>
-
-  <script src="survey.js"></script>
-</body>
+    <script src="survey.js"></script>
+  </body>
 </html>

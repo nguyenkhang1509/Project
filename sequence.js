@@ -33,17 +33,15 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   let index = 0;
-  const TRANSITION_TIME = 260; 
+  const TRANSITION_TIME = 260;
 
   function showSlide(i, animate) {
     const phrase = slides[i];
 
     if (!animate) {
-      
       textEl.textContent = phrase;
       textEl.classList.add("is-visible");
     } else {
-      
       textEl.classList.remove("is-visible");
       textEl.classList.add("is-exiting");
 

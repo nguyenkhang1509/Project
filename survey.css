@@ -25,8 +25,12 @@ body {
   width: 100%;
   overflow: hidden;
   display: block;
-  background:
-    radial-gradient(circle at top left, #0f172a 0, #020617 45%, #000 100%);
+  background: radial-gradient(
+    circle at top left,
+    #0f172a 0,
+    #020617 45%,
+    #000 100%
+  );
 }
 
 .bg-glow {
@@ -163,12 +167,8 @@ body {
   backdrop-filter: blur(8px);
   border: 1px solid rgba(148, 163, 184, 0.35);
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.12s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.12s ease, color 0.2s ease;
 }
 
 /* hover */
@@ -204,12 +204,8 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   border: 1px solid transparent;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease,
+    border-color 0.2s ease, color 0.2s ease;
 }
 
 .primary-btn {

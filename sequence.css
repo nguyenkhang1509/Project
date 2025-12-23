@@ -29,8 +29,12 @@ body {
   justify-content: center;
   padding: 24px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top left, #0f172a 0, #020617 45%, #000 100%);
+  background: radial-gradient(
+    circle at top left,
+    #0f172a 0,
+    #020617 45%,
+    #000 100%
+  );
 }
 
 /* GLOW ELEMENTS */
@@ -68,8 +72,11 @@ body {
   padding: 44px 28px;
   border-radius: 30px;
   border: 1px solid rgba(148, 163, 184, 0.3);
-  background:
-    radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), #020617 70%),
+  background: radial-gradient(
+      circle at top left,
+      rgba(15, 23, 42, 0.96),
+      #020617 70%
+    ),
     linear-gradient(135deg, rgba(148, 163, 184, 0.14), rgba(15, 23, 42, 0.5));
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.95);
 
@@ -91,10 +98,7 @@ body {
   opacity: 0;
   filter: blur(6px);
   transform: translateY(18px) scale(0.98);
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s ease,
-    filter 0.4s ease;
+  transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease;
 }
 
 /* visible state */
@@ -131,12 +135,8 @@ body {
   justify-content: center;
   font-size: 1.3rem;
 
-  transition:
-    background 0.2s ease,
-    transform 0.15s ease,
-    border-color 0.2s ease,
-    opacity 0.25s ease,
-    box-shadow 0.25s ease;
+  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease,
+    opacity 0.25s ease, box-shadow 0.25s ease;
 }
 
 .sequence-arrow:hover {
@@ -191,10 +191,7 @@ body {
   transform: translateY(12px) scale(0.97);
   pointer-events: none;
 
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s ease,
-    box-shadow 0.35s ease,
+  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.35s ease,
     filter 0.35s ease;
 }
 

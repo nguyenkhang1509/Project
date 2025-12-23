@@ -1,4 +1,3 @@
-// ---------- DOM ELEMENTS ----------
 const regForm = document.getElementById("register-form");
 const nameInput = document.getElementById("display-name");
 const regEmailInput = document.getElementById("reg-email");
@@ -15,8 +14,6 @@ const registerFormError = document.getElementById("register-form-error");
 
 const toggleRegPassBtn = document.getElementById("toggle-reg-pass");
 
-// ---------- HELPERS ----------
-
 function clearRegisterErrors() {
   nameError.textContent = "";
   regEmailError.textContent = "";
@@ -26,13 +23,11 @@ function clearRegisterErrors() {
   registerFormError.textContent = "";
 }
 
-// Basic email format
 function isValidEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email.trim());
 }
 
-// Strong password: 8+ chars, upper, lower, number, special
 function isStrongPassword(password) {
   const longEnough = password.length >= 8;
   const hasLower = /[a-z]/.test(password);
@@ -54,12 +49,10 @@ function getStoredUsers() {
   }
 }
 
-// Save users back to localStorage
 function saveUsers(users) {
   localStorage.setItem("aurakUsers", JSON.stringify(users));
 }
 
-// ---------- TOGGLE PASSWORD VISIBILITY ----------
 if (toggleRegPassBtn && regPassInput) {
   toggleRegPassBtn.addEventListener("click", () => {
     const hidden = regPassInput.type === "password";
@@ -68,7 +61,6 @@ if (toggleRegPassBtn && regPassInput) {
   });
 }
 
-// ---------- FORM SUBMIT ----------
 if (regForm) {
   regForm.addEventListener("submit", (e) => {
     clearRegisterErrors();
@@ -80,19 +72,16 @@ if (regForm) {
 
     let valid = true;
 
-    // Name validation
     if (!nameValue) {
       nameError.textContent = "Display name is required.";
       valid = false;
     }
 
-    // Email validation
     if (!isValidEmail(emailValue)) {
       regEmailError.textContent = "Enter a valid email address.";
       valid = false;
     }
 
-    // Password validation
     if (!passValue) {
       regPassError.textContent = "Password is required.";
       valid = false;
@@ -102,7 +91,6 @@ if (regForm) {
       valid = false;
     }
 
-    // Confirm password
     if (!passConfirmValue) {
       regPassConfirmError.textContent = "Please confirm your password.";
       valid = false;
@@ -117,7 +105,6 @@ if (regForm) {
       valid = false;
     }
 
-    // If any field-level validation failed, block submit here
     if (!valid) {
       e.preventDefault();
       registerFormError.textContent =
@@ -125,7 +112,6 @@ if (regForm) {
       return;
     }
 
-    // ---------- CHECK FOR DUPLICATE EMAIL ----------
     const users = getStoredUsers();
     const existingUser = users.find(
       (u) => u.email && u.email.toLowerCase() === emailValue.toLowerCase()
@@ -138,11 +124,10 @@ if (regForm) {
       return;
     }
 
-    // ---------- STORE NEW USER LOCALLY ----------
     const newUser = {
       name: nameValue,
       email: emailValue,
-      password: passValue, // demo only, do not store raw passwords in real apps
+      password: passValue,
       createdAt: new Date().toISOString(),
     };
 
@@ -150,7 +135,7 @@ if (regForm) {
     saveUsers(users);
 
     // SUCCESS → redirect to login page
-    e.preventDefault(); // stop default form submission
+    e.preventDefault();
     window.location.href = "login.html";
   });
 }
