@@ -1,3 +1,6 @@
+import { auth } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
 // Lấy thông tin user bằng ID
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
@@ -33,18 +36,6 @@ function clearErrors() {
   formError.textContent = "";
 }
 
-// Đọc dữ liệu user đã lưu trong localStorage
-// Nếu chưa có hoặc bị lỗi thì return
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem("aurakUsers");
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (err) {
-    return [];
-  }
-}
-
 // Khi bấm nút này thì mật khẩu sẽ hiện ra hoặc ẩn đi
 if (togglePassBtn && passwordInput) {
   togglePassBtn.addEventListener("click", () => {
@@ -56,7 +47,9 @@ if (togglePassBtn && passwordInput) {
 }
 
 if (form) {
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
     // Xóa lỗi cũ trước khi kiểm tra mới
     clearErrors();
 
@@ -83,31 +76,45 @@ if (form) {
     }
 
     // Nếu nhập sai thì dừng luôn
-    if (!valid) {
-      e.preventDefault();
-      return;
+    if (!valid) return;
+
+    // Đăng nhập bằng Firebase (Firebase sẽ tự kiểm tra email + password)
+    try {
+      const cred = await signInWithEmailAndPassword(
+        auth,
+        emailValue,
+        passValue
+      );
+
+      // Đăng nhập thành công → lưu user hiện tại (không lưu password)
+      const currentUser = {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        name: cred.user.displayName || "Player",
+        displayName: cred.user.displayName || "Player",
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
+
+      // Chuyển sang trang chính
+if (currentUser.stats) {
+  window.location.href = "dashboard.html";
+} else {
+  window.location.href = "sequence.html";
+}
+    } catch (err) {
+      if (
+        err?.code === "auth/invalid-credential" ||
+        err?.code === "auth/wrong-password" ||
+        err?.code === "auth/user-not-found"
+      ) {
+        formError.textContent = "Incorrect email or password.";
+        return;
+      }
+
+      formError.textContent = "Login failed. Try again.";
+      console.error(err);
     }
-
-    // Lấy danh sách user đã đăng ký
-    const users = getStoredUsers();
-
-    // Tìm user có email trùng với email nhập vô
-    const matchedUser = users.find(
-      (u) => u.email && u.email.toLowerCase() === emailValue.toLowerCase()
-    );
-
-    // Nếu không có user hoặc mật khẩu sai
-    if (!matchedUser || matchedUser.password !== passValue) {
-      e.preventDefault();
-      formError.textContent = "Incorrect email or password.";
-      return;
-    }
-
-    // Đăng nhập thành công → lưu user hiện tại
-    localStorage.setItem("aurakCurrentUser", JSON.stringify(matchedUser));
-
-    // Chuyển sang trang chính
-    e.preventDefault();
-    window.location.href = "sequence.html";
   });
 }

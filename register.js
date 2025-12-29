@@ -1,3 +1,8 @@
+import { auth } from "./firebase.js";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // Kết nối JavaScript với các input và form trong trang đăng ký
 const regForm = document.getElementById("register-form");
@@ -45,22 +50,6 @@ function isStrongPassword(password) {
   return longEnough && hasLower && hasUpper && hasNumber && hasSpecial;
 }
 
-// Đọc danh sách người dùng đã tồn tại trong localStorage
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem("aurakUsers");
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (err) {
-    return [];
-  }
-}
-
-// Lưu user vô localStorage
-function saveUsers(users) {
-  localStorage.setItem("aurakUsers", JSON.stringify(users));
-}
-
 // Cho phép người dùng xem mật khẩu khi nhập để tránh gõ sai
 if (toggleRegPassBtn && regPassInput) {
   toggleRegPassBtn.addEventListener("click", () => {
@@ -73,7 +62,8 @@ if (toggleRegPassBtn && regPassInput) {
 
 // Khi người dùng bấm Create Account, toàn bộ quá trình đăng ký bắt đầu
 if (regForm) {
-  regForm.addEventListener("submit", (e) => {
+  regForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
     // Xóa lỗi cũ trước khi kiểm tra dữ liệu mới
     clearRegisterErrors();
@@ -125,42 +115,43 @@ if (regForm) {
 
     // Nếu còn lỗi → kh đc đăng ký
     if (!valid) {
-      e.preventDefault();
       registerFormError.textContent =
         "Review the highlighted fields and correct them before creating your profile.";
       return;
     }
 
-    // Lấy danh sách user hiện tại
-    const users = getStoredUsers();
+    // Đăng ký bằng Firebase (Firebase sẽ tự kiểm tra email có tồn tại chưa)
+    try {
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        emailValue,
+        passValue
+      );
 
-    // Kiểm tra email đã tồn tại chưa
-    const existingUser = users.find(
-      (u) => u.email && u.email.toLowerCase() === emailValue.toLowerCase()
-    );
+      // Set display name lên Firebase profile
+      await updateProfile(cred.user, { displayName: nameValue });
 
-    if (existingUser) {
-      e.preventDefault();
-      registerFormError.textContent =
-        "An account with this email already exists. Try logging in instead.";
-      return;
+      // Lưu user hiện tại (không lưu password)
+      const newUser = {
+        uid: cred.user.uid,
+        name: nameValue,
+        email: emailValue,
+        createdAt: new Date().toISOString(),
+      };
+
+      localStorage.setItem("aurakCurrentUser", JSON.stringify(newUser));
+
+      // Đăng ký thành công → chuyển sang trang đăng nhập
+      window.location.href = "login.html";
+    } catch (err) {
+      if (err?.code === "auth/email-already-in-use") {
+        registerFormError.textContent =
+          "An account with this email already exists. Try logging in instead.";
+        return;
+      }
+
+      registerFormError.textContent = "Registration failed. Try again.";
+      console.error(err);
     }
-
-    // Tạo user mới
-    const newUser = {
-      name: nameValue,
-      email: emailValue,
-      password: passValue,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Thêm user mới vào danh sách và lưu lại
-    users.push(newUser);
-    saveUsers(users);
-
-    // Đăng ký thành công → chuyển sang trang đăng nhập
-    e.preventDefault();
-    window.location.href = "login.html";
   });
 }
-ÍÍ

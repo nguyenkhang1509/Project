@@ -1,3 +1,10 @@
+import { db } from "./firebase.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
 function scoreFromAnswer(ans) {
   if (!ans) return 0;
   if (ans.code === "A") return 0;
@@ -17,13 +24,9 @@ function calculateStats(survey) {
   const stress = scoreFromAnswer(survey.stressLevel);
 
   const physical = 0.5 * exercise + 0.3 * work + 0.2 * sleep;
-
   const intellectual = study;
-
   const disciplineStat = discipline;
-
   const confidence = 0.5 * happiness + 0.5 * social;
-
   const mental = 0.5 * stress + 0.5 * sleep;
 
   function scale(v) {
@@ -44,25 +47,9 @@ function getCurrentUser() {
     const raw = localStorage.getItem("aurakCurrentUser");
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch (e) {
-    console.error("aurakCurrentUser parse failed", e);
+  } catch {
     return null;
   }
-}
-
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem("aurakUsers");
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("aurakUsers parse failed", e);
-    return [];
-  }
-}
-
-function saveUsers(users) {
-  localStorage.setItem("aurakUsers", JSON.stringify(users));
 }
 
 function getRadioAnswer(name) {
@@ -74,11 +61,37 @@ function getRadioAnswer(name) {
   };
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const user = getCurrentUser();
   if (!user) {
     window.location.href = "login.html";
     return;
+  }
+
+  // Skip survey (lưu data trong local) - check 1
+  if (user.stats) {
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  // Skip survey (firestore) - check 2
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data?.stats) {
+        const updatedUser = {
+          ...user,
+          stats: data.stats,
+          survey: data.survey || null,
+        };
+        localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
+        window.location.href = "dashboard.html";
+        return;
+      }
+    }
+  } catch (err) {
+    console.error("Firestore check failed", err);
   }
 
   const steps = Array.from(document.querySelectorAll(".step"));
@@ -88,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextBtns = document.querySelectorAll(".next-btn");
   const backBtns = document.querySelectorAll(".back-btn");
 
-  let currentStep = 0; // matches data-step
+  let currentStep = 0;
 
   function showStep(stepNumber) {
     steps.forEach((step) => {
@@ -105,9 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function validateStep(stepNumber) {
     if (stepNumber === 0) return true;
-
-    const qName = `q${stepNumber}`;
-    const ans = getRadioAnswer(qName);
+    const ans = getRadioAnswer(`q${stepNumber}`);
     if (!ans) {
       showError("Please choose an option to continue.");
       return false;
@@ -115,33 +126,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
-  // Intro → first question
   if (startBtn) {
     startBtn.addEventListener("click", () => showStep(1));
   }
 
-  // Next buttons
   nextBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       if (!validateStep(currentStep)) return;
-      if (currentStep < 8) {
-        showStep(currentStep + 1);
-      }
+      if (currentStep < 8) showStep(currentStep + 1);
     });
   });
 
-  // Back buttons
   backBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      if (currentStep > 0) {
-        showStep(currentStep - 1);
-      }
+      if (currentStep > 0) showStep(currentStep - 1);
     });
   });
 
-  // Submit final
   if (form) {
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!validateStep(8)) return;
 
@@ -159,15 +162,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const stats = calculateStats(surveyData);
 
-      const users = getStoredUsers();
-      const idx = users.findIndex(
-        (u) => u.email && u.email.toLowerCase() === user.email.toLowerCase()
-      );
-      if (idx !== -1) {
-        users[idx].survey = surveyData;
-        users[idx].stats = stats;
-        saveUsers(users);
+      // Save permanently to Firestore
+      try {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            survey: surveyData,
+            stats: stats,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.error("Save failed", err);
+        showError("Failed to save. Please try again.");
+        return;
       }
+
+      // Update local user cache
       const updatedUser = {
         ...user,
         survey: surveyData,

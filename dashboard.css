@@ -1,0 +1,222 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: #0b0f1a;
+  color: #e5f2ff;
+}
+
+.dashboard-screen {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background: #0f1526;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.brand-name {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: #9aa9c6;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.side-link {
+  color: #9aa9c6;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.side-link.active,
+.side-link:hover {
+  background: #1a2240;
+  color: #ffffff;
+}
+
+.sidebar-tip {
+  font-size: 12px;
+  color: #7f90b2;
+}
+
+.main {
+  flex: 1;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-xp {
+  font-size: 13px;
+  color: #9aa9c6;
+  margin-top: 4px;
+}
+
+.xpbar-bg {
+  margin-top: 8px;
+  width: 240px;
+  height: 8px;
+  background: #1a2240;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xpbar-fill {
+  height: 100%;
+  width: 0%;
+  background: #22d3ee;
+}
+
+/* ---------- BUTTONS ---------- */
+.btn {
+  background: #1a2240;
+  color: #e5f2ff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #22d3ee;
+  color: #0b0f1a;
+}
+
+.btn + .btn {
+  margin-left: 8px;
+}
+
+/* ---------- GRID ---------- */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* ---------- PANELS ---------- */
+.panel {
+  background: #0f1526;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.panel-title {
+  margin-bottom: 16px;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9aa9c6;
+}
+
+/* ---------- TILES ---------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tile {
+  background: #1a2240;
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.tile-k {
+  font-size: 12px;
+  color: #9aa9c6;
+}
+
+.tile-v {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ---------- ACTIVITY ---------- */
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activity-row {
+  display: flex;
+  justify-content: space-between;
+  background: #1a2240;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.activity-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.activity-desc {
+  font-size: 12px;
+  color: #9aa9c6;
+  margin-top: 4px;
+}
+
+.activity-badge {
+  font-size: 12px;
+  color: #22d3ee;
+}
+
+.balance {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.pillars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pillar {
+  display: flex;
+  justify-content: space-between;
+  background: #1a2240;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
