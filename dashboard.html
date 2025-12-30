@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AuraK Levelling — Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
@@ -19,29 +23,72 @@
   </head>
 
   <body>
-    <main class="dashboard-screen">
+    <main class="dashboard-screen" aria-label="AuraK Dashboard">
       <aside class="sidebar" aria-label="AuraK Sidebar">
         <div class="sidebar-top">
-          <div class="brand">
-            <img
-              class="brand-logo"
-              src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
-              alt="AuraK Logo"
-              width="46"
-              height="46"
-            />
-            <div class="brand-text">
-              <div class="brand-name">AURAK</div>
-              <div class="brand-sub">Levelling</div>
+          <a
+            class="brand brand-link"
+            href="dashboard.html"
+            aria-label="Go to Dashboard"
+          >
+            <span class="brand-glow" aria-hidden="true"></span>
+
+            <span class="brand-logoWrap" aria-hidden="true">
+              <img
+                class="brand-logo"
+                src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+                alt=""
+                width="46"
+                height="46"
+              />
+            </span>
+
+            <span class="brand-text">
+              <span class="brand-name">AURAK</span>
+              <span class="brand-sub">Levelling System</span>
+            </span>
+
+            <span class="brand-chip" aria-hidden="true">ONLINE</span>
+          </a>
+
+          <div class="side-card side-card-top" aria-label="Account Card">
+            <div class="side-avatar" aria-hidden="true"></div>
+            <div class="side-meta">
+              <div class="side-user" id="sideUser">—</div>
+              <div class="side-sub" id="sideSub">—</div>
             </div>
           </div>
 
           <nav class="side-nav" aria-label="Sidebar Navigation">
-            <a class="side-link active" href="#">Account</a>
-            <a class="side-link" href="#">Active Stats</a>
-            <a class="side-link" href="#">Challenges</a>
-            <a class="side-link" href="#">History</a>
-            <a class="side-link" href="#">Settings</a>
+            <a class="side-link active" href="dashboard.html">
+              <i class="fa fa-chart-line side-fa"></i>
+              Dashboard
+            </a>
+
+            <a class="side-link" href="account.html">
+              <i class="fa fa-user side-fa"></i>
+              Account
+            </a>
+
+            <a class="side-link" href="balance.html">
+              <i class="fa fa-gauge side-fa"></i>
+              Balance
+            </a>
+
+            <a class="side-link" href="focus.html">
+              <i class="fa fa-bullseye side-fa"></i>
+              Focus
+            </a>
+
+            <a class="side-link" href="history.html">
+              <i class="fa fa-clock-rotate-left side-fa"></i>
+              History
+            </a>
+
+            <a class="side-link" href="appearance.html">
+              <i class="fa fa-moon side-fa"></i>
+              Appearance
+            </a>
           </nav>
         </div>
 
@@ -49,17 +96,19 @@
           <p class="sidebar-tip">
             Tip: Keep streaks small but consistent. Consistency compounds.
           </p>
+
+          <a class="btn-logout" href="login.html">Logout</a>
         </div>
       </aside>
 
-      <section class="main">
+      <section class="main" aria-label="Dashboard Main">
         <header class="topbar" aria-label="Top Bar">
-          <div class="top-left">
-            <div class="profile-name" id="dashName">User</div>
+          <div class="top-left" aria-label="Profile & XP">
+            <div class="profile-name" id="dashName">—</div>
 
             <div class="profile-xp">
-              <span class="profile-level" id="dashLevel">Level 1</span>
-              <span class="profile-xptext" id="dashXpText">0 / 250 XP</span>
+              <span class="profile-level" id="dashLevel">—</span>
+              <span class="profile-xptext" id="dashXpText">—</span>
             </div>
 
             <div class="xpbar" aria-label="XP Progress">
@@ -69,43 +118,31 @@
             </div>
           </div>
 
-          <div class="top-actions">
+          <div class="top-actions" aria-label="Actions">
             <button type="button" class="btn">Add Log</button>
             <button type="button" class="btn primary">Start Challenge</button>
           </div>
         </header>
 
         <section class="wide-stats" aria-label="Active Stats Row">
-          <article class="wide-tile">
+          <article class="wide-tile" aria-label="Streak">
             <div class="tile-k">Streak</div>
-            <div class="tile-v" id="tileStreak">0</div>
+            <div class="tile-v" id="tileStreak">—</div>
             <div class="tile-s">days</div>
           </article>
 
-          <article class="wide-tile">
-            <div class="tile-k">Tasks</div>
-            <div class="tile-v" id="tileTasks">0</div>
-            <div class="tile-s">this week</div>
-          </article>
-
-          <article class="wide-tile">
+          <article class="wide-tile" aria-label="XP gained">
             <div class="tile-k">XP Gained</div>
-            <div class="tile-v" id="tileXpGained">+0</div>
+            <div class="tile-v" id="tileXpGained">—</div>
             <div class="tile-s">7 days</div>
-          </article>
-
-          <article class="wide-tile">
-            <div class="tile-k">Focus</div>
-            <div class="tile-v" id="tileFocus">0</div>
-            <div class="tile-s">sessions</div>
           </article>
         </section>
 
-        <section class="below" aria-label="Pentagon Section">
-          <section class="panel">
+        <section class="below" aria-label="Main Panels">
+          <section class="panel" aria-label="Balance Panel Preview">
             <div class="panel-head">
               <h2 class="panel-title">Balance</h2>
-              <div class="panel-note">Based on your latest survey snapshot</div>
+              <div class="panel-note">Preview</div>
             </div>
 
             <div class="balance-grid">
@@ -140,56 +177,10 @@
                     stroke="rgba(34, 211, 238, 0.85)"
                     stroke-width="2.2"
                   ></polygon>
-
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="100"
-                    y2="18"
-                    stroke="currentColor"
-                    stroke-width="1"
-                    opacity="0.25"
-                  ></line>
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="176"
-                    y2="72"
-                    stroke="currentColor"
-                    stroke-width="1"
-                    opacity="0.25"
-                  ></line>
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="148"
-                    y2="162"
-                    stroke="currentColor"
-                    stroke-width="1"
-                    opacity="0.25"
-                  ></line>
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="52"
-                    y2="162"
-                    stroke="currentColor"
-                    stroke-width="1"
-                    opacity="0.25"
-                  ></line>
-                  <line
-                    x1="100"
-                    y1="100"
-                    x2="24"
-                    y2="72"
-                    stroke="currentColor"
-                    stroke-width="1"
-                    opacity="0.25"
-                  ></line>
                 </svg>
               </div>
 
-              <div class="pillars" aria-label="Pillar Breakdown">
+              <div class="pillars" aria-label="Pillar Breakdown Preview">
                 <div class="pillar-row">
                   <div class="pillar-name">Physical</div>
                   <div class="pillar-bar">
@@ -231,11 +222,49 @@
                 </div>
 
                 <div class="pillar-hint">
-                  Your radar is a snapshot. Your daily logs control your
-                  momentum.
+                  Full breakdown lives in <strong>BALANCE</strong>.
                 </div>
               </div>
             </div>
+          </section>
+
+          <section class="stack" aria-label="Side Features">
+            <section class="panel" aria-label="Focus Preview">
+              <div class="panel-head">
+                <h2 class="panel-title">Focus</h2>
+                <div class="panel-note">Preview</div>
+              </div>
+
+              <div class="focus-card">
+                <div class="focus-title" id="focusTitle">—</div>
+                <p class="focus-desc" id="focusDesc">—</p>
+
+                <div class="focus-actions">
+                  <a class="btn focus" href="focus.html">Open Focus</a>
+                  <button type="button" class="btn">Start</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-label="Appearance Quick Toggle">
+              <div class="panel-head">
+                <h2 class="panel-appaea">Appearance</h2>
+                <div class="panel-theme">Theme</div>
+              </div>
+
+              <label class="mode">
+                <input type="checkbox" id="themeToggle" />
+                <span class="mode-ui"></span>
+                <span class="mode-text">
+                  <span class="mode-LM">Light Mode</span>
+                  <span class="mode-text1">Better daylight viewing</span>
+                </span>
+              </label>
+
+              <div class="mode-hint">
+                Tip: Toggle switches the full dashboard palette.
+              </div>
+            </section>
           </section>
         </section>
       </section>
