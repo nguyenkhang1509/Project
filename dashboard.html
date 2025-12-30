@@ -9,7 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-        <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="dashboard.css" />
 
     <link
       rel="icon"
@@ -56,6 +56,7 @@
         <header class="topbar" aria-label="Top Bar">
           <div class="top-left">
             <div class="profile-name" id="dashName">User</div>
+
             <div class="profile-xp">
               <span class="profile-level" id="dashLevel">Level 1</span>
               <span class="profile-xptext" id="dashXpText">0 / 250 XP</span>
@@ -63,7 +64,7 @@
 
             <div class="xpbar" aria-label="XP Progress">
               <div class="xpbar-bg">
-                <div class="xpbar-fill" id="dashXpFill"></div>
+                <div class="xpbar-fill" id="dashXpFill" style="width: 0%"></div>
               </div>
             </div>
           </div>
@@ -102,85 +103,144 @@
 
         <section class="below" aria-label="Pentagon Section">
           <section class="panel">
-            <h2 class="panel-title">Balance</h2>
+            <div class="panel-head">
+              <h2 class="panel-title">Balance</h2>
+              <div class="panel-note">Based on your latest survey snapshot</div>
+            </div>
 
-            <div class="pentagon" aria-label="Pentagon Visual">
-              <svg
-                viewBox="0 0 200 200"
-                width="320"
-                height="320"
-                role="img"
-                aria-label="Five pillar pentagon"
-              >
-                <polygon
-                  points="100,18 176,72 148,162 52,162 24,72"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                ></polygon>
+            <div class="balance-grid">
+              <div class="pentagon" aria-label="Pentagon Visual">
+                <svg
+                  viewBox="0 0 200 200"
+                  width="320"
+                  height="320"
+                  role="img"
+                  aria-label="Five pillar pentagon"
+                >
+                  <polygon
+                    points="100,18 176,72 148,162 52,162 24,72"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    opacity="0.35"
+                  ></polygon>
 
-                <polygon
-                  points="100,44 152,82 132,144 68,144 48,82"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                ></polygon>
+                  <polygon
+                    points="100,44 152,82 132,144 68,144 48,82"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    opacity="0.25"
+                  ></polygon>
 
-                <polygon
-                  id="dashRadar"
-                  points="100,100 100,100 100,100 100,100 100,100"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                ></polygon>
+                  <polygon
+                    id="dashRadar"
+                    points="100,100 100,100 100,100 100,100 100,100"
+                    fill="rgba(34, 211, 238, 0.12)"
+                    stroke="rgba(34, 211, 238, 0.85)"
+                    stroke-width="2.2"
+                  ></polygon>
 
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="100"
-                  y2="18"
-                  stroke="currentColor"
-                  stroke-width="1"
-                ></line>
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="176"
-                  y2="72"
-                  stroke="currentColor"
-                  stroke-width="1"
-                ></line>
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="148"
-                  y2="162"
-                  stroke="currentColor"
-                  stroke-width="1"
-                ></line>
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="52"
-                  y2="162"
-                  stroke="currentColor"
-                  stroke-width="1"
-                ></line>
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="24"
-                  y2="72"
-                  stroke="currentColor"
-                  stroke-width="1"
-                ></line>
-              </svg>
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="100"
+                    y2="18"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    opacity="0.25"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="176"
+                    y2="72"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    opacity="0.25"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="148"
+                    y2="162"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    opacity="0.25"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="52"
+                    y2="162"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    opacity="0.25"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="24"
+                    y2="72"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    opacity="0.25"
+                  ></line>
+                </svg>
+              </div>
+
+              <div class="pillars" aria-label="Pillar Breakdown">
+                <div class="pillar-row">
+                  <div class="pillar-name">Physical</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" style="width: 0%"></span>
+                  </div>
+                  <div class="pillar-val" id="physical-val">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Intellectual</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" style="width: 0%"></span>
+                  </div>
+                  <div class="pillar-val" id="intellectual-val">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Mental</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" style="width: 0%"></span>
+                  </div>
+                  <div class="pillar-val" id="mental-val">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Confidence</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" style="width: 0%"></span>
+                  </div>
+                  <div class="pillar-val" id="confidence-val">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Discipline</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" style="width: 0%"></span>
+                  </div>
+                  <div class="pillar-val" id="discipline-val">—</div>
+                </div>
+
+                <div class="pillar-hint">
+                  Your radar is a snapshot. Your daily logs control your
+                  momentum.
+                </div>
+              </div>
             </div>
           </section>
         </section>
       </section>
     </main>
-      <script src="dashboard.js"></script>
 
+    <script type="module" src="dashboard.js"></script>
   </body>
 </html>

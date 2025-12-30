@@ -128,10 +128,8 @@ if (regForm) {
         passValue
       );
 
-      // Set display name lên Firebase profile
       await updateProfile(cred.user, { displayName: nameValue });
 
-      // Lưu user hiện tại (không lưu password)
       const newUser = {
         uid: cred.user.uid,
         name: nameValue,
@@ -142,7 +140,7 @@ if (regForm) {
       localStorage.setItem("aurakCurrentUser", JSON.stringify(newUser));
 
       // Đăng ký thành công → chuyển sang trang đăng nhập
-      window.location.href = "login.html";
+      window.location.href = "sequence.html";
     } catch (err) {
       if (err?.code === "auth/email-already-in-use") {
         registerFormError.textContent =

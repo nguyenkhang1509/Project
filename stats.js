@@ -67,11 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
   localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
 
   if (enterBtn) {
-    enterBtn.addEventListener("click", (e) => {
-      e.preventDefault();
+    // Let the link behave like a normal link (more reliable across browsers).
+    // We just refresh local cache right before navigation.
+    enterBtn.addEventListener("click", () => {
       localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
       localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
-      window.location.href = "dashboard.html";
     });
   }
 

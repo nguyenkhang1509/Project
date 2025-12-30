@@ -98,11 +98,8 @@ if (form) {
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
 
       // Chuyển sang trang chính
-if (currentUser.stats) {
-  window.location.href = "dashboard.html";
-} else {
-  window.location.href = "sequence.html";
-}
+window.location.href = "sequence.html";
+
     } catch (err) {
       if (
         err?.code === "auth/invalid-credential" ||

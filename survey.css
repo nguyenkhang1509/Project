@@ -42,6 +42,21 @@ body {
   mix-blend-mode: screen;
 }
 
+.step {
+  z-index: 5;
+}
+
+.bg-glow {
+  z-index: 1;
+}
+
+.primary-btn,
+.ghost-btn {
+  position: relative;
+  z-index: 10;
+}
+
+
 .glow1 {
   width: 480px;
   height: 480px;

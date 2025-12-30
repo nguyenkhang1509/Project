@@ -1,52 +1,12 @@
-import { db } from "./firebase.js";
-import {
-  doc,
-  getDoc,
-  setDoc,
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-function scoreFromAnswer(ans) {
-  if (!ans) return 0;
-  if (ans.code === "A") return 0;
-  if (ans.code === "B") return 0.5;
-  if (ans.code === "C") return 1;
-  return 0;
-}
-
-function calculateStats(survey) {
-  const exercise = scoreFromAnswer(survey.exerciseLevel);
-  const sleep = scoreFromAnswer(survey.sleepPerNight);
-  const work = scoreFromAnswer(survey.workHoursPerWeek);
-  const study = scoreFromAnswer(survey.studyTrainingPerWeek);
-  const discipline = scoreFromAnswer(survey.habitConsistency);
-  const happiness = scoreFromAnswer(survey.happiness);
-  const social = scoreFromAnswer(survey.socialLife);
-  const stress = scoreFromAnswer(survey.stressLevel);
-
-  const physical = 0.5 * exercise + 0.3 * work + 0.2 * sleep;
-  const intellectual = study;
-  const disciplineStat = discipline;
-  const confidence = 0.5 * happiness + 0.5 * social;
-  const mental = 0.5 * stress + 0.5 * sleep;
-
-  function scale(v) {
-    return Math.round(10 + v * 10);
-  }
-
-  return {
-    Physical: scale(physical),
-    Intellectual: scale(intellectual),
-    Discipline: scale(disciplineStat),
-    Confidence: scale(confidence),
-    Mental: scale(mental),
-  };
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
 }
 
 function getCurrentUser() {
   try {
     const raw = localStorage.getItem("aurakCurrentUser");
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -55,60 +15,62 @@ function getCurrentUser() {
 function getRadioAnswer(name) {
   const checked = document.querySelector(`input[name="${name}"]:checked`);
   if (!checked) return null;
-  return {
-    code: checked.value,
-    label: checked.dataset.label || "",
-  };
+  return { code: checked.value, label: checked.dataset.label || "" };
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+function abcToStat(ans, invert = false) {
+  if (!ans?.code) return 10;
+  const map = { A: 10, B: 15, C: 20 };
+  const v = map[ans.code] ?? 10;
+  return invert ? 30 - v : v;
+}
+
+function calculateStats(surveyData) {
+  const v1 = abcToStat(surveyData.exerciseLevel);              
+  const v2 = abcToStat(surveyData.sleepPerNight);             
+  const v3 = abcToStat(surveyData.workHoursPerWeek, true);    
+
+  const v4 = abcToStat(surveyData.studyTrainingPerWeek);       
+  const v5 = abcToStat(surveyData.habitConsistency);           
+  const v6 = abcToStat(surveyData.happiness);                  
+  const v7 = abcToStat(surveyData.socialLife);                 
+  const v8 = abcToStat(surveyData.stressLevel);               
+
+  const Physical = clamp(Math.round(v1 * 0.7 + v2 * 0.3), 10, 20);
+  const Intellectual = clamp(Math.round(v4), 10, 20);
+  const Discipline = clamp(Math.round(v5 * 0.7 + v3 * 0.3), 10, 20);
+  const Confidence = clamp(Math.round(v7 * 0.6 + v6 * 0.4), 10, 20);
+  const Mental = clamp(
+    Math.round(v6 * 0.4 + v2 * 0.2 + v3 * 0.2 + v8 * 0.2),
+    10,
+    20
+  );
+
+  return { Physical, Intellectual, Mental, Confidence, Discipline };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   const user = getCurrentUser();
-  if (!user) {
+  if (!user?.uid) {
     window.location.href = "login.html";
     return;
   }
 
-  // Skip survey (lưu data trong local) - check 1
-  if (user.stats) {
-    window.location.href = "dashboard.html";
-    return;
-  }
-
-  // Skip survey (firestore) - check 2
-  try {
-    const snap = await getDoc(doc(db, "users", user.uid));
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data?.stats) {
-        const updatedUser = {
-          ...user,
-          stats: data.stats,
-          survey: data.survey || null,
-        };
-        localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
-        window.location.href = "dashboard.html";
-        return;
-      }
-    }
-  } catch (err) {
-    console.error("Firestore check failed", err);
-  }
-
   const steps = Array.from(document.querySelectorAll(".step"));
   const startBtn = document.getElementById("startBtn");
-  const errorEl = document.getElementById("error");
   const form = document.getElementById("survey-form");
+  const errorEl = document.getElementById("error");
   const nextBtns = document.querySelectorAll(".next-btn");
   const backBtns = document.querySelectorAll(".back-btn");
 
   let currentStep = 0;
 
-  function showStep(stepNumber) {
-    steps.forEach((step) => {
-      const s = Number(step.dataset.step || 0);
-      step.classList.toggle("active", s === stepNumber);
+  function showStep(step) {
+    steps.forEach((el) => {
+      const s = Number(el.dataset.step);
+      el.classList.toggle("active", s === step);
     });
-    currentStep = stepNumber;
+    currentStep = step;
     if (errorEl) errorEl.textContent = "";
   }
 
@@ -116,9 +78,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (errorEl) errorEl.textContent = msg;
   }
 
-  function validateStep(stepNumber) {
-    if (stepNumber === 0) return true;
-    const ans = getRadioAnswer(`q${stepNumber}`);
+  function validateStep(step) {
+    if (step === 0) return true;
+    const ans = getRadioAnswer(`q${step}`);
     if (!ans) {
       showError("Please choose an option to continue.");
       return false;
@@ -126,26 +88,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     return true;
   }
 
+  // Begin
   if (startBtn) {
-    startBtn.addEventListener("click", () => showStep(1));
+    startBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      showStep(1);
+    });
   }
 
+  // Next
   nextBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
       if (!validateStep(currentStep)) return;
       if (currentStep < 8) showStep(currentStep + 1);
     });
   });
 
+  // Back
   backBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
       if (currentStep > 0) showStep(currentStep - 1);
     });
   });
 
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // Finish
+  if (!form) return;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    try {
       if (!validateStep(8)) return;
 
       const surveyData = {
@@ -162,34 +136,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const stats = calculateStats(surveyData);
 
-      // Save permanently to Firestore
-      try {
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            survey: surveyData,
-            stats: stats,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      } catch (err) {
-        console.error("Save failed", err);
-        showError("Failed to save. Please try again.");
-        return;
-      }
-
-      // Update local user cache
-      const updatedUser = {
-        ...user,
-        survey: surveyData,
-        stats: stats,
-      };
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
+      localStorage.setItem(
+        "aurakCurrentUser",
+        JSON.stringify({ ...user, survey: surveyData, stats })
+      );
 
       window.location.href = "loading.html";
-    });
-  }
 
-  showStep(0);
+    } catch (err) {
+      console.error("Survey finish failed:", err);
+      showError("Something went wrong. Open Console to see the error.");
+    }
+  });
 });
