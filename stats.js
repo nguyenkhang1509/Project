@@ -1,3 +1,5 @@
+import { mergeUserDoc } from "./userStore.js";
+
 function safeParse(key) {
   try {
     const raw = localStorage.getItem(key);
@@ -7,15 +9,25 @@ function safeParse(key) {
   }
 }
 
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
 function stat10to20_toPercent(v) {
-  const n = Number(v) || 10;
+  const num = Number(v);
+  const n = Number.isFinite(num) ? num : 10;
   const t = (n - 10) / 10;
   return clamp(Math.round(t * 100), 0, 100);
 }
 
-function computeXPFromPillars(p) {
+function computeXPFromStats(stats) {
   const avg =
-    (p.physical + p.intellectual + p.mental + p.confidence + p.discipline) / 5;
+    (stats.Physical +
+      stats.Intellectual +
+      stats.Mental +
+      stats.Confidence +
+      stats.Discipline) / 5;
+
   return clamp(Math.round(avg * 50), 0, 5000);
 }
 
@@ -23,11 +35,7 @@ function computeLevel(xpNow) {
   return Math.floor(clamp(xpNow, 0, 1000000) / 250) + 1;
 }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const user = safeParse("aurakCurrentUser");
 
   const statsWrap = document.getElementById("stats");
@@ -35,10 +43,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const topStats = document.getElementById("topStats");
   const enterBtn = document.getElementById("enterDashboardBtn");
 
-  if (!user || !user.stats) {
-    if (statsWrap)
+  if (!user?.uid || !user.stats || Object.keys(user.stats).length === 0) {
+    if (statsWrap) {
       statsWrap.innerHTML =
         "<p style='color:rgba(229,242,255,0.72)'>No data found. Please take the survey.</p>";
+    }
     if (summaryText) summaryText.textContent = "No baseline found.";
     return;
   }
@@ -51,52 +60,57 @@ document.addEventListener("DOMContentLoaded", () => {
     discipline: stat10to20_toPercent(user.stats.Discipline),
   };
 
+  const xpTotal = computeXPFromStats(user.stats);
+  const levelNow = computeLevel(xpTotal);
+  const xpInto = xpTotal % 250;
+
   const dashboardPayload = {
     accountName: user.displayName || user.name || user.email || "User",
-    level: 1,
-    xpTotal: 0,
-    xpIntoLevel: 0,
+    level: levelNow,
+    xpTotal,
+    xpIntoLevel: xpInto,
     xpToNextLevel: 250,
     pillars: pillarsPct,
     updatedAt: new Date().toISOString(),
   };
 
   localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
-
   const updatedUser = { ...user, dashboard: dashboardPayload };
   localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
 
-  if (enterBtn) {
-    // Let the link behave like a normal link (more reliable across browsers).
-    // We just refresh local cache right before navigation.
-    enterBtn.addEventListener("click", () => {
-      localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
-    });
-  }
+  mergeUserDoc(user.uid, { dashboard: dashboardPayload }).catch((e) => {
+    console.warn("Dashboard Firestore write failed (non-blocking):", e);
+  });
 
-  const coreKeys = ["Physical", "Intellectual", "Mental", "Confidence", "Discipline"];
+  const coreKeys = [
+    "Physical",
+    "Intellectual",
+    "Mental",
+    "Confidence",
+    "Discipline",
+  ];
 
-  const coreEntries = coreKeys
-    .filter((k) => user.stats[k] !== undefined)
-    .map((k) => [k, clamp(Number(user.stats[k]) || 10, 10, 20)]);
+  const coreEntries = coreKeys.map((k) => {
+    const num = Number(user.stats[k]);
+    const v = Number.isFinite(num) ? num : 10;
+    return [k, clamp(v, 10, 20)];
+  });
 
   if (statsWrap) {
     statsWrap.innerHTML = "";
-    coreEntries.forEach(([name, value], idx) => {
-      const raw = clamp(Number(value) || 10, 10, 20);
 
-      const pct = clamp(Math.round(((raw - 10) / 10) * 100), 0, 100);
+    coreEntries.forEach(([name, value], idx) => {
+      const pct = clamp(Math.round(((value - 10) / 10) * 100), 0, 100);
 
       const row = document.createElement("div");
       row.className = "stat";
       row.innerHTML = `
         <div class="stat-label">
           <span class="stat-name">${name}</span>
-          <span class="stat-value">${raw} / 20</span>
+          <span class="stat-value">${value} / 20</span>
         </div>
         <div class="bar-bg">
-          <div class="bar-fill" style="width: 0%"></div>
+          <div class="bar-fill" style="width:0%"></div>
         </div>
       `;
 
@@ -110,30 +124,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const sorted = coreEntries.slice().sort((a, b) => b[1] - a[1]);
-
   const topStrength = sorted[0];
   const weakness = sorted[sorted.length - 1];
-
   const gap = topStrength[1] - weakness[1];
 
-let summaryMessage = "";
+  let summaryMessage = "";
+  if (gap >= 4) {
+    summaryMessage =
+      "Your build is unbalanced. Strengthening your weakest pillar will give the biggest overall improvement.";
+  } else if (gap >= 2) {
+    summaryMessage =
+      "Your build is moderately balanced. Targeted work on weaker areas will raise your overall level.";
+  } else {
+    summaryMessage =
+      "Your build is well balanced. Consistent actions across all pillars will maintain steady growth.";
+  }
 
-if (gap >= 4) {
-  summaryMessage =
-    "Your build is unbalanced. Strengthening your weakest pillar will give the biggest overall improvement.";
-} else if (gap >= 2) {
-  summaryMessage =
-    "Your build is moderately balanced. Targeted work on weaker areas will raise your overall level.";
-} else {
-  summaryMessage =
-    "Your build is well balanced. Consistent actions across all pillars will maintain steady growth.";
-}
+  if (summaryText) summaryText.textContent = summaryMessage;
 
-if (summaryText) {
-  summaryText.textContent = summaryMessage;
-}
-
-    if (topStats) {
+  if (topStats) {
     topStats.innerHTML = "";
 
     const strengthBox = document.createElement("div");
@@ -147,4 +156,11 @@ if (summaryText) {
     topStats.appendChild(weaknessBox);
   }
 
+
+  if (enterBtn) {
+    enterBtn.addEventListener("click", () => {
+      localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
+      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
+    });
+  }
 });

@@ -64,11 +64,8 @@ if (toggleRegPassBtn && regPassInput) {
 if (regForm) {
   regForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    // Xóa lỗi cũ trước khi kiểm tra dữ liệu mới
     clearRegisterErrors();
 
-    // Lấy dữ liệu người dùng nhập
     const nameValue = nameInput.value.trim();
     const emailValue = regEmailInput.value.trim();
     const passValue = regPassInput.value;
@@ -76,14 +73,20 @@ if (regForm) {
 
     let valid = true;
 
-    // Kiểm tra tên hiển thị
+    // Name validation (required + max length)
     if (!nameValue) {
       nameError.textContent = "Display name is required.";
       valid = false;
+    } else if (nameValue.length > 24) {
+      nameError.textContent = "Display name must be 24 characters or fewer.";
+      valid = false;
     }
 
-    // Kiểm tra email
-    if (!isValidEmail(emailValue)) {
+    // Email validation
+    if (!emailValue) {
+      regEmailError.textContent = "Email is required.";
+      valid = false;
+    } else if (!isValidEmail(emailValue)) {
       regEmailError.textContent = "Enter a valid email address.";
       valid = false;
     }
@@ -132,8 +135,9 @@ if (regForm) {
 
       const newUser = {
         uid: cred.user.uid,
-        name: nameValue,
         email: emailValue,
+        name: nameValue,
+        displayName: nameValue,
         createdAt: new Date().toISOString(),
       };
 
@@ -142,9 +146,33 @@ if (regForm) {
       // Đăng ký thành công → chuyển sang trang đăng nhập
       window.location.href = "sequence.html";
     } catch (err) {
-      if (err?.code === "auth/email-already-in-use") {
+      const code = err?.code || "";
+
+      if (code === "auth/email-already-in-use") {
         registerFormError.textContent =
           "An account with this email already exists. Try logging in instead.";
+        return;
+      }
+
+      if (code === "auth/invalid-email") {
+        registerFormError.textContent = "That email address is not valid.";
+        return;
+      }
+
+      if (code === "auth/weak-password") {
+        registerFormError.textContent =
+          "Password is too weak. Use 8+ characters with uppercase, lowercase, number, and a special character.";
+        return;
+      }
+
+      if (code === "auth/network-request-failed") {
+        registerFormError.textContent =
+          "Network error. Check your connection and try again.";
+        return;
+      }
+
+      if (code === "auth/too-many-requests") {
+        registerFormError.textContent = "Too many attempts. Try again later.";
         return;
       }
 

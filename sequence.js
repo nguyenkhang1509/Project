@@ -1,6 +1,3 @@
-import { db } from "./firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
 function getCurrentUser() {
   try {
     const raw = localStorage.getItem("aurakCurrentUser");
@@ -10,12 +7,9 @@ function getCurrentUser() {
   }
 }
 
-function setCurrentUser(user) {
-  localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   const user = getCurrentUser();
+
   if (!user?.uid) {
     window.location.href = "login.html";
     return;
@@ -24,12 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const textEl = document.getElementById("sequence-text");
   const nextBtn = document.getElementById("sequence-next");
   const startLink = document.getElementById("sequence-start");
+
   if (!textEl || !nextBtn || !startLink) return;
 
-  const playerName = user.name || user.displayName || "Player";
-
-  startLink.href = "survey.html";
-  startLink.textContent = "Start →";
+  const playerName = user.displayName || "Player";
 
   const slides = [
     `Welcome, Player ${playerName}...`,
@@ -43,20 +35,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderNav(i) {
     const isLast = i === slides.length - 1;
-    if (isLast) {
-      nextBtn.classList.add("is-hidden");
-      startLink.classList.add("is-visible");
-    } else {
-      nextBtn.classList.remove("is-hidden");
-      startLink.classList.remove("is-visible");
-    }
+    nextBtn.classList.toggle("is-hidden", isLast);
+    startLink.classList.toggle("is-visible", isLast);
   }
 
   function showSlide(i, animate) {
-    const phrase = slides[i];
-
     if (!animate) {
-      textEl.textContent = phrase;
+      textEl.textContent = slides[i];
       textEl.classList.add("is-visible");
       renderNav(i);
       return;
@@ -65,53 +50,32 @@ document.addEventListener("DOMContentLoaded", () => {
     textEl.classList.remove("is-visible");
     textEl.classList.add("is-exiting");
 
-    window.setTimeout(() => {
+    setTimeout(() => {
       textEl.classList.remove("is-exiting");
-      textEl.textContent = phrase;
+      textEl.textContent = slides[i];
       void textEl.offsetWidth;
       textEl.classList.add("is-visible");
       renderNav(i);
     }, TRANSITION_TIME);
   }
 
+  const hasBaseline = !!user.stats;
+  startLink.href = hasBaseline ? "stats.html" : "survey.html";
+  startLink.textContent = hasBaseline ? "Continue →" : "Start →";
+
   showSlide(index, false);
 
   nextBtn.addEventListener("click", () => {
-    if (index >= slides.length - 1) return;
-    index += 1;
-    showSlide(index, true);
-  });
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight" && index < slides.length - 1) {
-      index += 1;
+    if (index < slides.length - 1) {
+      index++;
       showSlide(index, true);
     }
   });
 
-  (async () => {
-    try {
-      const snap = await getDoc(doc(db, "users", user.uid));
-      const data = snap.exists() ? snap.data() : null;
-
-      if (data?.stats) {
-        setCurrentUser({
-          ...user,
-          stats: data.stats,
-          survey: data.survey || null,
-        });
-
-        startLink.href = "stats.html";
-        startLink.textContent = "Continue →";
-      } else {
-        startLink.href = "survey.html";
-        startLink.textContent = "Start →";
-      }
-    } catch (e) {
-      console.warn("Sequence Firestore check failed:", e);
-      startLink.href = "survey.html";
-      startLink.textContent = "Start →";
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" && index < slides.length - 1) {
+      index++;
+      showSlide(index, true);
     }
-  })();
-
+  });
 });

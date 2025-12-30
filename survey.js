@@ -1,3 +1,5 @@
+// survey.js
+import { mergeUserDoc } from "./userStore.js";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -10,6 +12,10 @@ function getCurrentUser() {
   } catch {
     return null;
   }
+}
+
+function setCurrentUser(user) {
+  localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
 }
 
 function getRadioAnswer(name) {
@@ -26,27 +32,26 @@ function abcToStat(ans, invert = false) {
 }
 
 function calculateStats(surveyData) {
-  const v1 = abcToStat(surveyData.exerciseLevel);              
-  const v2 = abcToStat(surveyData.sleepPerNight);             
-  const v3 = abcToStat(surveyData.workHoursPerWeek, true);    
+  const v1 = abcToStat(surveyData.exerciseLevel);
+  const v2 = abcToStat(surveyData.sleepPerNight);
+  const v3 = abcToStat(surveyData.workHoursPerWeek, true);
+  const v4 = abcToStat(surveyData.studyTrainingPerWeek);
+  const v5 = abcToStat(surveyData.habitConsistency);
+  const v6 = abcToStat(surveyData.happiness);
+  const v7 = abcToStat(surveyData.socialLife);
+  const v8 = abcToStat(surveyData.stressLevel);
 
-  const v4 = abcToStat(surveyData.studyTrainingPerWeek);       
-  const v5 = abcToStat(surveyData.habitConsistency);           
-  const v6 = abcToStat(surveyData.happiness);                  
-  const v7 = abcToStat(surveyData.socialLife);                 
-  const v8 = abcToStat(surveyData.stressLevel);               
-
-  const Physical = clamp(Math.round(v1 * 0.7 + v2 * 0.3), 10, 20);
-  const Intellectual = clamp(Math.round(v4), 10, 20);
-  const Discipline = clamp(Math.round(v5 * 0.7 + v3 * 0.3), 10, 20);
-  const Confidence = clamp(Math.round(v7 * 0.6 + v6 * 0.4), 10, 20);
-  const Mental = clamp(
-    Math.round(v6 * 0.4 + v2 * 0.2 + v3 * 0.2 + v8 * 0.2),
-    10,
-    20
-  );
-
-  return { Physical, Intellectual, Mental, Confidence, Discipline };
+  return {
+    Physical: clamp(Math.round(v1 * 0.7 + v2 * 0.3), 10, 20),
+    Intellectual: clamp(Math.round(v4), 10, 20),
+    Discipline: clamp(Math.round(v5 * 0.7 + v3 * 0.3), 10, 20),
+    Confidence: clamp(Math.round(v7 * 0.6 + v6 * 0.4), 10, 20),
+    Mental: clamp(
+      Math.round(v6 * 0.4 + v2 * 0.2 + v3 * 0.2 + v8 * 0.2),
+      10,
+      20
+    ),
+  };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -80,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function validateStep(step) {
     if (step === 0) return true;
+
     const ans = getRadioAnswer(`q${step}`);
     if (!ans) {
       showError("Please choose an option to continue.");
@@ -88,13 +94,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
-  // Begin
-  if (startBtn) {
-    startBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      showStep(1);
-    });
-  }
+  // Start
+  startBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    showStep(1);
+  });
 
   // Next
   nextBtns.forEach((btn) => {
@@ -113,39 +117,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Finish
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    try {
-      if (!validateStep(8)) return;
+    if (!validateStep(8)) return;
 
-      const surveyData = {
-        exerciseLevel: getRadioAnswer("q1"),
-        sleepPerNight: getRadioAnswer("q2"),
-        workHoursPerWeek: getRadioAnswer("q3"),
-        studyTrainingPerWeek: getRadioAnswer("q4"),
-        habitConsistency: getRadioAnswer("q5"),
-        happiness: getRadioAnswer("q6"),
-        socialLife: getRadioAnswer("q7"),
-        stressLevel: getRadioAnswer("q8"),
-        updatedAt: new Date().toISOString(),
-      };
+    const surveyData = {
+      exerciseLevel: getRadioAnswer("q1"),
+      sleepPerNight: getRadioAnswer("q2"),
+      workHoursPerWeek: getRadioAnswer("q3"),
+      studyTrainingPerWeek: getRadioAnswer("q4"),
+      habitConsistency: getRadioAnswer("q5"),
+      happiness: getRadioAnswer("q6"),
+      socialLife: getRadioAnswer("q7"),
+      stressLevel: getRadioAnswer("q8"),
+      updatedAt: new Date().toISOString(),
+    };
 
-      const stats = calculateStats(surveyData);
+    const stats = calculateStats(surveyData);
 
-      localStorage.setItem(
-        "aurakCurrentUser",
-        JSON.stringify({ ...user, survey: surveyData, stats })
-      );
+    const updatedLocal = { ...user, survey: surveyData, stats };
+    setCurrentUser(updatedLocal);
 
-      window.location.href = "loading.html";
+    window.location.href = "loading.html";
 
-    } catch (err) {
-      console.error("Survey finish failed:", err);
-      showError("Something went wrong. Open Console to see the error.");
-    }
+    mergeUserDoc(user.uid, {
+      baseline: {
+        stats,
+        survey: surveyData,
+        completedAt: new Date().toISOString(),
+      },
+    }).catch((err) => {
+      console.warn("Firestore baseline save failed (non-blocking):", err);
+    });
   });
 });
