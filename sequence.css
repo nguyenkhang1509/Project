@@ -95,12 +95,9 @@ body {
   letter-spacing: 0.02em;
   text-align: center;
 
-
   opacity: 1;
   filter: blur(0);
   transform: translateY(0) scale(1);
-
-
 }
 
 /* visible state */
@@ -199,8 +196,6 @@ body {
   /* stays clickable above the card + glows */
   z-index: 6;
 
-
-
   transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.35s ease,
     filter 0.35s ease;
 }
@@ -221,6 +216,30 @@ body {
 .sequence-start:active {
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.95);
   transform: translateY(0) scale(0.99);
+}
+
+.sequence-cursor {
+  display: inline-block;
+  margin-left: 6px;
+  opacity: 0.75;
+  animation: seqBlink 1.35s steps(1) infinite;
+  transform: translateY(-1px);
+}
+
+@keyframes seqBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* optional: smoother "typing" spacing */
+#sequence-typed {
+  white-space: pre-wrap;
 }
 
 /* RESPONSIVE */
