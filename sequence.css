@@ -19,7 +19,6 @@ body {
   color: #e5f2ff;
 }
 
-/* FULL SCREEN LAYOUT */
 .sequence-screen {
   position: relative;
   height: 100vh;
@@ -37,7 +36,6 @@ body {
   );
 }
 
-/* GLOW ELEMENTS */
 .sequence-glow {
   position: absolute;
   border-radius: 999px;
@@ -63,7 +61,6 @@ body {
   right: -40px;
 }
 
-/* CENTRAL CARD */
 .sequence-card {
   position: relative;
   z-index: 1;
@@ -80,13 +77,12 @@ body {
     linear-gradient(135deg, rgba(148, 163, 184, 0.14), rgba(15, 23, 42, 0.5));
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.95);
 
-  height: 260px; /* fixed so it does not jump */
+  height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* SENTENCE TEXT */
 .sequence-text {
   max-width: 22ch;
   font-size: 2.05rem;
@@ -95,29 +91,23 @@ body {
   letter-spacing: 0.02em;
   text-align: center;
 
-
   opacity: 1;
   filter: blur(0);
   transform: translateY(0) scale(1);
-
-
 }
 
-/* visible state */
 .sequence-text.is-visible {
   opacity: 1;
   filter: blur(0);
   transform: translateY(0) scale(1);
 }
 
-/* exiting state */
 .sequence-text.is-exiting {
   opacity: 0;
   filter: blur(6px);
   transform: translateY(-14px) scale(0.98);
 }
 
-/* ARROW – middle-right of SCREEN, outside card */
 .sequence-arrow {
   position: fixed;
   right: 34px;
@@ -140,7 +130,6 @@ body {
   transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease,
     opacity 0.25s ease, box-shadow 0.25s ease;
 
-  /* stays clickable above the card + glows */
   z-index: 5;
 }
 
@@ -155,13 +144,11 @@ body {
   transform: translateY(-50%) translateX(0);
 }
 
-/* hide arrow on last slide */
 .sequence-arrow.is-hidden {
   opacity: 0;
   pointer-events: none;
 }
 
-/* START LINK – bottom-right corner of SCREEN */
 .sequence-start {
   position: fixed;
   right: 28px;
@@ -191,21 +178,14 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  /* hidden until the last slide */
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px) scale(0.97);
-
-  /* stays clickable above the card + glows */
   z-index: 6;
-
-
-
   transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.35s ease,
     filter 0.35s ease;
 }
 
-/* visible state for Start link */
 .sequence-start.is-visible {
   opacity: 1;
   pointer-events: auto;
@@ -221,6 +201,29 @@ body {
 .sequence-start:active {
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.95);
   transform: translateY(0) scale(0.99);
+}
+
+.sequence-cursor {
+  display: inline-block;
+  margin-left: 6px;
+  opacity: 0.75;
+  animation: seqBlink 1.35s steps(1) infinite;
+  transform: translateY(-1px);
+}
+
+@keyframes seqBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+#sequence-typed {
+  white-space: pre-wrap;
 }
 
 /* RESPONSIVE */

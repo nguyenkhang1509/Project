@@ -18,7 +18,6 @@ body {
   color: #e5e7eb;
 }
 
-/* FULLSCREEN BACKGROUND */
 .survey-screen {
   position: relative;
   min-height: 100vh;
@@ -73,7 +72,6 @@ body {
   right: -120px;
 }
 
-/* LAYOUT */
 .step {
   position: absolute;
   inset: 0;
@@ -107,7 +105,6 @@ body {
   margin: 0 auto;
 }
 
-/* TEXT */
 .kicker {
   font-size: 0.78rem;
   letter-spacing: 0.2em;
@@ -152,14 +149,12 @@ body {
   color: #cbd5f5;
 }
 
-/* QUESTIONS */
 .question {
   font-size: 1.8rem;
   line-height: 1.35;
   margin-bottom: 30px;
 }
 
-/* OPTIONS */
 .options {
   display: flex;
   flex-direction: column;
@@ -186,7 +181,6 @@ body {
     transform 0.12s ease, color 0.2s ease;
 }
 
-/* hover */
 .option-chip:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(148, 163, 184, 0.9);
@@ -194,7 +188,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* selected */
 .option input:checked + .option-chip {
   background: radial-gradient(circle at top left, #22d3ee, #0ea5e9 60%);
   border-color: rgba(56, 189, 248, 0.98);
@@ -202,7 +195,6 @@ body {
   box-shadow: 0 24px 60px rgba(56, 189, 248, 0.75);
 }
 
-/* NAV BUTTONS */
 .nav-row {
   margin-top: 34px;
   display: flex;
@@ -250,7 +242,6 @@ body {
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.95);
 }
 
-/* ERROR MESSAGE */
 .error {
   position: absolute;
   left: 50%;

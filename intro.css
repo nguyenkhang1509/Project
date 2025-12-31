@@ -628,8 +628,6 @@ body {
   font-size: 0.78rem;
 }
 
-/* STREAKS CARD */
-
 .card-streak {
   display: flex;
   flex-direction: column;
@@ -663,7 +661,6 @@ body {
   color: var(--text-muted);
 }
 
-/* mini 7-day streak timeline */
 .mini-timeline {
   margin-top: 6px;
   display: flex;
@@ -694,8 +691,6 @@ body {
   font-size: 0.74rem;
   color: var(--text-muted);
 }
-
-/* HISTORY CARD */
 
 .card-history-data {
   display: flex;
@@ -775,8 +770,6 @@ body {
     var(--accent-secondary)
   );
 }
-
-/* FOOTER */
 
 .footer {
   font-size: 0.7rem;
