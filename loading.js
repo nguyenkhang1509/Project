@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const user = safeParse("aurakCurrentUser");
 
+  // Guard: user came here without survey
   if (!user || !user.stats) {
     if (subtitle) subtitle.textContent = "No survey data found. Returning…";
     if (statusText) statusText.textContent = "OFFLINE";
@@ -26,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // Welcome text (optional, subtle)
   const displayName =
     user.name ||
     user.username ||
@@ -34,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (statusText) statusText.textContent = "ONLINE";
 
+  // Creative loading messages
   const lines = [
     "Analyzing Player Data…",
     "Calibrating Baselines…",
@@ -51,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (i >= lines.length) clearInterval(ticker);
   }, 700);
 
+  // Redirect to final stats page
   setTimeout(() => {
     window.location.href = "stats.html";
   }, 2800);
