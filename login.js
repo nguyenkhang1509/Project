@@ -14,6 +14,15 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+function safeParse(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function clearErrors() {
   emailError.textContent = "";
   passwordError.textContent = "";
@@ -65,6 +74,8 @@ if (form) {
       // 🔥 CRITICAL FIX
       await fbUser.reload();
 
+      const existingUser = safeParse("aurakCurrentUser");
+
       const displayName = fbUser.displayName || "Player";
 
       const currentUser = {
@@ -73,11 +84,16 @@ if (form) {
         name: displayName,
         displayName: displayName,
         lastLoginAt: new Date().toISOString(),
+        ...(existingUser && existingUser.stats ? { stats: existingUser.stats } : {}),
       };
 
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
 
-      window.location.href = "sequence.html";
+      if (currentUser.stats) {
+        window.location.href = "dashboard.html";
+      } else {
+        window.location.href = "sequence.html";
+      }
     } catch (err) {
       const code = err?.code || "";
 
