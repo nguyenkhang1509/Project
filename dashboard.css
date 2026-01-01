@@ -572,7 +572,7 @@ input:focus-visible {
   margin-bottom: 12px;
 }
 
-.panel-title {
+.panel-appaea {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 900;
@@ -603,7 +603,7 @@ input:focus-visible {
 
 .pillar-row {
   display: grid;
-  grid-template-columns: 120px 1fr 56px;
+  grid-template-columns: 120px 1fr 63px;
   gap: 10px;
   align-items: center;
 }
@@ -731,11 +731,11 @@ input:focus-visible {
   gap: 3px;
 }
 
-.mode-title {
+.mode-LM {
   font-weight: 900;
 }
 
-.mode-sub {
+.mode-text1 {
   display: block;
   color: var(--muted);
   font-size: 0.9rem;
@@ -747,12 +747,16 @@ input:focus-visible {
   font-size: 0.92rem;
 }
 
-line-graph {
+.line-graph {
   margin-top: 12px;
   padding: 16px;
   background: var(--card);
   border-radius: var(--radius2);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
+
 
 .line-graph1 {
   display: flex;

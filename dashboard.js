@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dashName) dashName.textContent = displayName;
   if (sideUser) sideUser.textContent = displayName;
 
-  // Populate stats if available
   if (user.stats) {
     const statKeys = ['Physical', 'Intellectual', 'Mental', 'Confidence', 'Discipline'];
     const pillarRows = document.querySelectorAll('.pillar-row');
@@ -39,15 +38,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (barFill) barFill.style.width = `${user.stats[key]}%`;
     });
 
-    // Update spider chart
     const radar = document.getElementById("dashRadar");
     if (radar) {
       const outerPoints = [
-        {x: 100, y: 18}, // Physical
-        {x: 176, y: 72}, // Intellectual
-        {x: 148, y: 162}, // Mental
-        {x: 52, y: 162}, // Confidence
-        {x: 24, y: 72}, // Discipline
+        {x: 100, y: 18}, 
+        {x: 176, y: 72}, 
+        {x: 148, y: 162}, 
+        {x: 52, y: 162}, 
+        {x: 24, y: 72}, 
       ];
 
       const points = statKeys.map((key, i) => {
@@ -61,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
       radar.setAttribute('points', points);
     }
 
-    // Set level to 1 and XP to 0/100
     const dashLevel = document.getElementById("dashLevel");
     const dashXpText = document.getElementById("dashXpText");
     const dashXpFill = document.getElementById("dashXpFill");
