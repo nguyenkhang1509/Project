@@ -323,28 +323,36 @@
             <section class="panel" aria-label="Focus Preview">
               <div class="panel-head">
                 <h2 class="panel-title">Quests</h2>
-                <div class="panel-note">Preview</div>
+
+                <button
+                  class="panel-note quest-btn"
+                  type="button"
+                  onclick="window.location.href='quests.html'"
+                  aria-label="Open quests"
+                >
+                  Preview →
+                </button>
               </div>
 
-              <div class="focus-card">
-                <div class="focus-title" id="focusTitle">—</div>
-                <p class="focus-desc" id="focusDesc1">—</p>
-                <p class="focus-desc" id="focusDesc2">—</p>
-                <p class="focus-desc" id="focusDesc3">—</p>
-                <p class="focus-desc" id="focusDesc4">—</p>
-                <p class="focus-desc" id="focusDesc5">—</p>
-
-                <div class="focus-actions">
-                  <a class="btn focus" href="quests.html">Open Quests</a>
-                  <button type="button" class="btn">Start</button>
-                </div>
+              <div
+                class="focus-card"
+                onclick="window.location.href='quests.html'"
+                role="button"
+                tabindex="0"
+                onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); window.location.href='quests.html'; }"
+              >
+                <p class="focus-desc" id="focusDesc1">🏋️ Work out for 1 hour</p>
+                <p class="focus-desc" id="focusDesc2">📖 Read 10 pages</p>
+                <p class="focus-desc" id="focusDesc3">
+                  🧘 Meditate for 15 mins
+                </p>
+                <p class="focus-desc" id="focusDesc4">+ 2 more</p>
               </div>
             </section>
 
             <section class="panel" aria-label="Appearance Quick Toggle">
               <div class="panel-head">
                 <h2 class="panel-appaea">Appearance</h2>
-                <div class="panel-theme">Theme</div>
               </div>
 
               <label class="mode">

@@ -649,30 +649,57 @@ input:focus-visible {
   gap: 12px;
 }
 
-.focus-card {
-  border: 1px solid color-mix(in srgb, var(--stroke) 70%, transparent);
-  border-radius: var(--radius2);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
-  padding: 14px;
-}
-
-.focus-title {
-  font-weight: 900;
-  font-size: 1.05rem;
-}
-
-.focus-desc {
-  margin: 10px 0 0;
-  color: var(--muted);
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-.focus-actions {
-  margin-top: 12px;
+.panel[aria-label="Focus Preview"] .panel-head {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel[aria-label="Focus Preview"] .quest-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  min-width: 120px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--stroke) 48%, transparent);
+  background: color-mix(in srgb, var(--card2) 14%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.panel[aria-label="Focus Preview"] .quest-btn:hover {
+  background: var(--card2); 
+  border-color: var(--stroke2);
+  color: var(--text);
+}
+
+.panel[aria-label="Focus Preview"] .focus-card {
+  cursor: pointer;
+  padding: 26px;
+  border-radius: var(--radius2);
+  border: 1px solid color-mix(in srgb, var(--stroke) 55%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+.panel[aria-label="Focus Preview"] .focus-card .focus-desc {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--stroke) 30%, transparent);
+  background: color-mix(in srgb, var(--card2) 14%, transparent);
+  color: color-mix(in srgb, var(--text) 92%, var(--muted));
+  font-size: 0.98rem;
+  line-height: 1.25;
 }
 
 .mode {
@@ -756,7 +783,6 @@ input:focus-visible {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-
 
 .line-graph1 {
   display: flex;
