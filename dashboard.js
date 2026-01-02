@@ -1,3 +1,6 @@
+const now = new Date();
+
+
 
 function getCurrentUser() {
   try {
@@ -67,4 +70,57 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dashXpText) dashXpText.textContent = `0 / 100 XP`;
     if (dashXpFill) dashXpFill.style.width = `0%`;
   }
+
+  // Quest completion and graph update
+  updateGraph();
 });
+
+function updateGraph() {
+  const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, ..., 6=Sun
+
+  let weeklyData = JSON.parse(localStorage.getItem('weeklyQuestData')) || [0, 0, 0, 0, 0, 0, 0];
+
+  const completedCount = document.querySelectorAll('.quest-row.is-complete').length;
+  weeklyData[dayIndex] = completedCount;
+
+  localStorage.setItem('weeklyQuestData', JSON.stringify(weeklyData));
+
+  // Update the SVG line graph
+  const svg = document.querySelector('.line-graph-svg');
+  if (!svg) return;
+
+  let path = svg.querySelector('.data-line');
+  if (!path) {
+    path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.classList.add('data-line');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'var(--aqua)');
+    path.setAttribute('stroke-width', '3');
+    svg.appendChild(path);
+  }
+
+  const points = weeklyData.map((val, i) => {
+    const x = 60 + i * 100;
+    const y = 220 - Math.min(val, 20) / 20 * 200; // Cap at 20
+    return `${x},${y}`;
+  });
+
+  const d = points.length > 0 ? 'M' + points.join(' L') : '';
+  path.setAttribute('d', d);
+}
+
+// Make completeQuest available globally and update graph
+window.completeQuest = function(checkEl) {
+  const row = checkEl.closest(".quest-row");
+  if (!row) return;
+  const nowComplete = row.classList.toggle("is-complete");
+  if (nowComplete) {
+    checkEl.setAttribute("aria-pressed", "true");
+    checkEl.setAttribute("aria-label", "Mark quest as incomplete");
+  } else {
+    checkEl.setAttribute("aria-pressed", "false");
+    checkEl.setAttribute("aria-label", "Mark quest as complete");
+  }
+  updateGraph();
+};

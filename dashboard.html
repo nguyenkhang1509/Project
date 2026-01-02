@@ -425,20 +425,6 @@
         </section>
       </section>
     </main>
-    <script>
-      function completeQuest(checkEl) {
-        const row = checkEl.closest(".quest-row");
-        if (!row) return;
-        const nowComplete = row.classList.toggle("is-complete");
-        if (nowComplete) {
-          checkEl.setAttribute("aria-pressed", "true");
-          checkEl.setAttribute("aria-label", "Mark quest as incomplete");
-        } else {
-          checkEl.setAttribute("aria-pressed", "false");
-          checkEl.setAttribute("aria-label", "Mark quest as complete");
-        }
-      }
-    </script>
 
     <script type="module" src="dashboard.js"></script>
   </body>

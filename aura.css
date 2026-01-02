@@ -626,3 +626,7 @@ input:focus-visible {
 #sendButton:active {
   transform: translateY(0px);
 }
+
+.side-link i {
+  padding-right: 16px;
+}
