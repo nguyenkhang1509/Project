@@ -71,13 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dashXpFill) dashXpFill.style.width = `0%`;
   }
 
-  // Quest completion and graph update
+  
   updateGraph();
 });
 
 function updateGraph() {
-  const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon, ..., 6=Sun
+  const dayOfWeek = new Date().getDay(); 
+  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; 
 
   let weeklyData = JSON.parse(localStorage.getItem('weeklyQuestData')) || [0, 0, 0, 0, 0, 0, 0];
 
@@ -102,7 +102,7 @@ function updateGraph() {
 
   const points = weeklyData.map((val, i) => {
     const x = 60 + i * 100;
-    const y = 220 - Math.min(val, 20) / 20 * 200; // Cap at 20
+    const y = 220 - Math.min(val, 20) / 20 * 200; 
     return `${x},${y}`;
   });
 
@@ -110,7 +110,7 @@ function updateGraph() {
   path.setAttribute('d', d);
 }
 
-// Make completeQuest available globally and update graph
+
 window.completeQuest = function(checkEl) {
   const row = checkEl.closest(".quest-row");
   if (!row) return;
