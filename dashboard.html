@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AuraK Levelling — Dashboard</title>
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -13,6 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
     <link rel="stylesheet" href="dashboard.css" />
 
     <link
@@ -70,7 +72,7 @@
               Profile
             </a>
 
-            <a class="side-link" href="stats.html">
+            <a class="side-link" href="stats1.html">
               <i class="fa-solid fa-chart-simple side-fa"></i>
               Stats
             </a>
@@ -137,12 +139,12 @@
             <div class="tile-s">7 days</div>
           </article>
         </section>
+
         <section class="below" aria-label="Main Panels">
           <div class="left-column" aria-label="Balance + Trend">
             <section class="panel" aria-label="Balance Panel Preview">
               <div class="panel-head">
-                <h2 class="panel-title">Balance</h2>
-                <div class="panel-note">Preview</div>
+                <h2 class="panel-title">Stats</h2>
               </div>
 
               <div class="balance-grid">
@@ -188,6 +190,7 @@
                     >
                       Physical
                     </text>
+
                     <text
                       x="170"
                       y="50"
@@ -199,6 +202,7 @@
                       <tspan x="170" dy="0">Intel-</tspan>
                       <tspan x="170" dy="8">lectual</tspan>
                     </text>
+
                     <text
                       x="155"
                       y="185"
@@ -209,6 +213,7 @@
                     >
                       Mental
                     </text>
+
                     <text
                       x="45"
                       y="185"
@@ -219,6 +224,7 @@
                     >
                       Confidence
                     </text>
+
                     <text
                       x="25"
                       y="50"
@@ -334,19 +340,66 @@
                 </button>
               </div>
 
-              <div
-                class="focus-card"
-                onclick="window.location.href='quests.html'"
-                role="button"
-                tabindex="0"
-                onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); window.location.href='quests.html'; }"
-              >
-                <p class="focus-desc" id="focusDesc1">🏋️ Work out for 1 hour</p>
-                <p class="focus-desc" id="focusDesc2">📖 Read 10 pages</p>
-                <p class="focus-desc" id="focusDesc3">
-                  🧘 Meditate for 15 mins
-                </p>
-                <p class="focus-desc" id="focusDesc4">+ 2 more</p>
+              <div class="focus-card quests-preview">
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Meditate for 100 hours constantly</h4>
+                    <p>Calm your mind and reset focus</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-spa"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Work out for 50 hours</h4>
+                    <p>Train your body and build consistency</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-dumbbell"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Complete 1 million words essay</h4>
+                    <p>Focus and track progress</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-brain"></i>
+                  </span>
+                </div>
               </div>
             </section>
 
@@ -372,6 +425,20 @@
         </section>
       </section>
     </main>
+    <script>
+      function completeQuest(checkEl) {
+        const row = checkEl.closest(".quest-row");
+        if (!row) return;
+        const nowComplete = row.classList.toggle("is-complete");
+        if (nowComplete) {
+          checkEl.setAttribute("aria-pressed", "true");
+          checkEl.setAttribute("aria-label", "Mark quest as incomplete");
+        } else {
+          checkEl.setAttribute("aria-pressed", "false");
+          checkEl.setAttribute("aria-label", "Mark quest as complete");
+        }
+      }
+    </script>
 
     <script type="module" src="dashboard.js"></script>
   </body>

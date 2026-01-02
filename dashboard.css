@@ -649,6 +649,29 @@ input:focus-visible {
   gap: 12px;
 }
 
+.panel[aria-label="Focus Preview"] .quest-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  font-size: 1rem;
+
+  color: color-mix(in srgb, var(--text) 75%, var(--muted));
+  opacity: 0.85;
+  transition: opacity 120ms ease, transform 120ms ease, color 120ms ease;
+}
+
+.panel[aria-label="Focus Preview"] .quest-row:hover .quest-icon {
+  opacity: 1;
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-icon {
+  color: rgba(95, 255, 210, 0.85);
+  opacity: 1;
+}
+
 .panel[aria-label="Focus Preview"] .panel-head {
   display: flex;
   align-items: center;
@@ -677,13 +700,13 @@ input:focus-visible {
 }
 
 .panel[aria-label="Focus Preview"] .quest-btn:hover {
-  background: var(--card2); 
+  background: var(--card2);
   border-color: var(--stroke2);
   color: var(--text);
 }
 
 .panel[aria-label="Focus Preview"] .focus-card {
-  cursor: pointer;
+  cursor: default;
   padding: 26px;
   border-radius: var(--radius2);
   border: 1px solid color-mix(in srgb, var(--stroke) 55%, transparent);
@@ -691,15 +714,107 @@ input:focus-visible {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
 }
 
-.panel[aria-label="Focus Preview"] .focus-card .focus-desc {
-  margin: 10px 0 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--stroke) 30%, transparent);
+.panel[aria-label="Focus Preview"] .focus-card.quests-preview {
+  padding: 18px;
+  border-radius: calc(var(--radius2) + 6px);
+  overflow: hidden;
+
+  background: radial-gradient(
+      900px 340px at 10% 0%,
+      rgba(124, 156, 255, 0.14),
+      transparent 58%
+    ),
+    radial-gradient(
+      700px 320px at 95% 12%,
+      rgba(95, 255, 210, 0.08),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 82%, transparent),
+      color-mix(in srgb, var(--card) 62%, transparent)
+    );
+
+  border-color: color-mix(in srgb, var(--stroke) 58%, transparent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 14px;
+  align-items: center;
+
+  padding: 14px 16px;
+  border-radius: 14px;
+
   background: color-mix(in srgb, var(--card2) 14%, transparent);
-  color: color-mix(in srgb, var(--text) 92%, var(--muted));
+  border: 1px solid color-mix(in srgb, var(--stroke) 42%, transparent);
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-row + .quest-row {
+  margin-top: 12px;
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--stroke2) 70%, transparent);
+  background: transparent;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--card2) 18%, transparent);
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-text h4 {
+  margin: 0;
   font-size: 0.98rem;
-  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: color-mix(in srgb, var(--text) 92%, white);
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-text p {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--text) 65%, var(--muted));
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-complete {
+  appearance: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  border: 1px solid color-mix(in srgb, var(--stroke2) 65%, transparent);
+  background: color-mix(in srgb, rgba(120, 220, 255, 0.22) 60%, transparent);
+  color: color-mix(in srgb, var(--text) 92%, white);
+
+  transition: transform 120ms ease, background 120ms ease,
+    border-color 120ms ease;
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-complete:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, rgba(120, 220, 255, 0.28) 70%, transparent);
+  border-color: color-mix(in srgb, var(--stroke2) 85%, transparent);
+}
+
+/* ===== COMPLETED STATE ===== */
+.panel[aria-label="Focus Preview"] .quest-row.is-complete {
+  opacity: 0.65;
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-check {
+  background: color-mix(in srgb, rgba(95, 255, 210, 0.65) 70%, transparent);
+  border-color: color-mix(in srgb, rgba(95, 255, 210, 0.95) 70%, transparent);
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-complete {
+  cursor: default;
+  background: color-mix(in srgb, var(--card2) 22%, transparent);
+  border-color: color-mix(in srgb, var(--stroke) 55%, transparent);
 }
 
 .mode {
@@ -827,4 +942,18 @@ input:focus-visible {
 
 .side-link i {
   padding-right: 16px;
+}
+
+.panel[aria-label="Focus Preview"] .quest-check {
+  cursor: pointer;
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete {
+  opacity: 0.6;
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-check {
+  background: color-mix(in srgb, rgba(95, 255, 210, 0.75) 70%, transparent);
+  border-color: color-mix(in srgb, rgba(95, 255, 210, 1) 70%, transparent);
+  cursor: default;
 }
