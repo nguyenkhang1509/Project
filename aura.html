@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling — Aura System</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="aura.css" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+  </head>
+
+  <body>
+    <main class="dashboard-screen" aria-label="Aura System">
+      <aside class="sidebar" aria-label="AuraK Sidebar">
+        <div class="sidebar-top">
+          <a
+            class="brand brand-link"
+            href="dashboard.html"
+            aria-label="Go to Dashboard"
+          >
+            <span class="brand-glow" aria-hidden="true"></span>
+
+            <span class="brand-logoWrap" aria-hidden="true">
+              <img
+                class="brand-logo"
+                src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+                alt=""
+                width="46"
+                height="46"
+              />
+            </span>
+
+            <span class="brand-text">
+              <span class="brand-name">AURAK</span>
+              <span class="brand-sub">Levelling System</span>
+            </span>
+
+            <span class="brand-chip" aria-hidden="true">ONLINE</span>
+          </a>
+
+          <div class="side-card side-card-top" aria-label="Account Card">
+            <div class="side-avatar" aria-hidden="true"></div>
+            <div class="side-meta">
+              <div class="side-user" id="sideUser">—</div>
+              <div class="side-sub" id="sideSub">—</div>
+            </div>
+          </div>
+
+          <nav class="side-nav" aria-label="Sidebar Navigation">
+            <a class="side-link" href="dashboard.html">
+              <i class="fa fa-chart-line side-fa"></i>
+              Dashboard
+            </a>
+
+            <a class="side-link" href="profile.html">
+              <i class="fa fa-user side-fa"></i>
+              Profile
+            </a>
+
+            <a class="side-link" href="stats.html">
+              <i class="fa-solid fa-chart-simple side-fa"></i>
+              Stats
+            </a>
+
+            <a class="side-link" href="focus.html">
+              <i class="fa-solid fa-list-check"></i>
+              Quest
+            </a>
+
+            <a class="side-link active" href="aura.html">
+              <i class="fa-solid fa-comment"></i>
+              Aura System
+            </a>
+
+            <a class="side-link" href="history.html">
+              <i class="fa fa-clock-rotate-left side-fa"></i>
+              History
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <p class="sidebar-tip">
+            Tip: Keep streaks small but consistent. Consistency compounds.
+          </p>
+
+          <a class="btn-logout" href="login.html">Logout</a>
+        </div>
+      </aside>
+
+      <section class="main" aria-label="Aura System Main">
+        <header class="topbar" aria-label="Top Bar">
+          <div class="top-left" aria-label="Profile & XP">
+            <div class="profile-name" id="dashName">—</div>
+
+            <div class="profile-xp">
+              <span class="profile-level" id="dashLevel">—</span>
+              <span class="profile-xptext" id="dashXpText">—</span>
+            </div>
+
+            <div class="xpbar" aria-label="XP Progress">
+              <div class="xpbar-bg">
+                <div class="xpbar-fill" id="dashXpFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-actions" aria-label="Actions">
+            <button type="button" class="btn">Add Log</button>
+            <button type="button" class="btn primary">Start Challenge</button>
+          </div>
+        </header>
+
+        <section class="chat-section" aria-label="Aura Chatbot">
+          <div class="chat-container">
+            <div class="chat-header">
+              <h2>Aura Assistant</h2>
+              <p>Your personal levelling companion</p>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message bot-message">
+                <div class="message-avatar">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="message-content">
+                  <p>Hello! I'm Aura, your AI assistant for the AuraK Levelling System. How can I help you today?</p>
+                </div>
+              </div>
+            </div>
+            <div class="chat-input-container">
+              <input type="text" id="messageInput" placeholder="Type your message..." />
+              <button id="sendButton">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="aura.js"></script>
+  </body>
+</html>
