@@ -798,3 +798,7 @@ input:focus-visible {
 .line-x text {
   opacity: 0.9;
 }
+
+.side-link i {
+  padding-right: 16px;
+}

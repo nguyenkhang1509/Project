@@ -139,18 +139,14 @@ body {
   margin-bottom: 18px;
 }
 
-.auth-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  color: var(--text-muted);
+.auth-small-text a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-small-text a:hover {
+  color: #7dd3fc;
 }
 
 .auth-heading {

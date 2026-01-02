@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let summaryMessage = "";
   if (gap >= 4) {
     summaryMessage =
-      "Your build is unbalanced. Strengthening your weakest pillar will give the biggest overall improvement.";
+      "Your build shows some imbalanced. Strengthening your weakest pillar will give the biggest overall improvement.";
   } else if (gap >= 2) {
     summaryMessage =
       "Your build is moderately balanced. Targeted work on weaker areas will raise your overall level.";
