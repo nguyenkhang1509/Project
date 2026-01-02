@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashXpFill = document.getElementById("dashXpFill");
 
     if (dashLevel) dashLevel.textContent = `Lv. 1`;
-    if (dashXpText) dashXpText.textContent = `0 / 100 XP`;
+    if (dashXpText) dashXpText.textContent = `0 / 1000 XP`;
     if (dashXpFill) dashXpFill.style.width = `0%`;
   }
 
