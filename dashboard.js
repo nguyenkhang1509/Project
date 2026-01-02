@@ -24,6 +24,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dashName) dashName.textContent = displayName;
   if (sideUser) sideUser.textContent = displayName;
 
+  let completedQuests = JSON.parse(localStorage.getItem('completedQuests')) || [false, false, false];
+  const questRows = document.querySelectorAll('.quest-row');
+  questRows.forEach((row, i) => {
+    if (completedQuests[i]) {
+      row.classList.add('is-complete');
+      const check = row.querySelector('.quest-check');
+      if (check) {
+        check.setAttribute("aria-pressed", "true");
+        check.setAttribute("aria-label", "Mark quest as incomplete");
+      }
+    }
+  });
+
   if (user.stats) {
     const statKeys = ['Physical', 'Intellectual', 'Mental', 'Confidence', 'Discipline'];
     const pillarRows = document.querySelectorAll('.pillar-row');
@@ -73,7 +86,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   
   updateGraph();
+  updateXP();
 });
+
+function updateXP() {
+  const completedCount = document.querySelectorAll('.quest-row.is-complete').length;
+  const totalXP = completedCount * 100;
+  localStorage.setItem('totalXP', totalXP.toString());
+
+  const dashXpText = document.getElementById("dashXpText");
+  const dashXpFill = document.getElementById("dashXpFill");
+  const tileXpGained = document.getElementById("tileXpGained");
+
+  if (dashXpText) dashXpText.textContent = `${totalXP} / 1000 XP`;
+  if (dashXpFill) dashXpFill.style.width = `${Math.min(totalXP / 1000 * 100, 100)}%`;
+  if (tileXpGained) tileXpGained.textContent = totalXP;
+}
 
 function updateGraph() {
   const dayOfWeek = new Date().getDay(); 
@@ -86,7 +114,7 @@ function updateGraph() {
 
   localStorage.setItem('weeklyQuestData', JSON.stringify(weeklyData));
 
-  // Update the SVG line graph
+
   const svg = document.querySelector('.line-graph-svg');
   if (!svg) return;
 
@@ -122,5 +150,15 @@ window.completeQuest = function(checkEl) {
     checkEl.setAttribute("aria-pressed", "false");
     checkEl.setAttribute("aria-label", "Mark quest as complete");
   }
+
+  const questRows = document.querySelectorAll('.quest-row');
+  const index = Array.from(questRows).indexOf(row);
+  if (index !== -1) {
+    let completedQuests = JSON.parse(localStorage.getItem('completedQuests')) || [false, false, false];
+    completedQuests[index] = nowComplete;
+    localStorage.setItem('completedQuests', JSON.stringify(completedQuests));
+  }
+
   updateGraph();
+  updateXP();
 };
