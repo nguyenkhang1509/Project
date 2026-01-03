@@ -71,7 +71,7 @@ if (form) {
 
       const fbUser = cred.user;
 
-      // 🔥 CRITICAL FIX
+    
       await fbUser.reload();
 
       const existingUser = safeParse("aurakCurrentUser");
@@ -90,7 +90,7 @@ if (form) {
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
 
       if (currentUser.stats) {
-        window.location.href = "dashboard.html";
+        window.location.href = "loading.html";
       } else {
         window.location.href = "sequence.html";
       }

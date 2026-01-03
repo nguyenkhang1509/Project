@@ -52,6 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 700);
 
   setTimeout(() => {
-    window.location.href = "stats.html";
+    window.location.href = "dashboard.html";
   }, 2800);
 });
