@@ -71,7 +71,6 @@ if (form) {
 
       const fbUser = cred.user;
 
-    
       await fbUser.reload();
 
       const existingUser = safeParse("aurakCurrentUser");
@@ -84,7 +83,9 @@ if (form) {
         name: displayName,
         displayName: displayName,
         lastLoginAt: new Date().toISOString(),
-        ...(existingUser && existingUser.stats ? { stats: existingUser.stats } : {}),
+        ...(existingUser && existingUser.stats
+          ? { stats: existingUser.stats }
+          : {}),
       };
 
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
