@@ -17,15 +17,33 @@
     <link rel="stylesheet" href="dashboard.css" />
     <link rel="stylesheet" href="quests.css" />
 
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("aurak_theme") === "light") {
+            const r = document.documentElement.style;
+            r.setProperty("--bg", "#f6f8ff");
+            r.setProperty("--bg2", "#eef2ff");
+            r.setProperty("--card", "rgba(2, 6, 23, 0.05)");
+            r.setProperty("--card2", "rgba(2, 6, 23, 0.08)");
+            r.setProperty("--stroke", "rgba(2, 6, 23, 0.12)");
+            r.setProperty("--stroke2", "rgba(2, 6, 23, 0.18)");
+            r.setProperty("--text", "#081022");
+            r.setProperty("--muted", "rgba(8, 16, 34, 0.62)");
+            r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.1)");
+            r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.1)");
+            r.setProperty("--shadow", "0 18px 50px rgba(2, 6, 23, 0.1)");
+            r.setProperty("--shadow2", "0 24px 70px rgba(2, 6, 23, 0.14)");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <link
       rel="icon"
       type="image/png"
       href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
     />
-
-    
-    <script src="habiticaConfig.js" defer></script>
-    <script src="habiticaAPI.js" defer></script>
   </head>
 
   <body>
@@ -196,10 +214,164 @@
         </div>
 
         <div class="qlist" id="questList" aria-label="Quest List">
-          
-          <p style="text-align: center; color: var(--muted); padding: 40px 20px;">
-            Loading challenges from Habitica API...
-          </p>
+          <article class="qcard" data-type="physical" data-completed="false">
+            <button
+              class="qcheck"
+              type="button"
+              aria-label="Toggle complete"
+            ></button>
+
+            <div class="qmain">
+              <div class="qmeta">
+                <span class="qchip physical">PHYSICAL</span>
+                <span class="qdue"><i class="fa-regular fa-clock"></i>24h</span>
+              </div>
+
+              <h3 class="qname">Incline walk — 30 minutes</h3>
+              <p class="qdesc">
+                Zone 2 cardio for stamina and fat loss support
+              </p>
+
+              <div class="qrewards">
+                <span class="reward exp"
+                  ><i class="fa-solid fa-bolt"></i>+60 EXP</span
+                >
+                <span class="reward stat"
+                  ><i class="fa-solid fa-star"></i>PHY +2</span
+                >
+              </div>
+            </div>
+
+            <button class="qbtn" type="button">Complete</button>
+          </article>
+
+          <article
+            class="qcard"
+            data-type="intellectual"
+            data-completed="false"
+          >
+            <button
+              class="qcheck"
+              type="button"
+              aria-label="Toggle complete"
+            ></button>
+
+            <div class="qmain">
+              <div class="qmeta">
+                <span class="qchip intellectual">INTELLECTUAL</span>
+                <span class="qdue"><i class="fa-regular fa-clock"></i>48h</span>
+              </div>
+
+              <h3 class="qname">Study — 45 minutes deep focus</h3>
+              <p class="qdesc">
+                One topic, no multitask. Notes + 3 practice questions
+              </p>
+
+              <div class="qrewards">
+                <span class="reward exp"
+                  ><i class="fa-solid fa-bolt"></i>+80 EXP</span
+                >
+                <span class="reward stat"
+                  ><i class="fa-solid fa-star"></i>INT +3</span
+                >
+              </div>
+            </div>
+
+            <button class="qbtn" type="button">Complete</button>
+          </article>
+
+          <article class="qcard" data-type="discipline" data-completed="false">
+            <button
+              class="qcheck"
+              type="button"
+              aria-label="Toggle complete"
+            ></button>
+
+            <div class="qmain">
+              <div class="qmeta">
+                <span class="qchip discipline">DISCIPLINE</span>
+                <span class="qdue"><i class="fa-regular fa-clock"></i>7d</span>
+              </div>
+
+              <h3 class="qname">Weekly review</h3>
+              <p class="qdesc">
+                Review wins, failures, and set 3 priorities for next week
+              </p>
+
+              <div class="qrewards">
+                <span class="reward exp"
+                  ><i class="fa-solid fa-bolt"></i>+75 EXP</span
+                >
+                <span class="reward stat"
+                  ><i class="fa-solid fa-star"></i>DIS +2</span
+                >
+              </div>
+            </div>
+
+            <button class="qbtn" type="button">Complete</button>
+          </article>
+
+          <article class="qcard" data-type="confidence" data-completed="false">
+            <button
+              class="qcheck"
+              type="button"
+              aria-label="Toggle complete"
+            ></button>
+
+            <div class="qmain">
+              <div class="qmeta">
+                <span class="qchip confidence">CONFIDENCE</span>
+                <span class="qdue"><i class="fa-regular fa-clock"></i>72h</span>
+              </div>
+
+              <h3 class="qname">Speak up once in class</h3>
+              <p class="qdesc">
+                Ask 1 question or contribute 1 idea (clean, simple, confident)
+              </p>
+
+              <div class="qrewards">
+                <span class="reward exp"
+                  ><i class="fa-solid fa-bolt"></i>+70 EXP</span
+                >
+                <span class="reward stat"
+                  ><i class="fa-solid fa-star"></i>CON +2</span
+                >
+              </div>
+            </div>
+
+            <button class="qbtn" type="button">Complete</button>
+          </article>
+
+          <article class="qcard" data-type="mental" data-completed="false">
+            <button
+              class="qcheck"
+              type="button"
+              aria-label="Toggle complete"
+            ></button>
+
+            <div class="qmain">
+              <div class="qmeta">
+                <span class="qchip mental">MENTAL</span>
+                <span class="qdue"><i class="fa-regular fa-clock"></i>24h</span>
+              </div>
+
+              <h3 class="qname">Meditate — 10 minutes</h3>
+              <p class="qdesc">
+                Breathing + reset attention. No phone during session
+              </p>
+
+              <div class="qrewards">
+                <span class="reward exp"
+                  ><i class="fa-solid fa-bolt"></i>+55 EXP</span
+                >
+                <span class="reward stat"
+                  ><i class="fa-solid fa-star"></i>MEN +2</span
+                >
+              </div>
+            </div>
+
+            <button class="qbtn" type="button">Complete</button>
+          </article>
         </div>
 
         <footer class="qfoot" aria-label="Quest footer">
@@ -210,6 +382,7 @@
         </footer>
       </section>
     </main>
+    <script src="theme.js"></script>
     <script src="quests.js" defer></script>
   </body>
 </html>
