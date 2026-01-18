@@ -10,7 +10,6 @@
   const tablist = document.querySelector(".qtabs");
   const showCompleted = document.getElementById("showCompleted");
   const questList = document.getElementById("questList");
-  const cards = Array.from(document.querySelectorAll(".qcard"));
 
   const dashLevel = document.getElementById("dashLevel");
   const dashXpText = document.getElementById("dashXpText");
@@ -20,9 +19,12 @@
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  if (!questList || !showCompleted || tabs.length === 0 || cards.length === 0) {
+  if (!questList || !showCompleted || tabs.length === 0) {
     return; 
   }
+
+  
+  let cards = Array.from(document.querySelectorAll(".qcard"));
 
   function safeId(str) {
     return String(str || "")
@@ -328,5 +330,89 @@
     applyFilter();
   });
 
-  applyFilter();
+
+
+  async function initializeChallenges() {
+   
+    if (typeof HabiticaAPI === "undefined" || typeof HABITICA_CONFIG === "undefined") {
+      console.error("HabiticaAPI or HABITICA_CONFIG not loaded");
+      questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error: Configuration not loaded. Please check habiticaConfig.js and habiticaAPI.js</p>';
+      return;
+    }
+
+    const api = new HabiticaAPI(HABITICA_CONFIG);
+
+    try {
+      
+      const challenges = await api.fetchAllChallenges(HABITICA_CONFIG.challenges);
+
+      if (challenges.length === 0) {
+        questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">No challenges configured. Add challenge IDs to habiticaConfig.js</p>';
+        return;
+      }
+
+      
+      questList.innerHTML = "";
+
+      challenges.forEach((challenge, index) => {
+        const cardHTML = api.generateCardHTML(challenge, challenge.category);
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = cardHTML;
+        const card = tempDiv.firstElementChild;
+        questList.appendChild(card);
+
+       
+        const qid = challenge.id;
+        card.setAttribute("data-qid", qid);
+
+        const isDone = !!state.completed[qid];
+        card.dataset.completed = isDone ? "true" : "false";
+        card.classList.toggle("is-done", isDone);
+
+        const check = card.querySelector(".qcheck");
+        if (check) check.setAttribute("aria-pressed", isDone ? "true" : "false");
+
+        const btn = card.querySelector(".qbtn");
+        if (btn) btn.textContent = isDone ? "Completed" : "Complete";
+
+        cards.push(card);
+      });
+
+     
+      reinitializeUI();
+
+    } catch (error) {
+      console.error("Error loading challenges:", error);
+      questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error loading challenges. Check console for details.</p>';
+    }
+  }
+
+  function reinitializeUI() {
+    showCompleted.checked = !!state.showCompleted;
+    xpTotal = recomputeXpTotal();
+    renderXp(xpTotal);
+    applyFilter();
+
+  
+    questList.removeEventListener("click", handleQuestClick);
+    questList.addEventListener("click", handleQuestClick);
+  }
+
+  function handleQuestClick(e) {
+    const hit = e.target.closest(".qbtn, .qcheck");
+    if (!hit) return;
+
+    const card = e.target.closest(".qcard");
+    if (!card) return;
+
+    const isDone = card.dataset.completed === "true";
+    setCardCompleted(card, !isDone);
+  }
+
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeChallenges);
+  } else {
+    initializeChallenges();
+  }
 })();
