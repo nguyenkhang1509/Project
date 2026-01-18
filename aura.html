@@ -15,6 +15,28 @@
     />
     <link rel="stylesheet" href="aura.css" />
 
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("aurak_theme") === "light") {
+            const r = document.documentElement.style;
+            r.setProperty("--bg", "#f6f8ff");
+            r.setProperty("--bg2", "#eef2ff");
+            r.setProperty("--card", "rgba(2, 6, 23, 0.05)");
+            r.setProperty("--card2", "rgba(2, 6, 23, 0.08)");
+            r.setProperty("--stroke", "rgba(2, 6, 23, 0.12)");
+            r.setProperty("--stroke2", "rgba(2, 6, 23, 0.18)");
+            r.setProperty("--text", "#081022");
+            r.setProperty("--muted", "rgba(8, 16, 34, 0.62)");
+            r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.1)");
+            r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.1)");
+            r.setProperty("--shadow", "0 18px 50px rgba(2, 6, 23, 0.1)");
+            r.setProperty("--shadow2", "0 24px 70px rgba(2, 6, 23, 0.14)");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <link
       rel="icon"
       type="image/png"
@@ -158,6 +180,7 @@
       </section>
     </main>
 
+    <script src="theme.js"></script>
     <script type="module" src="aura.js"></script>
   </body>
 </html>
