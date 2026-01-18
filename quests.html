@@ -72,7 +72,7 @@
               Profile
             </a>
 
-            <a class="side-link" href="stats.html">
+            <a class="side-link" href="stats1.html">
               <i class="fa-solid fa-chart-simple side-fa"></i>
               Stats
             </a>
@@ -87,9 +87,9 @@
               Aura System
             </a>
 
-            <a class="side-link" href="history.html">
-              <i class="fa fa-clock-rotate-left side-fa"></i>
-              History
+            <a class="side-link" href="dungeon.html">
+              <i class="fa-solid fa-skull"></i>
+              Dungeon
             </a>
           </nav>
         </div>
@@ -360,55 +360,6 @@
         </footer>
       </section>
     </main>
-
-    <script>
-      (function () {
-        const tabs = Array.from(document.querySelectorAll(".qtab"));
-        const showCompleted = document.getElementById("showCompleted");
-        const cards = Array.from(document.querySelectorAll(".qcard"));
-
-        function applyFilter() {
-          const active = document.querySelector(".qtab.is-active");
-          const filter = active ? active.dataset.filter : "all";
-          const allowCompleted = showCompleted.checked;
-
-          cards.forEach((card) => {
-            const type = card.dataset.type;
-            const isDone = card.dataset.completed === "true";
-            const matchType = filter === "all" ? true : type === filter;
-            const matchDone = allowCompleted ? true : !isDone;
-            card.style.display = matchType && matchDone ? "" : "none";
-          });
-        }
-
-        tabs.forEach((btn) => {
-          btn.addEventListener("click", () => {
-            tabs.forEach((t) => t.classList.remove("is-active"));
-            btn.classList.add("is-active");
-            applyFilter();
-          });
-        });
-
-        document.querySelectorAll(".qbtn, .qcheck").forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            const card = e.target.closest(".qcard");
-            if (!card) return;
-
-            const isDone = card.dataset.completed === "true";
-            card.dataset.completed = isDone ? "false" : "true";
-            card.classList.toggle("is-done", !isDone);
-
-            const labelBtn = card.querySelector(".qbtn");
-            if (labelBtn)
-              labelBtn.textContent = !isDone ? "Completed" : "Complete";
-
-            applyFilter();
-          });
-        });
-
-        showCompleted.addEventListener("change", applyFilter);
-        applyFilter();
-      })();
-    </script>
+    <script src="quests.js" defer></script>
   </body>
 </html>
