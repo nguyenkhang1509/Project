@@ -1,5 +1,3 @@
-
-
 class HabiticaAPI {
   constructor(config) {
     this.config = config;
@@ -9,7 +7,6 @@ class HabiticaAPI {
 
   generateDemoData() {
     return {
-      
       "physical-1": {
         name: "Morning Run — 5km",
         summary: "Early morning run for cardiovascular health",
@@ -27,7 +24,6 @@ class HabiticaAPI {
         summary: "Full-body cardio and low-impact exercise",
       },
 
-      
       "intellectual-1": {
         name: "Read Programming Article",
         summary: "Read and summarize one technical article",
@@ -45,7 +41,6 @@ class HabiticaAPI {
         summary: "Deep dive into a new technology or concept",
       },
 
-      
       "discipline-1": {
         name: "Weekly Reflection Journal",
         summary: "Reflect on wins, failures, and lessons learned",
@@ -63,7 +58,6 @@ class HabiticaAPI {
         summary: "Review spending and adjust weekly budget",
       },
 
-      
       "confidence-1": {
         name: "Speak Up in Meeting",
         summary: "Share 1 idea or ask 1 question confidently",
@@ -81,7 +75,6 @@ class HabiticaAPI {
         summary: "Present your work or ideas to others",
       },
 
-      
       "mental-1": {
         name: "Meditation — 10 minutes",
         summary: "Mindfulness meditation with focus on breath",
@@ -102,19 +95,16 @@ class HabiticaAPI {
   }
 
   async fetchChallenge(challengeId) {
-    
     if (this.cache.has(challengeId)) {
       return this.cache.get(challengeId);
     }
 
-    
     try {
       const url = `${this.config.apiBase}/challenges/${challengeId}`;
       const headers = {
         "Content-Type": "application/json",
       };
 
-      
       if (this.config.userId && this.config.apiToken) {
         headers["x-api-user"] = this.config.userId;
         headers["x-api-key"] = this.config.apiToken;
@@ -132,7 +122,6 @@ class HabiticaAPI {
       console.log(`Challenge ${challengeId} not found in API, using demo data`);
     }
 
-    
     if (this.demoData[challengeId]) {
       const demoChallenge = {
         _id: challengeId,
@@ -175,7 +164,6 @@ class HabiticaAPI {
     const categoryIcon = this.getCategoryIcon(category);
     const categoryLabel = this.getCategoryLabel(category);
 
-    
     const safeId = (challenge.name || challenge.shortName || "challenge")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")

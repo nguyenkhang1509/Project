@@ -20,10 +20,9 @@
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (!questList || !showCompleted || tabs.length === 0) {
-    return; 
+    return;
   }
 
-  
   let cards = Array.from(document.querySelectorAll(".qcard"));
 
   function safeId(str) {
@@ -66,8 +65,7 @@
   function saveState(state) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-    }
+    } catch {}
   }
 
   function ensureToastEl() {
@@ -86,9 +84,14 @@
 
     clearTimeout(t._hideTimer);
 
+    t.style.opacity = "1";
+    t.style.transform = "translateX(-50%) translateY(0px)";
+
     if (prefersReducedMotion) {
-      t.style.opacity = "1";
-      t._hideTimer = setTimeout(() => (t.style.opacity = "0"), 900);
+      t._hideTimer = setTimeout(() => {
+        t.style.opacity = "0";
+        t.style.transform = "translateX(-50%) translateY(8px)";
+      }, 900);
       return;
     }
 
@@ -97,7 +100,7 @@
         { opacity: 0, transform: "translateX(-50%) translateY(8px)" },
         { opacity: 1, transform: "translateX(-50%) translateY(0px)" },
       ],
-      { duration: 160, easing: "ease-out", fill: "forwards" }
+      { duration: 160, easing: "ease-out", fill: "forwards" },
     );
 
     t._hideTimer = setTimeout(() => {
@@ -106,7 +109,7 @@
           { opacity: 1, transform: "translateX(-50%) translateY(0px)" },
           { opacity: 0, transform: "translateX(-50%) translateY(8px)" },
         ],
-        { duration: 200, easing: "ease-in", fill: "forwards" }
+        { duration: 200, easing: "ease-in", fill: "forwards" },
       );
     }, 1200);
   }
@@ -119,7 +122,7 @@
         { transform: "scale(1.01)" },
         { transform: "scale(1)" },
       ],
-      { duration: 180, easing: "ease-out" }
+      { duration: 180, easing: "ease-out" },
     );
   }
 
@@ -282,7 +285,7 @@
     if (!qid) return;
 
     const wasDone = card.dataset.completed === "true";
-    if (wasDone === makeDone) return; 
+    if (wasDone === makeDone) return;
 
     card.dataset.completed = makeDone ? "true" : "false";
     card.classList.toggle("is-done", makeDone);
@@ -303,7 +306,7 @@
     const delta = xpTotal - before;
     if (delta !== 0) {
       toast(
-        delta > 0 ? `Quest completed +${delta} XP` : `Quest undone ${delta} XP`
+        delta > 0 ? `Quest completed +${delta} XP` : `Quest undone ${delta} XP`,
       );
     } else {
       toast(makeDone ? "Quest completed" : "Quest marked incomplete");
@@ -313,90 +316,11 @@
     applyFilter();
   }
 
-  questList.addEventListener("click", (e) => {
-    const hit = e.target.closest(".qbtn, .qcheck");
-    if (!hit) return;
-
-    const card = e.target.closest(".qcard");
-    if (!card) return;
-
-    const isDone = card.dataset.completed === "true";
-    setCardCompleted(card, !isDone);
-  });
-
   showCompleted.addEventListener("change", () => {
     state.showCompleted = !!showCompleted.checked;
     saveState(state);
     applyFilter();
   });
-
-
-
-  async function initializeChallenges() {
-   
-    if (typeof HabiticaAPI === "undefined" || typeof HABITICA_CONFIG === "undefined") {
-      console.error("HabiticaAPI or HABITICA_CONFIG not loaded");
-      questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error: Configuration not loaded. Please check habiticaConfig.js and habiticaAPI.js</p>';
-      return;
-    }
-
-    const api = new HabiticaAPI(HABITICA_CONFIG);
-
-    try {
-      
-      const challenges = await api.fetchAllChallenges(HABITICA_CONFIG.challenges);
-
-      if (challenges.length === 0) {
-        questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">No challenges configured. Add challenge IDs to habiticaConfig.js</p>';
-        return;
-      }
-
-      
-      questList.innerHTML = "";
-
-      challenges.forEach((challenge, index) => {
-        const cardHTML = api.generateCardHTML(challenge, challenge.category);
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = cardHTML;
-        const card = tempDiv.firstElementChild;
-        questList.appendChild(card);
-
-       
-        const qid = challenge.id;
-        card.setAttribute("data-qid", qid);
-
-        const isDone = !!state.completed[qid];
-        card.dataset.completed = isDone ? "true" : "false";
-        card.classList.toggle("is-done", isDone);
-
-        const check = card.querySelector(".qcheck");
-        if (check) check.setAttribute("aria-pressed", isDone ? "true" : "false");
-
-        const btn = card.querySelector(".qbtn");
-        if (btn) btn.textContent = isDone ? "Completed" : "Complete";
-
-        cards.push(card);
-      });
-
-     
-      reinitializeUI();
-
-    } catch (error) {
-      console.error("Error loading challenges:", error);
-      questList.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error loading challenges. Check console for details.</p>';
-    }
-  }
-
-  function reinitializeUI() {
-    showCompleted.checked = !!state.showCompleted;
-    xpTotal = recomputeXpTotal();
-    renderXp(xpTotal);
-    applyFilter();
-
-  
-    questList.removeEventListener("click", handleQuestClick);
-    questList.addEventListener("click", handleQuestClick);
-  }
 
   function handleQuestClick(e) {
     const hit = e.target.closest(".qbtn, .qcheck");
@@ -409,6 +333,69 @@
     setCardCompleted(card, !isDone);
   }
 
+  questList.addEventListener("click", handleQuestClick);
+
+  async function initializeChallenges() {
+    if (
+      typeof HabiticaAPI === "undefined" ||
+      typeof HABITICA_CONFIG === "undefined"
+    ) {
+      console.error("HabiticaAPI or HABITICA_CONFIG not loaded");
+      questList.innerHTML =
+        '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error: Configuration not loaded. Please check habiticaConfig.js and habiticaAPI.js</p>';
+      return;
+    }
+
+    const api = new HabiticaAPI(HABITICA_CONFIG);
+
+    try {
+      const challenges = await api.fetchAllChallenges(
+        HABITICA_CONFIG.challenges,
+      );
+
+      if (challenges.length === 0) {
+        questList.innerHTML =
+          '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">No challenges configured. Add challenge IDs to habiticaConfig.js</p>';
+        return;
+      }
+
+      questList.innerHTML = "";
+      cards = [];
+
+      challenges.forEach((challenge) => {
+        const cardHTML = api.generateCardHTML(challenge, challenge.category);
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = cardHTML;
+        const card = tempDiv.firstElementChild;
+        questList.appendChild(card);
+
+        const qid = challenge.id;
+        card.setAttribute("data-qid", qid);
+
+        const isDone = !!state.completed[qid];
+        card.dataset.completed = isDone ? "true" : "false";
+        card.classList.toggle("is-done", isDone);
+
+        const check = card.querySelector(".qcheck");
+        if (check)
+          check.setAttribute("aria-pressed", isDone ? "true" : "false");
+
+        const btn = card.querySelector(".qbtn");
+        if (btn) btn.textContent = isDone ? "Completed" : "Complete";
+
+        cards.push(card);
+      });
+
+      showCompleted.checked = !!state.showCompleted;
+      xpTotal = recomputeXpTotal();
+      renderXp(xpTotal);
+      applyFilter();
+    } catch (error) {
+      console.error("Error loading challenges:", error);
+      questList.innerHTML =
+        '<p style="color: var(--muted); text-align: center; padding: 40px 20px;">Error loading challenges. Check console for details.</p>';
+    }
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeChallenges);
