@@ -94,7 +94,7 @@
               Profile
             </a>
 
-            <a class="side-link" href="stats1.html">
+            <a class="side-link" href="info.html">
               <i class="fa-solid fa-chart-simple side-fa"></i>
               Stats
             </a>
@@ -362,7 +362,65 @@
               </div>
 
               <div class="focus-card quests-preview">
-                <!-- Dynamically loaded from API -->
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Meditate for 100 hours constantly</h4>
+                    <p>Calm your mind and reset focus</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-spa"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Work out for 50 hours</h4>
+                    <p>Train your body and build consistency</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-dumbbell"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Mark quest as complete"
+                    onclick="completeQuest(this)"
+                    onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); completeQuest(this); }"
+                  ></span>
+
+                  <div class="quest-text">
+                    <h4>Complete 1 million words essay</h4>
+                    <p>Focus and track progress</p>
+                  </div>
+
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-brain"></i>
+                  </span>
+                </div>
               </div>
             </section>
 
@@ -389,9 +447,8 @@
       </section>
     </main>
 
-    <script src="habiticaConfig.js"></script>
-    <script src="habiticaAPI.js"></script>
     <script src="theme.js"></script>
-    <script src="dashboard.js"></script>
+    <script src="theme.js"></script>
+    <script type="module" src="dashboard.js"></script>
   </body>
 </html>

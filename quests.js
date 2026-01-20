@@ -18,7 +18,8 @@
       const raw = localStorage.getItem("aurakCurrentUser");
       const user = raw ? JSON.parse(raw) : null;
       if (user) {
-        const displayName = user.displayName || user.name || user.username || "User";
+        const displayName =
+          user.displayName || user.name || user.username || "User";
         const dashName = document.getElementById("dashName");
         const sideUser = document.getElementById("sideUser");
         if (dashName) dashName.textContent = displayName;
