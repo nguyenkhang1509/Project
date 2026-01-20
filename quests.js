@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "aurak_quests_v4";
+  const XP_STORAGE_KEY = "totalXP";
 
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
@@ -10,6 +11,21 @@
   const tablist = document.querySelector(".qtabs");
   const showCompleted = document.getElementById("showCompleted");
   const questList = document.getElementById("questList");
+
+  // Display username at the top
+  function displayUsername() {
+    try {
+      const raw = localStorage.getItem("aurakCurrentUser");
+      const user = raw ? JSON.parse(raw) : null;
+      if (user) {
+        const displayName = user.displayName || user.name || user.username || "User";
+        const dashName = document.getElementById("dashName");
+        const sideUser = document.getElementById("sideUser");
+        if (dashName) dashName.textContent = displayName;
+        if (sideUser) sideUser.textContent = displayName;
+      }
+    } catch {}
+  }
 
   const dashLevel = document.getElementById("dashLevel");
   const dashXpText = document.getElementById("dashXpText");
@@ -22,6 +38,9 @@
   if (!questList || !showCompleted || tabs.length === 0) {
     return;
   }
+
+  // Display username on page load
+  displayUsername();
 
   let cards = Array.from(document.querySelectorAll(".qcard"));
 
@@ -139,7 +158,7 @@
     }
 
     const progress = req > 0 ? clamp(remaining / req, 0, 1) : 0;
-    return { level, req, progress };
+    return { level, req, progress, remaining };
   }
 
   function renderXp(totalXp) {
@@ -149,7 +168,7 @@
     const info = getLevelInfo(xp);
 
     dashLevel.textContent = `LVL ${info.level}`;
-    dashXpText.textContent = `${xp} XP`;
+    dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
     dashXpFill.style.width = `${Math.round(info.progress * 100)}%`;
   }
 
@@ -182,6 +201,21 @@
       if (card.dataset.completed === "true") total += parseExp(card);
     });
     return Math.max(0, total);
+  }
+
+  function persistXpTotal(total) {
+    try {
+      localStorage.setItem(XP_STORAGE_KEY, String(total));
+    } catch {}
+  }
+
+  function loadXpTotal() {
+    try {
+      const stored = localStorage.getItem(XP_STORAGE_KEY);
+      return stored ? Math.max(0, Number(stored) || 0) : 0;
+    } catch {
+      return 0;
+    }
   }
 
   function updateCountsRemainingOnly() {
@@ -277,8 +311,9 @@
     });
   });
 
-  let xpTotal = recomputeXpTotal();
+  let xpTotal = loadXpTotal() || recomputeXpTotal();
   renderXp(xpTotal);
+  persistXpTotal(xpTotal);
 
   function setCardCompleted(card, makeDone) {
     const qid = card.getAttribute("data-qid");
@@ -301,6 +336,7 @@
 
     const before = xpTotal;
     xpTotal = recomputeXpTotal();
+    persistXpTotal(xpTotal);
     renderXp(xpTotal);
 
     const delta = xpTotal - before;
@@ -388,6 +424,7 @@
 
       showCompleted.checked = !!state.showCompleted;
       xpTotal = recomputeXpTotal();
+      persistXpTotal(xpTotal);
       renderXp(xpTotal);
       applyFilter();
     } catch (error) {
