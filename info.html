@@ -110,9 +110,9 @@
               Aura System
             </a>
 
-            <a class="side-link" href="dungeon.html">
-              <i class="fa-solid fa-skull"></i>
-              Dungeon
+            <a class="side-link" href="journal.html">
+              <i class="fa-solid fa-book"></i>
+              Journal
             </a>
           </nav>
         </div>
@@ -628,6 +628,47 @@
         if (metricToday) metricToday.textContent = String(completedToday);
         if (metricWeek) metricWeek.textContent = "—";
         if (metricScore) metricScore.textContent = "—";
+
+        renderGraph();
+      }
+
+      function renderGraph() {
+        const QUEST_STORAGE_KEY = "aurak_quests_v4";
+        const dayOfWeek = new Date().getDay();
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+        let weeklyData = JSON.parse(localStorage.getItem("weeklyQuestData")) || [
+          0, 0, 0, 0, 0, 0, 0,
+        ];
+
+        const svg = document.querySelector(".line-graph-svg");
+        if (!svg) return;
+
+        let path = svg.querySelector(".data-line");
+        if (!path) {
+          path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.classList.add("data-line");
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", "var(--aqua)");
+          path.setAttribute("stroke-width", "3");
+          svg.appendChild(path);
+        }
+
+        const points = weeklyData.map((val, i) => {
+          const x = 60 + i * 100;
+          const y = 220 - (Math.min(val, 20) / 20) * 200;
+          return `${x},${y}`;
+        });
+
+        const d = points.length > 0 ? "M" + points.join(" L") : "";
+        path.setAttribute("d", d);
+
+        // Listen for storage changes to update graph
+        window.addEventListener("storage", (e) => {
+          if (e.key === "weeklyQuestData" || e.key === QUEST_STORAGE_KEY) {
+            renderGraph();
+          }
+        });
       }
 
       document.addEventListener("DOMContentLoaded", render);

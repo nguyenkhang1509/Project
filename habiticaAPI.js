@@ -8,41 +8,41 @@ class HabiticaAPI {
   generateDemoData() {
     return {
       "physical-1": {
-        name: "Morning Run — 5km",
-        summary: "Early morning run for cardiovascular health",
+        name: "Stretching routine — 10 to 15 minutes",
+        summary: "Improve mobility, reduce injury risk",
       },
       "physical-2": {
-        name: "Gym Session — Strength Training",
-        summary: "1 hour focused strength training workout",
+        name: "Workout Session — Strength Training",
+        summary: "45 minutes of intense workout focusing on strength",
       },
       "physical-3": {
-        name: "Yoga Flow — 30 minutes",
-        summary: "Flexibility and core strength routine",
+        name: "Sport Activities - 30 minutes",
+        summary: "Full-body cardio",
       },
       "physical-4": {
-        name: "Swimming — 45 minutes",
-        summary: "Full-body cardio and low-impact exercise",
+        name: "Mindful walking - 10 minutes",
+        summary: "Light cardio to boost mood, reduces anxiety",
       },
 
       "intellectual-1": {
-        name: "Read Programming Article",
-        summary: "Read and summarize one technical article",
+        name: "Read book/article daily - 15 to 30 minutes",
+        summary: "Expand vocabulary, enrich knowledge, sharpen thinking",
       },
       "intellectual-2": {
-        name: "Complete Online Course Module",
-        summary: "Finish one module of online learning course",
+        name: "Practice active recall",
+        summary: "Quiz yourself instead of just reading",
       },
       "intellectual-3": {
-        name: "Problem Solving — Algorithms",
-        summary: "Solve 3 coding challenges or LeetCode problems",
+        name: "Learning something new everyday",
+        summary: "A new skill or concept strengthens your brain",
       },
       "intellectual-4": {
-        name: "Research & Learn New Concept",
-        summary: "Deep dive into a new technology or concept",
+        name: "Teach someone else",
+        summary: "build deeper understanding about the knowledge",
       },
 
       "discipline-1": {
-        name: "Weekly Reflection Journal",
+        name: "Write a daily journal",
         summary: "Reflect on wins, failures, and lessons learned",
       },
       "discipline-2": {
@@ -76,7 +76,7 @@ class HabiticaAPI {
       },
 
       "mental-1": {
-        name: "Meditation — 10 minutes",
+        name: "5 to 10 minutes in silence thinking about your goals and life",
         summary: "Mindfulness meditation with focus on breath",
       },
       "mental-2": {
@@ -84,12 +84,12 @@ class HabiticaAPI {
         summary: "Write down 5 things you're grateful for",
       },
       "mental-3": {
-        name: "Stress Relief Activity",
-        summary: "Do an activity that helps you relax",
+        name: "Limit screen time daily",
+        summary: "Reduces mental overload and improves focus",
       },
       "mental-4": {
-        name: "Sleep Early",
-        summary: "Get to bed 30 minutes earlier than usual",
+        name: "Get good sleep",
+        summary: "Get at least 7 hours of sleep everyday",
       },
     };
   }
