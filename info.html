@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling — Stats</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("aurak_theme") === "light") {
+            const r = document.documentElement.style;
+            r.setProperty("--bg", "#f6f8ff");
+            r.setProperty("--bg2", "#eef2ff");
+            r.setProperty("--card", "rgba(2, 6, 23, 0.05)");
+            r.setProperty("--card2", "rgba(2, 6, 23, 0.08)");
+            r.setProperty("--stroke", "rgba(2, 6, 23, 0.12)");
+            r.setProperty("--stroke2", "rgba(2, 6, 23, 0.18)");
+            r.setProperty("--text", "#081022");
+            r.setProperty("--muted", "rgba(8, 16, 34, 0.62)");
+            r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.1)");
+            r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.1)");
+            r.setProperty("--shadow", "0 18px 50px rgba(2, 6, 23, 0.1)");
+            r.setProperty("--shadow2", "0 24px 70px rgba(2, 6, 23, 0.14)");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="info.css" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+  </head>
+
+  <body>
+    <main class="dashboard-screen" aria-label="AuraK Stats">
+      <aside class="sidebar" aria-label="AuraK Sidebar">
+        <div class="sidebar-top">
+          <a
+            class="brand brand-link"
+            href="dashboard.html"
+            aria-label="Go to Dashboard"
+          >
+            <span class="brand-glow" aria-hidden="true"></span>
+
+            <span class="brand-logoWrap" aria-hidden="true">
+              <img
+                class="brand-logo"
+                src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+                alt=""
+                width="46"
+                height="46"
+              />
+            </span>
+
+            <span class="brand-text">
+              <span class="brand-name">AURAK</span>
+              <span class="brand-sub">Levelling System</span>
+            </span>
+
+            <span class="brand-chip" aria-hidden="true">ONLINE</span>
+          </a>
+
+          <div class="side-card side-card-top" aria-label="Account Card">
+            <div class="side-avatar" aria-hidden="true"></div>
+            <div class="side-meta">
+              <div class="side-user" id="sideUser">—</div>
+              <div class="side-sub" id="sideSub">—</div>
+            </div>
+          </div>
+
+          <nav class="side-nav" aria-label="Sidebar Navigation">
+            <a class="side-link" href="dashboard.html">
+              <i class="fa fa-chart-line side-fa"></i>
+              Dashboard
+            </a>
+
+            <a class="side-link" href="profile.html">
+              <i class="fa fa-user side-fa"></i>
+              Profile
+            </a>
+
+            <a class="side-link active" href="stats.html">
+              <i class="fa-solid fa-chart-simple side-fa"></i>
+              Stats
+            </a>
+
+            <a class="side-link" href="quests.html">
+              <i class="fa-solid fa-list-check"></i>
+              Quest
+            </a>
+
+            <a class="side-link" href="aura.html">
+              <i class="fa-solid fa-comment"></i>
+              Aura System
+            </a>
+
+            <a class="side-link" href="dungeon.html">
+              <i class="fa-solid fa-skull"></i>
+              Dungeon
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <p class="sidebar-tip">
+            Tip: Keep streaks small but consistent. Consistency compounds.
+          </p>
+
+          <a class="btn-logout" href="login.html">Logout</a>
+        </div>
+      </aside>
+
+      <section class="main stats-main" aria-label="Stats Main">
+        <header class="topbar" aria-label="Top Bar">
+          <div class="top-left" aria-label="Profile">
+            <div class="profile-name" id="statsName">—</div>
+
+            <div class="profile-xp">
+              <span class="profile-level" id="statsLevel">Lv. 1</span>
+            </div>
+          </div>
+
+          <div class="top-actions" aria-label="Streak">
+            <div class="streak-pill" aria-label="Current streak">
+              <span class="streak-ico" aria-hidden="true"
+                ><i class="fa-solid fa-fire"></i
+              ></span>
+              <span class="streak-num" id="streakNum">0</span>
+              <span class="streak-lbl">day streak</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="stats-grid" aria-label="Stats Panels">
+          <section class="panel" aria-label="Pillars Radar">
+            <div class="panel-head">
+              <h2 class="panel-appaea">Stats</h2>
+            </div>
+
+            <div class="balance-grid">
+              <div class="pentagon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 200 200"
+                  width="320"
+                  height="320"
+                  role="img"
+                  aria-label="Five pillar pentagon"
+                >
+                  <polygon
+                    points="100,18 176,72 148,162 52,162 24,72"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    opacity="0.35"
+                  ></polygon>
+
+                  <polygon
+                    points="100,44 152,82 132,144 68,144 48,82"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    opacity="0.25"
+                  ></polygon>
+
+                  <polygon
+                    id="dashRadar"
+                    points="100,100 100,100 100,100 100,100 100,100"
+                    fill="rgba(34, 211, 238, 0.12)"
+                    stroke="rgba(34, 211, 238, 0.85)"
+                    stroke-width="2.2"
+                  ></polygon>
+
+                  <text
+                    x="100"
+                    y="8"
+                    text-anchor="middle"
+                    font-size="8"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    Physical
+                  </text>
+                  <text
+                    x="170"
+                    y="50"
+                    text-anchor="start"
+                    font-size="8"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    <tspan x="170" dy="0">Intel-</tspan>
+                    <tspan x="170" dy="8">lectual</tspan>
+                  </text>
+
+                  <text
+                    x="150"
+                    y="188"
+                    text-anchor="middle"
+                    font-size="8"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    Mental
+                  </text>
+                  <text
+                    x="50"
+                    y="188"
+                    text-anchor="middle"
+                    font-size="8"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    Confidence
+                  </text>
+                  <text
+                    x="25"
+                    y="50"
+                    text-anchor="end"
+                    font-size="8"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    <tspan x="25" dy="0">Disci-</tspan>
+                    <tspan x="25" dy="8">pline</tspan>
+                  </text>
+                </svg>
+              </div>
+
+              <div class="pillars" aria-label="Pillar values">
+                <div class="pillar-row">
+                  <div class="pillar-name">Physical</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" id="barPhysical"></span>
+                  </div>
+                  <div class="pillar-val" id="valPhysical">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Intellectual</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" id="barIntellectual"></span>
+                  </div>
+                  <div class="pillar-val" id="valIntellectual">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Mental</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" id="barMental"></span>
+                  </div>
+                  <div class="pillar-val" id="valMental">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Confidence</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" id="barConfidence"></span>
+                  </div>
+                  <div class="pillar-val" id="valConfidence">—</div>
+                </div>
+
+                <div class="pillar-row">
+                  <div class="pillar-name">Discipline</div>
+                  <div class="pillar-bar">
+                    <span class="bar-fill" id="barDiscipline"></span>
+                  </div>
+                  <div class="pillar-val" id="valDiscipline">—</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel streak-panel" aria-label="Streak Details">
+            <div class="panel-head">
+              <h2 class="panel-appaea">Streak</h2>
+              <span class="panel-note" id="streakNote"
+                >Keep it small but consistent</span
+              >
+            </div>
+
+            <div class="streak-wrap">
+              <div class="streak-big">
+                <div class="streak-big-num" id="streakBig">0</div>
+                <div class="streak-big-sub">days in a row</div>
+              </div>
+
+              <div class="streak-week" aria-label="Last 7 days">
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd0"></span
+                  ><span class="sd-t">M</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd1"></span
+                  ><span class="sd-t">T</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd2"></span
+                  ><span class="sd-t">W</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd3"></span
+                  ><span class="sd-t">T</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd4"></span
+                  ><span class="sd-t">F</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd5"></span
+                  ><span class="sd-t">S</span>
+                </div>
+                <div class="streak-day">
+                  <span class="sd-dot" id="sd6"></span
+                  ><span class="sd-t">S</span>
+                </div>
+              </div>
+
+              <div class="streak-metrics" aria-label="Streak metrics">
+                <div class="metric">
+                  <div class="metric-k">Completed today</div>
+                  <div class="metric-v" id="metricToday">0</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-k">Weekly total</div>
+                  <div class="metric-v" id="metricWeek">0</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-k">Consistency score</div>
+                  <div class="metric-v" id="metricScore">0%</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Task Completion Graph">
+            <div class="panel-head">
+              <h2 class="panel-appaea">Task Completion</h2>
+              <span class="panel-note">Tasks completed per day</span>
+            </div>
+
+            <svg
+              class="line-graph-svg"
+              viewBox="0 0 720 260"
+              preserveAspectRatio="none"
+              aria-label="Task completion line graph"
+            >
+              <line class="line-axis" x1="60" y1="20" x2="60" y2="220" />
+              <line class="line-axis" x1="60" y1="220" x2="700" y2="220" />
+
+              <g class="line-y">
+                <text x="36" y="224">0</text>
+                <text x="30" y="174">5</text>
+                <text x="26" y="124">10</text>
+                <text x="26" y="74">15</text>
+                <text x="22" y="24">20</text>
+              </g>
+
+              <g class="line-x">
+                <text x="60" y="248" text-anchor="middle">Mon</text>
+                <text x="160" y="248" text-anchor="middle">Tue</text>
+                <text x="260" y="248" text-anchor="middle">Wed</text>
+                <text x="360" y="248" text-anchor="middle">Thu</text>
+                <text x="460" y="248" text-anchor="middle">Fri</text>
+                <text x="560" y="248" text-anchor="middle">Sat</text>
+                <text x="660" y="248" text-anchor="middle">Sun</text>
+              </g>
+
+              <g class="line-grid">
+                <line x1="60" y1="170" x2="700" y2="170" />
+                <line x1="60" y1="120" x2="700" y2="120" />
+                <line x1="60" y1="70" x2="700" y2="70" />
+              </g>
+            </svg>
+          </section>
+
+          <section class="panel" aria-label="Dopamine Loading Graph">
+            <div class="panel-head">
+              <h2 class="panel-appaea">Dopamine Loading</h2>
+              <span class="panel-note">Simulated daily dopamine curve</span>
+            </div>
+
+            <svg
+              class="dopamine-graph-svg"
+              viewBox="0 0 720 260"
+              preserveAspectRatio="none"
+              aria-label="Dopamine loading line graph"
+            >
+              <line class="line-axis" x1="60" y1="20" x2="60" y2="220" />
+              <line class="line-axis" x1="60" y1="220" x2="700" y2="220" />
+
+              <g class="line-y">
+                <text x="36" y="224">0</text>
+                <text x="30" y="174">25</text>
+                <text x="26" y="124">50</text>
+                <text x="26" y="74">75</text>
+                <text x="22" y="24">100</text>
+              </g>
+
+              <g class="line-x">
+                <text x="60" y="248" text-anchor="middle">6</text>
+                <text x="170" y="248" text-anchor="middle">9</text>
+                <text x="280" y="248" text-anchor="middle">12</text>
+                <text x="390" y="248" text-anchor="middle">15</text>
+                <text x="500" y="248" text-anchor="middle">18</text>
+                <text x="610" y="248" text-anchor="middle">21</text>
+                <text x="700" y="248" text-anchor="middle">24</text>
+              </g>
+
+              <g class="line-grid">
+                <line x1="60" y1="170" x2="700" y2="170" />
+                <line x1="60" y1="120" x2="700" y2="120" />
+                <line x1="60" y1="70" x2="700" y2="70" />
+              </g>
+            </svg>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      function getCurrentUser() {
+        try {
+          const raw = localStorage.getItem("aurakCurrentUser");
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function getISODate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+
+      function getDayStreak(today, completedToday) {
+        let streak = 0;
+        try {
+          streak =
+            parseInt(localStorage.getItem("aurak_streak") || "0", 10) || 0;
+        } catch {
+          streak = 0;
+        }
+
+        let last = null;
+        try {
+          last = localStorage.getItem("aurak_streak_last") || null;
+        } catch {
+          last = null;
+        }
+
+        const todayKey = getISODate(today);
+
+        if (!last) {
+          if (completedToday > 0) {
+            localStorage.setItem("aurak_streak", "1");
+            localStorage.setItem("aurak_streak_last", todayKey);
+            return 1;
+          }
+          localStorage.setItem("aurak_streak", "0");
+          localStorage.setItem("aurak_streak_last", todayKey);
+          return 0;
+        }
+
+        const lastDate = new Date(last + "T00:00:00");
+        const diffDays = Math.floor((today - lastDate) / 86400000);
+
+        if (diffDays === 0) {
+          if (completedToday > 0 && streak === 0) {
+            localStorage.setItem("aurak_streak", "1");
+            localStorage.setItem("aurak_streak_last", todayKey);
+            return 1;
+          }
+          return streak;
+        }
+
+        if (diffDays === 1) {
+          if (completedToday > 0) {
+            const next = streak + 1;
+            localStorage.setItem("aurak_streak", String(next));
+            localStorage.setItem("aurak_streak_last", todayKey);
+            return next;
+          }
+          localStorage.setItem("aurak_streak_last", todayKey);
+          return streak;
+        }
+
+        if (completedToday > 0) {
+          localStorage.setItem("aurak_streak", "1");
+          localStorage.setItem("aurak_streak_last", todayKey);
+          return 1;
+        }
+
+        localStorage.setItem("aurak_streak", "0");
+        localStorage.setItem("aurak_streak_last", todayKey);
+        return 0;
+      }
+
+      function render() {
+        const user = getCurrentUser();
+        const displayName =
+          (user && (user.displayName || user.name || user.username)) || "User";
+
+        const statsName = document.getElementById("statsName");
+        const sideUser = document.getElementById("sideUser");
+        const sideSub = document.getElementById("sideSub");
+
+        if (statsName) statsName.textContent = displayName;
+        if (sideUser) sideUser.textContent = displayName;
+
+        const statKeys = [
+          "Physical",
+          "Intellectual",
+          "Mental",
+          "Confidence",
+          "Discipline",
+        ];
+        const stats =
+          user && user.stats
+            ? user.stats
+            : {
+                Physical: 0,
+                Intellectual: 0,
+                Mental: 0,
+                Confidence: 0,
+                Discipline: 0,
+              };
+
+        const outerPoints = [
+          { x: 100, y: 18 },
+          { x: 176, y: 72 },
+          { x: 148, y: 162 },
+          { x: 52, y: 162 },
+          { x: 24, y: 72 },
+        ];
+
+        const radar = document.getElementById("dashRadar");
+        if (radar) {
+          const points = statKeys
+            .map((key, i) => {
+              const pct = (stats[key] || 0) / 100;
+              const outer = outerPoints[i];
+              const x = 100 + pct * (outer.x - 100);
+              const y = 100 + pct * (outer.y - 100);
+              return `${x},${y}`;
+            })
+            .join(" ");
+          radar.setAttribute("points", points);
+        }
+
+        const map = {
+          Physical: ["barPhysical", "valPhysical"],
+          Intellectual: ["barIntellectual", "valIntellectual"],
+          Mental: ["barMental", "valMental"],
+          Confidence: ["barConfidence", "valConfidence"],
+          Discipline: ["barDiscipline", "valDiscipline"],
+        };
+
+        statKeys.forEach((k) => {
+          const ids = map[k];
+          const bar = document.getElementById(ids[0]);
+          const val = document.getElementById(ids[1]);
+          const v = Math.max(
+            0,
+            Math.min(parseInt(stats[k] || 0, 10) || 0, 100),
+          );
+          if (bar) bar.style.width = `${v}%`;
+          if (val) val.textContent = `${v} / 100`;
+        });
+
+        const today = new Date();
+        const completedQuests = JSON.parse(
+          localStorage.getItem("completedQuests") || "[]",
+        );
+        const completedToday = Array.isArray(completedQuests)
+          ? completedQuests.filter(Boolean).length
+          : 0;
+
+        const streak = getDayStreak(today, completedToday);
+        const streakNum = document.getElementById("streakNum");
+        const streakBig = document.getElementById("streakBig");
+        if (streakNum) streakNum.textContent = String(streak);
+        if (streakBig) streakBig.textContent = String(streak);
+
+        const dayOfWeek = today.getDay();
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+        let weekPresence = JSON.parse(
+          localStorage.getItem("aurak_week_presence") || "[]",
+        );
+        if (!Array.isArray(weekPresence) || weekPresence.length !== 7) {
+          weekPresence = Array(7).fill(0);
+        }
+        weekPresence[dayIndex] = completedToday > 0 ? 1 : 0;
+        localStorage.setItem(
+          "aurak_week_presence",
+          JSON.stringify(weekPresence),
+        );
+
+        for (let i = 0; i < 7; i++) {
+          const dot = document.getElementById("sd" + i);
+          if (!dot) continue;
+          dot.classList.toggle("is-on", weekPresence[i] === 1);
+          dot.classList.toggle("is-today", i === dayIndex);
+        }
+
+        const metricToday = document.getElementById("metricToday");
+        const metricWeek = document.getElementById("metricWeek");
+        const metricScore = document.getElementById("metricScore");
+
+        if (metricToday) metricToday.textContent = String(completedToday);
+        if (metricWeek) metricWeek.textContent = "—";
+        if (metricScore) metricScore.textContent = "—";
+      }
+
+      document.addEventListener("DOMContentLoaded", render);
+    </script>
+  </body>
+</html>
