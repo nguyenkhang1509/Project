@@ -95,7 +95,7 @@
               Profile
             </a>
 
-            <a class="side-link active" href="stats.html">
+            <a class="side-link active" href="info.html">
               <i class="fa-solid fa-chart-simple side-fa"></i>
               Stats
             </a>
@@ -348,48 +348,10 @@
             </div>
           </section>
 
-          <section class="panel" aria-label="Task Completion Graph">
-            <div class="panel-head">
-              <h2 class="panel-appaea">Task Completion</h2>
-              <span class="panel-note">Tasks completed per day</span>
-            </div>
-
-            <svg
-              class="line-graph-svg"
-              viewBox="0 0 720 260"
-              preserveAspectRatio="none"
-              aria-label="Task completion line graph"
-            >
-              <line class="line-axis" x1="60" y1="20" x2="60" y2="220" />
-              <line class="line-axis" x1="60" y1="220" x2="700" y2="220" />
-
-              <g class="line-y">
-                <text x="36" y="224">0</text>
-                <text x="30" y="174">5</text>
-                <text x="26" y="124">10</text>
-                <text x="26" y="74">15</text>
-                <text x="22" y="24">20</text>
-              </g>
-
-              <g class="line-x">
-                <text x="60" y="248" text-anchor="middle">Mon</text>
-                <text x="160" y="248" text-anchor="middle">Tue</text>
-                <text x="260" y="248" text-anchor="middle">Wed</text>
-                <text x="360" y="248" text-anchor="middle">Thu</text>
-                <text x="460" y="248" text-anchor="middle">Fri</text>
-                <text x="560" y="248" text-anchor="middle">Sat</text>
-                <text x="660" y="248" text-anchor="middle">Sun</text>
-              </g>
-
-              <g class="line-grid">
-                <line x1="60" y1="170" x2="700" y2="170" />
-                <line x1="60" y1="120" x2="700" y2="120" />
-                <line x1="60" y1="70" x2="700" y2="70" />
-              </g>
-            </svg>
-          </section>
-
-          <section class="panel" aria-label="Dopamine Loading Graph">
+          <section
+            class="panel dopamine-panel"
+            aria-label="Dopamine Loading Graph"
+          >
             <div class="panel-head">
               <h2 class="panel-appaea">Dopamine Loading</h2>
               <span class="panel-note">Simulated daily dopamine curve</span>
@@ -429,11 +391,84 @@
               </g>
             </svg>
           </section>
+
+          <section class="panel" aria-label="Achievements">
+            <div class="panel-head">
+              <h2 class="panel-appaea">Achievements</h2>
+              <span class="panel-note">Milestones and progress</span>
+            </div>
+
+            <div class="ach-grid" role="list">
+              <article
+                class="ach-card"
+                role="listitem"
+                aria-label="7-day streak"
+              >
+                <div class="ach-ico" aria-hidden="true">
+                  <i class="fa-solid fa-fire"></i>
+                </div>
+                <div class="ach-meta">
+                  <div class="ach-title">7-Day Streak</div>
+                  <div class="ach-sub">
+                    Maintain consistency for a full week
+                  </div>
+                </div>
+                <span class="ach-tag">Locked</span>
+              </article>
+
+              <article
+                class="ach-card"
+                role="listitem"
+                aria-label="First check-in"
+              >
+                <div class="ach-ico" aria-hidden="true">
+                  <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div class="ach-meta">
+                  <div class="ach-title">First Check-In</div>
+                  <div class="ach-sub">Complete your first daily check-in</div>
+                </div>
+                <span class="ach-tag is-on">Earned</span>
+              </article>
+
+              <article
+                class="ach-card"
+                role="listitem"
+                aria-label="Journal writer"
+              >
+                <div class="ach-ico" aria-hidden="true">
+                  <i class="fa-solid fa-book"></i>
+                </div>
+                <div class="ach-meta">
+                  <div class="ach-title">Journal Writer</div>
+                  <div class="ach-sub">Write 5 reflections</div>
+                </div>
+                <span class="ach-tag">Locked</span>
+              </article>
+
+              <article
+                class="ach-card"
+                role="listitem"
+                aria-label="Focus morning"
+              >
+                <div class="ach-ico" aria-hidden="true">
+                  <i class="fa-solid fa-sun"></i>
+                </div>
+                <div class="ach-meta">
+                  <div class="ach-title">Focus Morning</div>
+                  <div class="ach-sub">No phone scrolling before school</div>
+                </div>
+                <span class="ach-tag">Locked</span>
+              </article>
+            </div>
+          </section>
         </div>
       </section>
     </main>
 
     <script>
+      const DAILY_DONE_KEY = "aurak_daily_done_v1";
+
       function getCurrentUser() {
         try {
           const raw = localStorage.getItem("aurakCurrentUser");
@@ -443,6 +478,10 @@
         }
       }
 
+      function clamp(n, a, b) {
+        return Math.max(a, Math.min(b, n));
+      }
+
       function getISODate(d) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -450,67 +489,69 @@
         return `${y}-${m}-${day}`;
       }
 
-      function getDayStreak(today, completedToday) {
+      function localNoon(d) {
+        const x = new Date(d);
+        x.setHours(12, 0, 0, 0);
+        return x;
+      }
+
+      function addDays(d, days) {
+        const x = new Date(d);
+        x.setDate(x.getDate() + days);
+        return x;
+      }
+
+      function dayIndexMon0(d) {
+        const dow = d.getDay();
+        return dow === 0 ? 6 : dow - 1;
+      }
+
+      function weekMonday(d) {
+        const idx = dayIndexMon0(d);
+        const monday = localNoon(d);
+        monday.setDate(monday.getDate() - idx);
+        return monday;
+      }
+
+      function readDailyDoneMap() {
+        try {
+          const raw = localStorage.getItem(DAILY_DONE_KEY);
+          const obj = raw ? JSON.parse(raw) : {};
+          return obj && typeof obj === "object" ? obj : {};
+        } catch {
+          return {};
+        }
+      }
+
+      function writeDailyDoneMap(map) {
+        try {
+          localStorage.setItem(DAILY_DONE_KEY, JSON.stringify(map));
+        } catch {}
+      }
+
+      function computeStreak(map, todayNoon, completedToday) {
+        let cursor = localNoon(todayNoon);
+
+        if (!(Number(completedToday) > 0)) {
+          cursor = addDays(cursor, -1);
+        }
+
         let streak = 0;
-        try {
-          streak =
-            parseInt(localStorage.getItem("aurak_streak") || "0", 10) || 0;
-        } catch {
-          streak = 0;
+
+        for (let guard = 0; guard < 3650; guard++) {
+          const iso = getISODate(cursor);
+          const done = Number(map[iso] || 0) || 0;
+          if (done <= 0) break;
+          streak++;
+          cursor = addDays(cursor, -1);
         }
 
-        let last = null;
-        try {
-          last = localStorage.getItem("aurak_streak_last") || null;
-        } catch {
-          last = null;
-        }
+        return streak;
+      }
 
-        const todayKey = getISODate(today);
-
-        if (!last) {
-          if (completedToday > 0) {
-            localStorage.setItem("aurak_streak", "1");
-            localStorage.setItem("aurak_streak_last", todayKey);
-            return 1;
-          }
-          localStorage.setItem("aurak_streak", "0");
-          localStorage.setItem("aurak_streak_last", todayKey);
-          return 0;
-        }
-
-        const lastDate = new Date(last + "T00:00:00");
-        const diffDays = Math.floor((today - lastDate) / 86400000);
-
-        if (diffDays === 0) {
-          if (completedToday > 0 && streak === 0) {
-            localStorage.setItem("aurak_streak", "1");
-            localStorage.setItem("aurak_streak_last", todayKey);
-            return 1;
-          }
-          return streak;
-        }
-
-        if (diffDays === 1) {
-          if (completedToday > 0) {
-            const next = streak + 1;
-            localStorage.setItem("aurak_streak", String(next));
-            localStorage.setItem("aurak_streak_last", todayKey);
-            return next;
-          }
-          localStorage.setItem("aurak_streak_last", todayKey);
-          return streak;
-        }
-
-        if (completedToday > 0) {
-          localStorage.setItem("aurak_streak", "1");
-          localStorage.setItem("aurak_streak_last", todayKey);
-          return 1;
-        }
-
-        localStorage.setItem("aurak_streak", "0");
-        localStorage.setItem("aurak_streak_last", todayKey);
-        return 0;
+      function setText(id, txt) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
       }
 
       function render() {
@@ -518,12 +559,8 @@
         const displayName =
           (user && (user.displayName || user.name || user.username)) || "User";
 
-        const statsName = document.getElementById("statsName");
-        const sideUser = document.getElementById("sideUser");
-        const sideSub = document.getElementById("sideSub");
-
-        if (statsName) statsName.textContent = displayName;
-        if (sideUser) sideUser.textContent = displayName;
+        setText("statsName", displayName);
+        setText("sideUser", displayName);
 
         const statKeys = [
           "Physical",
@@ -532,6 +569,7 @@
           "Confidence",
           "Discipline",
         ];
+
         const stats =
           user && user.stats
             ? user.stats
@@ -555,7 +593,7 @@
         if (radar) {
           const points = statKeys
             .map((key, i) => {
-              const pct = (stats[key] || 0) / 100;
+              const pct = clamp((Number(stats[key]) || 0) / 100, 0, 1);
               const outer = outerPoints[i];
               const x = 100 + pct * (outer.x - 100);
               const y = 100 + pct * (outer.y - 100);
@@ -565,7 +603,7 @@
           radar.setAttribute("points", points);
         }
 
-        const map = {
+        const idMap = {
           Physical: ["barPhysical", "valPhysical"],
           Intellectual: ["barIntellectual", "valIntellectual"],
           Mental: ["barMental", "valMental"],
@@ -574,104 +612,131 @@
         };
 
         statKeys.forEach((k) => {
-          const ids = map[k];
-          const bar = document.getElementById(ids[0]);
-          const val = document.getElementById(ids[1]);
-          const v = Math.max(
-            0,
-            Math.min(parseInt(stats[k] || 0, 10) || 0, 100),
-          );
+          const [barId, valId] = idMap[k];
+          const v = clamp(parseInt(stats[k] || 0, 10) || 0, 0, 100);
+          const bar = document.getElementById(barId);
           if (bar) bar.style.width = `${v}%`;
-          if (val) val.textContent = `${v} / 100`;
+          setText(valId, `${v} / 100`);
         });
 
-        const today = new Date();
-        const completedQuests = JSON.parse(
-          localStorage.getItem("completedQuests") || "[]",
-        );
+        const todayNoon = localNoon(new Date());
+        const todayISO = getISODate(todayNoon);
+
+        const completedQuests = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("completedQuests") || "[]");
+          } catch {
+            return [];
+          }
+        })();
+
         const completedToday = Array.isArray(completedQuests)
           ? completedQuests.filter(Boolean).length
           : 0;
 
-        const streak = getDayStreak(today, completedToday);
-        const streakNum = document.getElementById("streakNum");
-        const streakBig = document.getElementById("streakBig");
-        if (streakNum) streakNum.textContent = String(streak);
-        if (streakBig) streakBig.textContent = String(streak);
+        const dailyMap = readDailyDoneMap();
+        dailyMap[todayISO] = completedToday;
+        writeDailyDoneMap(dailyMap);
 
-        const dayOfWeek = today.getDay();
-        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const streak = computeStreak(dailyMap, todayNoon, completedToday);
+        setText("streakNum", String(streak));
+        setText("streakBig", String(streak));
 
-        let weekPresence = JSON.parse(
-          localStorage.getItem("aurak_week_presence") || "[]",
-        );
-        if (!Array.isArray(weekPresence) || weekPresence.length !== 7) {
-          weekPresence = Array(7).fill(0);
-        }
-        weekPresence[dayIndex] = completedToday > 0 ? 1 : 0;
-        localStorage.setItem(
-          "aurak_week_presence",
-          JSON.stringify(weekPresence),
-        );
+        const monday = weekMonday(todayNoon);
+        const todayIdx = dayIndexMon0(todayNoon);
+
+        let weekTotal = 0;
+        let activeDays = 0;
 
         for (let i = 0; i < 7; i++) {
+          const day = addDays(monday, i);
+          const iso = getISODate(day);
+          const done = Number(dailyMap[iso] || 0) || 0;
+
+          weekTotal += done;
+          if (done > 0) activeDays++;
+
           const dot = document.getElementById("sd" + i);
-          if (!dot) continue;
-          dot.classList.toggle("is-on", weekPresence[i] === 1);
-          dot.classList.toggle("is-today", i === dayIndex);
+          if (dot) {
+            dot.classList.toggle("is-on", done > 0);
+            dot.classList.toggle("is-today", i === todayIdx);
+          }
         }
 
-        const metricToday = document.getElementById("metricToday");
-        const metricWeek = document.getElementById("metricWeek");
-        const metricScore = document.getElementById("metricScore");
+        setText("metricToday", String(completedToday));
+        setText("metricWeek", String(weekTotal));
+        setText("metricScore", `${Math.round((activeDays / 7) * 100)}%`);
 
-        if (metricToday) metricToday.textContent = String(completedToday);
-        if (metricWeek) metricWeek.textContent = "—";
-        if (metricScore) metricScore.textContent = "—";
-
-        renderGraph();
+        renderDopamine();
       }
 
-      function renderGraph() {
-        const QUEST_STORAGE_KEY = "aurak_quests_v4";
-        const dayOfWeek = new Date().getDay();
-        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-
-        let weeklyData = JSON.parse(localStorage.getItem("weeklyQuestData")) || [
-          0, 0, 0, 0, 0, 0, 0,
-        ];
-
-        const svg = document.querySelector(".line-graph-svg");
+      function renderDopamine() {
+        const svg = document.querySelector(".dopamine-graph-svg");
         if (!svg) return;
 
-        let path = svg.querySelector(".data-line");
+        let path = svg.querySelector(".dopamine-line");
         if (!path) {
           path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.classList.add("data-line");
+          path.classList.add("dopamine-line");
           path.setAttribute("fill", "none");
           path.setAttribute("stroke", "var(--aqua)");
           path.setAttribute("stroke-width", "3");
           svg.appendChild(path);
         }
 
-        const points = weeklyData.map((val, i) => {
-          const x = 60 + i * 100;
-          const y = 220 - (Math.min(val, 20) / 20) * 200;
+        const today = new Date();
+        const iso = getISODate(today);
+
+        const moodRaw = localStorage.getItem("aurak_mood_today");
+        const mood = moodRaw ? clamp(parseInt(moodRaw, 10) || 0, 0, 100) : 50;
+
+        const journal = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("aurak_journal_v1") || "{}");
+          } catch {
+            return {};
+          }
+        })();
+
+        const entry = journal[iso] || {};
+        const baseline =
+          typeof entry.baseline === "number" ? entry.baseline : 45;
+
+        const curve = buildDopamineCurve({ baseline, mood });
+
+        const points = curve.map((val, i) => {
+          const t = i / (curve.length - 1);
+          const x = 60 + t * (700 - 60);
+          const y = 220 - (clamp(val, 0, 100) / 100) * 200;
           return `${x},${y}`;
         });
 
-        const d = points.length > 0 ? "M" + points.join(" L") : "";
+        const d = points.length ? "M" + points.join(" L") : "";
         path.setAttribute("d", d);
+      }
 
-        // Listen for storage changes to update graph
-        window.addEventListener("storage", (e) => {
-          if (e.key === "weeklyQuestData" || e.key === QUEST_STORAGE_KEY) {
-            renderGraph();
-          }
-        });
+      function buildDopamineCurve({ baseline, mood }) {
+        const out = [];
+        const n = 25;
+        const moodBoost = (mood - 50) * 0.25;
+
+        for (let i = 0; i < n; i++) {
+          const t = i / (n - 1);
+          const peak = Math.exp(-Math.pow((t - 0.45) / 0.18, 2)) * 35;
+          const eveningDip = Math.exp(-Math.pow((t - 0.85) / 0.12, 2)) * -18;
+          const wave = Math.sin(t * Math.PI * 2) * 6;
+          const val = baseline + moodBoost + peak + eveningDip + wave;
+          out.push(clamp(val, 0, 100));
+        }
+
+        return out;
       }
 
       document.addEventListener("DOMContentLoaded", render);
+
+      window.addEventListener("storage", (e) => {
+        if (e.key === "completedQuests" || e.key === DAILY_DONE_KEY) render();
+      });
     </script>
   </body>
 </html>

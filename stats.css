@@ -417,7 +417,7 @@ body {
   transform: scaleY(1.05);
 }
 
-Í.stat-value {
+.stat-value {
   transition: opacity 160ms ease;
 }
 

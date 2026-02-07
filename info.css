@@ -10,6 +10,10 @@
   align-items: start;
 }
 
+.dopamine-panel {
+  grid-column: 1 / -1;
+}
+
 .streak-pill {
   display: inline-flex;
   align-items: center;
@@ -191,96 +195,124 @@
 .line-graph-svg,
 .dopamine-graph-svg {
   width: 100%;
-  height: 260px;
   display: block;
 }
 
-.data-line {
+.dopamine-graph-svg {
+  height: 340px;
+}
+
+.dopamine-line {
   filter: drop-shadow(0 18px 36px rgba(34, 211, 238, 0.12));
 }
 
-.panel[aria-label="Balance Panel Preview"] .balance-grid {
-  gap: 16px;
-  align-items: center;
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.panel[aria-label="Balance Panel Preview"] .pentagon svg {
-  width: min(360px, 100%);
-  height: auto;
-}
-
-.panel[aria-label="Balance Panel Preview"] .pentagon svg polygon {
-  opacity: 0.18;
-}
-
-.panel[aria-label="Balance Panel Preview"] .pentagon svg #dashRadar {
-  fill: rgba(34, 211, 238, 0.11);
-  stroke: rgba(34, 211, 238, 0.85);
-  stroke-width: 2.2;
-  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.12));
-}
-
-.panel[aria-label="Balance Panel Preview"] .pentagon svg text {
-  opacity: 0.75;
-  letter-spacing: 0.1px;
-}
-
-.panel[aria-label="Balance Panel Preview"] .pillar-row {
-  padding: 10px 10px;
-  border-radius: 14px;
+.ach-card {
   border: 1px solid var(--stroke);
-  background: color-mix(in srgb, var(--card) 82%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
   box-shadow: var(--shadow);
-  transition:
-    border-color 140ms ease,
-    transform 140ms ease;
+  padding: 12px 12px;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  position: relative;
 }
 
-.panel[aria-label="Balance Panel Preview"] .pillar-row:hover {
-  transform: translateY(-1px);
-  border-color: rgba(34, 211, 238, 0.22);
+.ach-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+    radial-gradient(
+      760px 220px at 20% 0%,
+      rgba(34, 211, 238, 0.12),
+      transparent 58%
+    ),
+    radial-gradient(
+      740px 220px at 90% 10%,
+      rgba(168, 85, 247, 0.1),
+      transparent 58%
+    );
+  pointer-events: none;
+  opacity: 0.85;
 }
 
-.panel[aria-label="Balance Panel Preview"] .pillar-name {
-  font-weight: 850;
-  letter-spacing: 0.15px;
+.ach-card > * {
+  position: relative;
+  z-index: 1;
 }
 
-.panel[aria-label="Balance Panel Preview"] .pillar-bar {
-  height: 10px;
+.ach-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--stroke);
+  background: color-mix(in srgb, var(--card2) 70%, transparent);
+  color: var(--aqua);
+}
+
+.ach-title {
+  font-weight: 950;
+  letter-spacing: 0.2px;
+}
+
+.ach-sub {
+  margin-top: 2px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.ach-tag {
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 10px;
   border-radius: 999px;
   border: 1px solid var(--stroke2);
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  overflow: hidden;
-}
-
-.panel[aria-label="Balance Panel Preview"] .bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(34, 211, 238, 0.9),
-    rgba(168, 85, 247, 0.55)
-  );
-  box-shadow: 0 10px 18px rgba(34, 211, 238, 0.08);
-}
-
-.panel[aria-label="Balance Panel Preview"] .pillar-val {
-  font-weight: 900;
   color: color-mix(in srgb, var(--text) 70%, var(--muted));
+  background: color-mix(in srgb, var(--card) 75%, transparent);
+}
+
+.ach-tag.is-on {
+  border-color: rgba(34, 211, 238, 0.38);
+  background: color-mix(in srgb, var(--aquaSoft) 85%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+}
+
+.panel[aria-label="Achievements"] {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 1100px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .balance-grid {
+@media (max-width: 720px) {
+  .ach-grid {
     grid-template-columns: 1fr;
   }
 
-  .streak-metrics {
-    grid-template-columns: 1fr;
+  .badge-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dopamine-graph-svg {
+    height: 320px;
   }
 }
 
@@ -301,5 +333,9 @@
 
   .streak-week {
     gap: 8px;
+  }
+
+  .badge-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
