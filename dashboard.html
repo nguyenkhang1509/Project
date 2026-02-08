@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -354,7 +354,7 @@
                 <button
                   class="panel-note quest-btn"
                   type="button"
-                  onclick="window.location.href='quests.html'"
+                  onclick="window.location.href = 'quests.html'"
                   aria-label="Open quests"
                 >
                   Preview →
@@ -363,6 +363,72 @@
 
               <div class="focus-card quests-preview">
                 <!-- Dynamically loaded from API -->
+              </div>
+            </section>
+
+            <section class="panel" aria-label="Daily Check-in Panel">
+              <div class="panel-head">
+                <h2 class="panel-title">Daily Check-In</h2>
+              </div>
+
+              <div class="checkin-card" aria-label="Daily check-in summary">
+                <div class="checkin-top checkin-top--compact">
+                  <div class="checkin-right">
+                    <div
+                      class="checkin-date"
+                      id="dashCheckinDatePill"
+                      aria-label="Today date"
+                    >
+                      —
+                    </div>
+                  </div>
+                </div>
+
+                <div class="checkin-bars" aria-label="Mood + baseline meters">
+                  <div class="cbar">
+                    <div class="cbar-k">Mood</div>
+                    <div class="cbar-track" aria-hidden="true">
+                      <span
+                        class="cbar-fill"
+                        id="dashMoodFill"
+                        style="width: 0%"
+                      ></span>
+                    </div>
+                    <div class="cbar-v" id="dashMoodVal">—</div>
+                  </div>
+
+                  <div class="cbar">
+                    <div class="cbar-k">Baseline</div>
+                    <div class="cbar-track" aria-hidden="true">
+                      <span
+                        class="cbar-fill"
+                        id="dashBaseFill"
+                        style="width: 0%"
+                      ></span>
+                    </div>
+                    <div class="cbar-v" id="dashBaseVal">—</div>
+                  </div>
+                </div>
+
+                <div class="checkin-snippet" id="dashReflectionSnippet">
+                  No journal data yet.
+                </div>
+
+                <div class="checkin-actions">
+                  <a
+                    class="btn primary"
+                    href="journal.html"
+                    id="dashOpenJournal"
+                    >Open Journal</a
+                  >
+                  <button
+                    class="btn ghost"
+                    type="button"
+                    id="dashCheckinRefresh"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
             </section>
 

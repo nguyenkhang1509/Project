@@ -23,7 +23,7 @@ function getLevelInfo(totalXp) {
     req = Math.max(1, Math.round(req * LEVEL_GROWTH));
   }
 
-  const progress = req > 0 ? (remaining / req) : 0;
+  const progress = req > 0 ? remaining / req : 0;
   return { level, req, progress, remaining };
 }
 
@@ -40,12 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dashName) dashName.textContent = displayName;
   if (sideUser) sideUser.textContent = displayName;
 
-  // Load old quest rows from storage for backwards compatibility
-  let completedQuests = JSON.parse(localStorage.getItem(getAccountStorageKey("completedQuests"))) || [
-    false,
-    false,
-    false,
-  ];
+  let completedQuests = JSON.parse(
+    localStorage.getItem(getAccountStorageKey("completedQuests")),
+  ) || [false, false, false];
   const legacyQuestRows = document.querySelectorAll(".quest-row:not(.qcard)");
   legacyQuestRows.forEach((row, i) => {
     row.setAttribute("data-qid", `legacy-${i}`);
@@ -108,8 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashLevel = document.getElementById("dashLevel");
     const dashXpText = document.getElementById("dashXpText");
     const dashXpFill = document.getElementById("dashXpFill");
-
-    
   }
 
   updateGraph();
@@ -117,7 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
   loadAndRenderPreviewTasks();
 
   window.addEventListener("storage", (e) => {
-    if (e.key === getAccountStorageKey(QUEST_STORAGE_KEY) || e.key === getAccountStorageKey(XP_STORAGE_KEY)) {
+    if (
+      e.key === getAccountStorageKey(QUEST_STORAGE_KEY) ||
+      e.key === getAccountStorageKey(XP_STORAGE_KEY)
+    ) {
       updateXP();
       updateGraph();
       loadAndRenderPreviewTasks();
@@ -138,19 +136,17 @@ async function loadAndRenderPreviewTasks() {
   if (!previewContainer) return;
 
   try {
-    const challenges = await api.fetchAllChallenges(
-      HABITICA_CONFIG.challenges,
-    );
+    const challenges = await api.fetchAllChallenges(HABITICA_CONFIG.challenges);
     if (challenges.length === 0) return;
 
-    // Get first 3 challenges
     const firstThree = challenges.slice(0, 3);
     previewContainer.innerHTML = "";
 
-    
     let state = {};
     try {
-      const stored = localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY));
+      const stored = localStorage.getItem(
+        getAccountStorageKey(QUEST_STORAGE_KEY),
+      );
       state = stored ? JSON.parse(stored) : {};
     } catch {}
     state.completed = state.completed || {};
@@ -161,14 +157,13 @@ async function loadAndRenderPreviewTasks() {
       const xpReward =
         HABITICA_CONFIG.defaultXpPerCategory[challenge.category] ||
         HABITICA_CONFIG.defaultXpPerCategory.mental;
-      
-      
+
       const row = document.createElement("div");
       row.className = "quest-row";
       row.setAttribute("data-qid", challenge.id);
       row.setAttribute("data-xp", xpReward);
       if (isDone) row.classList.add("is-complete");
-      
+
       row.innerHTML = `
         <span
           class="quest-check"
@@ -184,7 +179,7 @@ async function loadAndRenderPreviewTasks() {
           <i class="fa-solid fa-check"></i>
         </span>
       `;
-      
+
       const check = row.querySelector(".quest-check");
       if (check) {
         check.onclick = function () {
@@ -197,11 +192,10 @@ async function loadAndRenderPreviewTasks() {
           }
         };
       }
-      
+
       previewContainer.appendChild(row);
     });
-    
-    
+
     updateXP();
   } catch (error) {
     console.error("Error loading preview tasks:", error);
@@ -221,18 +215,25 @@ function completePreviewQuest(checkEl) {
     checkEl.setAttribute("aria-pressed", nowComplete ? "true" : "false");
   }
 
- 
   try {
-    let state = JSON.parse(localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY))) || {};
+    let state =
+      JSON.parse(
+        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+      ) || {};
     state.completed = state.completed || {};
     state.completed[qid] = nowComplete;
-    localStorage.setItem(getAccountStorageKey(QUEST_STORAGE_KEY), JSON.stringify(state));
+    localStorage.setItem(
+      getAccountStorageKey(QUEST_STORAGE_KEY),
+      JSON.stringify(state),
+    );
   } catch {}
 
-  
   let totalXP = 0;
   try {
-    const state = JSON.parse(localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY))) || {};
+    const state =
+      JSON.parse(
+        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+      ) || {};
     state.completed = state.completed || {};
     Object.keys(state.completed).forEach((questId) => {
       if (state.completed[questId]) {
@@ -242,7 +243,6 @@ function completePreviewQuest(checkEl) {
           if (xpValue) {
             totalXP += Number(xpValue);
           } else {
-            
             const expEl = questCard.querySelector(".reward.exp");
             if (expEl) {
               const txt = expEl.textContent || "";
@@ -255,7 +255,10 @@ function completePreviewQuest(checkEl) {
     });
   } catch {}
 
-  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), totalXP.toString());
+  localStorage.setItem(
+    getAccountStorageKey(XP_STORAGE_KEY),
+    totalXP.toString(),
+  );
   updateGraph();
   updateXP();
 }
@@ -284,14 +287,15 @@ function updateXP() {
 
 function updateGraph() {
   const dayOfWeek = new Date().getDay();
-  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; 
+  const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-  let lastResetDate = localStorage.getItem(getAccountStorageKey("weeklyGraphResetDate"));
-  let weeklyData = JSON.parse(localStorage.getItem(getAccountStorageKey("weeklyQuestData"))) || [
-    0, 0, 0, 0, 0, 0, 0,
-  ];
+  let lastResetDate = localStorage.getItem(
+    getAccountStorageKey("weeklyGraphResetDate"),
+  );
+  let weeklyData = JSON.parse(
+    localStorage.getItem(getAccountStorageKey("weeklyQuestData")),
+  ) || [0, 0, 0, 0, 0, 0, 0];
 
-  
   const currentMonday = new Date();
   currentMonday.setDate(currentMonday.getDate() - dayIndex);
   currentMonday.setHours(0, 0, 0, 0);
@@ -299,21 +303,28 @@ function updateGraph() {
 
   if (lastResetDate !== currentMondayStr) {
     weeklyData = [0, 0, 0, 0, 0, 0, 0];
-    localStorage.setItem(getAccountStorageKey("weeklyGraphResetDate"), currentMondayStr);
+    localStorage.setItem(
+      getAccountStorageKey("weeklyGraphResetDate"),
+      currentMondayStr,
+    );
   }
 
-  // Count all completed quests from storage, not just visible preview quests
   let completedCount = 0;
   try {
-    const state = JSON.parse(localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY))) || {};
+    const state =
+      JSON.parse(
+        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+      ) || {};
     state.completed = state.completed || {};
     completedCount = Object.values(state.completed).filter(Boolean).length;
   } catch {}
   weeklyData[dayIndex] = completedCount;
 
-  localStorage.setItem(getAccountStorageKey("weeklyQuestData"), JSON.stringify(weeklyData));
+  localStorage.setItem(
+    getAccountStorageKey("weeklyQuestData"),
+    JSON.stringify(weeklyData),
+  );
 
-  // Update all SVG graphs on the page with the new data
   const svgs = document.querySelectorAll(".line-graph-svg");
   svgs.forEach((svg) => {
     let path = svg.querySelector(".data-line");
@@ -355,35 +366,44 @@ window.completeQuest = function (checkEl) {
     const qid = row.getAttribute("data-qid");
     if (qid) {
       try {
-        let state = JSON.parse(localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY))) || {};
+        let state =
+          JSON.parse(
+            localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+          ) || {};
         state.completed = state.completed || {};
         state.completed[qid] = nowComplete;
-        localStorage.setItem(getAccountStorageKey(QUEST_STORAGE_KEY), JSON.stringify(state));
+        localStorage.setItem(
+          getAccountStorageKey(QUEST_STORAGE_KEY),
+          JSON.stringify(state),
+        );
       } catch {}
     }
 
     let completedQuests = JSON.parse(
-      localStorage.getItem(getAccountStorageKey("completedQuests"))
+      localStorage.getItem(getAccountStorageKey("completedQuests")),
     ) || [false, false, false];
     completedQuests[index] = nowComplete;
-    localStorage.setItem(getAccountStorageKey("completedQuests"), JSON.stringify(completedQuests));
+    localStorage.setItem(
+      getAccountStorageKey("completedQuests"),
+      JSON.stringify(completedQuests),
+    );
   }
 
-  
   let totalXP = 0;
   try {
-    const state = JSON.parse(localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY))) || {};
+    const state =
+      JSON.parse(
+        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+      ) || {};
     state.completed = state.completed || {};
     Object.keys(state.completed).forEach((qid) => {
       if (state.completed[qid]) {
         const card = document.querySelector(`[data-qid="${qid}"]`);
         if (card) {
-          
           const xpValue = card.getAttribute("data-xp");
           if (xpValue) {
             totalXP += Number(xpValue);
           } else {
-            
             const expEl = card.querySelector(".reward.exp");
             if (expEl) {
               const txt = expEl.textContent || "";
@@ -395,9 +415,73 @@ window.completeQuest = function (checkEl) {
       }
     });
   } catch {}
-  
-  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), totalXP.toString());
+
+  localStorage.setItem(
+    getAccountStorageKey(XP_STORAGE_KEY),
+    totalXP.toString(),
+  );
   updateGraph();
   updateXP();
 };
 
+function getISODate(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function getJournalStore() {
+  try {
+    const raw = localStorage.getItem("aurakJournal");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function pct(v) {
+  return Math.max(0, Math.min(100, v));
+}
+
+function renderDailyCheckin() {
+  const today = getISODate();
+  const journal = getJournalStore();
+  const entry = journal[today];
+
+  const datePill = document.getElementById("dashCheckinDatePill");
+  const moodFill = document.getElementById("dashMoodFill");
+  const moodVal = document.getElementById("dashMoodVal");
+  const baseFill = document.getElementById("dashBaseFill");
+  const baseVal = document.getElementById("dashBaseVal");
+  const snippet = document.getElementById("dashReflectionSnippet");
+
+  datePill.textContent = today;
+
+  if (!entry) {
+    moodFill.style.width = "0%";
+    baseFill.style.width = "0%";
+    moodVal.textContent = "—";
+    baseVal.textContent = "—";
+    snippet.textContent = "No journal data yet.";
+    return;
+  }
+
+  const moodPercent = pct((entry.mood / 10) * 100);
+  const basePercent = pct((entry.baseline / 10) * 100);
+
+  moodFill.style.width = moodPercent + "%";
+  baseFill.style.width = basePercent + "%";
+
+  moodVal.textContent = entry.mood + "/10";
+  baseVal.textContent = entry.baseline + "/10";
+
+  snippet.textContent =
+    entry.reflection.slice(0, 120) + (entry.reflection.length > 120 ? "…" : "");
+}
+
+document
+  .getElementById("dashCheckinRefresh")
+  .addEventListener("click", renderDailyCheckin);
+
+document.addEventListener("DOMContentLoaded", renderDailyCheckin);
