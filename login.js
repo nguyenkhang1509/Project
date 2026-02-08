@@ -1,5 +1,6 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { clearAccountData } from "./userStore.js";
 
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
@@ -72,6 +73,12 @@ if (form) {
       const fbUser = cred.user;
 
       await fbUser.reload();
+
+      // Clear old account data if there was a previous user logged in
+      const previousUser = safeParse("aurakCurrentUser");
+      if (previousUser && previousUser.uid && previousUser.uid !== fbUser.uid) {
+        clearAccountData(previousUser.uid);
+      }
 
       const existingUser = safeParse("aurakCurrentUser");
 

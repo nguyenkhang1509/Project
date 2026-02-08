@@ -3,8 +3,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-
-// Kết nối JavaScript với các input và form trong trang đăng ký
+import { clearAccountData } from "./userStore.js";
 const regForm = document.getElementById("register-form");
 const nameInput = document.getElementById("display-name");
 const regEmailInput = document.getElementById("reg-email");
@@ -132,6 +131,12 @@ if (regForm) {
       );
 
       await updateProfile(cred.user, { displayName: nameValue });
+
+      // Clear old account data if there was a previous user
+      const previousUser = JSON.parse(localStorage.getItem("aurakCurrentUser") || "null");
+      if (previousUser && previousUser.uid && previousUser.uid !== cred.user.uid) {
+        clearAccountData(previousUser.uid);
+      }
 
       const newUser = {
         uid: cred.user.uid,

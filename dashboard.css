@@ -1,17 +1,23 @@
 :root {
   --bg: #020617;
   --bg2: #020818;
+
   --card: rgba(255, 255, 255, 0.06);
   --card2: rgba(255, 255, 255, 0.08);
+
   --stroke: rgba(255, 255, 255, 0.12);
   --stroke2: rgba(255, 255, 255, 0.18);
+
   --text: #e7f0ff;
   --muted: rgba(231, 240, 255, 0.68);
+
   --aqua: rgba(34, 211, 238, 0.85);
   --aquaSoft: rgba(34, 211, 238, 0.12);
   --violetSoft: rgba(168, 85, 247, 0.14);
+
   --radius: 18px;
   --radius2: 22px;
+
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
   --shadow2: 0 24px 70px rgba(0, 0, 0, 0.45);
 }
@@ -19,14 +25,19 @@
 body:has(#themeToggle:checked) {
   --bg: #f6f8ff;
   --bg2: #eef2ff;
+
   --card: rgba(2, 6, 23, 0.05);
   --card2: rgba(2, 6, 23, 0.08);
+
   --stroke: rgba(2, 6, 23, 0.12);
   --stroke2: rgba(2, 6, 23, 0.18);
+
   --text: #081022;
   --muted: rgba(8, 16, 34, 0.62);
+
   --aquaSoft: rgba(34, 211, 238, 0.1);
   --violetSoft: rgba(168, 85, 247, 0.1);
+
   --shadow: 0 18px 50px rgba(2, 6, 23, 0.1);
   --shadow2: 0 24px 70px rgba(2, 6, 23, 0.14);
 }
@@ -44,15 +55,13 @@ body {
 
 body {
   margin: 0;
-  font-family:
-    "Space Grotesk",
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(900px 600px at 12% 10%, var(--aquaSoft), transparent 60%),
+  background: radial-gradient(
+      900px 600px at 12% 10%,
+      var(--aquaSoft),
+      transparent 60%
+    ),
     radial-gradient(900px 600px at 88% 14%, var(--violetSoft), transparent 60%),
     linear-gradient(180deg, var(--bg), var(--bg2));
 }
@@ -87,10 +96,7 @@ input:focus-visible {
   text-align: center;
   margin-right: 10px;
   font-size: 1.1rem;
-  transition:
-    transform 140ms ease,
-    filter 140ms ease,
-    opacity 140ms ease;
+  transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
 }
 
 .sidebar {
@@ -101,6 +107,7 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
   position: sticky;
   top: 0;
   height: 100vh;
@@ -111,8 +118,7 @@ input:focus-visible {
   content: "";
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       600px 220px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 55%
@@ -158,8 +164,7 @@ input:focus-visible {
 .brand-glow {
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       520px 160px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 60%
@@ -186,6 +191,16 @@ input:focus-visible {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
   position: relative;
   z-index: 2;
+}
+
+.brand-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--aqua) 22%, var(--stroke));
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.06);
+  opacity: 0.9;
+  z-index: 1;
 }
 
 .brand-text {
@@ -222,10 +237,7 @@ input:focus-visible {
 
 .brand:hover {
   transform: translateY(-1px);
-  transition:
-    transform 160ms ease,
-    border 160ms ease,
-    background 160ms ease;
+  transition: transform 160ms ease, border 160ms ease, background 160ms ease;
   border-color: color-mix(in srgb, var(--aqua) 28%, var(--stroke));
 }
 
@@ -248,8 +260,7 @@ input:focus-visible {
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       circle at 30% 30%,
       rgba(34, 211, 238, 0.35),
       transparent 55%
@@ -291,10 +302,7 @@ input:focus-visible {
   border: 1px solid transparent;
   color: var(--text);
   background: color-mix(in srgb, var(--card) 70%, transparent);
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
   position: relative;
 }
 
@@ -345,10 +353,7 @@ input:focus-visible {
   border-radius: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
 }
 
 .btn-logout:hover {
@@ -382,8 +387,7 @@ input:focus-visible {
   content: "";
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       800px 180px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 55%
@@ -463,10 +467,7 @@ input:focus-visible {
   border-radius: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
 }
 
 .btn:hover {
@@ -485,12 +486,6 @@ input:focus-visible {
 
 .btn.primary:hover {
   background: color-mix(in srgb, var(--aquaSoft) 115%, transparent);
-}
-
-.btn[disabled] {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .wide-stats {
@@ -534,15 +529,11 @@ input:focus-visible {
   gap: 12px;
   align-items: start;
 }
-
 .line-graph {
   margin-top: 12px;
   padding: 16px;
   background: var(--card);
   border-radius: var(--radius2);
-  border: 1px solid var(--stroke);
-  box-shadow: var(--shadow);
-  overflow: hidden;
 }
 
 .line-graph1 {
@@ -581,7 +572,7 @@ input:focus-visible {
   margin-bottom: 12px;
 }
 
-.panel-title {
+.panel-appaea {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 900;
@@ -647,9 +638,38 @@ input:focus-visible {
   font-weight: 900;
 }
 
+.pillar-hint {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .stack {
   display: grid;
   gap: 12px;
+}
+
+.panel[aria-label="Focus Preview"] .quest-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  font-size: 1rem;
+
+  color: color-mix(in srgb, var(--text) 75%, var(--muted));
+  opacity: 0.85;
+  transition: opacity 120ms ease, transform 120ms ease, color 120ms ease;
+}
+
+.panel[aria-label="Focus Preview"] .quest-row:hover .quest-icon {
+  opacity: 1;
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-icon {
+  color: rgba(95, 255, 210, 0.85);
+  opacity: 1;
 }
 
 .panel[aria-label="Focus Preview"] .panel-head {
@@ -676,9 +696,7 @@ input:focus-visible {
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
 .panel[aria-label="Focus Preview"] .quest-btn:hover {
@@ -700,8 +718,8 @@ input:focus-visible {
   padding: 18px;
   border-radius: calc(var(--radius2) + 6px);
   overflow: hidden;
-  background:
-    radial-gradient(
+
+  background: radial-gradient(
       900px 340px at 10% 0%,
       rgba(124, 156, 255, 0.14),
       transparent 58%
@@ -716,6 +734,7 @@ input:focus-visible {
       color-mix(in srgb, var(--card) 82%, transparent),
       color-mix(in srgb, var(--card) 62%, transparent)
     );
+
   border-color: color-mix(in srgb, var(--stroke) 58%, transparent);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
 }
@@ -725,8 +744,10 @@ input:focus-visible {
   grid-template-columns: 22px 1fr auto;
   gap: 14px;
   align-items: center;
+
   padding: 14px 16px;
   border-radius: 14px;
+
   background: color-mix(in srgb, var(--card2) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--stroke) 42%, transparent);
 }
@@ -752,26 +773,35 @@ input:focus-visible {
   color: color-mix(in srgb, var(--text) 92%, white);
 }
 
-.panel[aria-label="Focus Preview"] .quest-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 12px;
-  font-size: 1rem;
-  color: color-mix(in srgb, var(--text) 75%, var(--muted));
-  opacity: 0.85;
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    color 120ms ease;
+.panel[aria-label="Focus Preview"] .quests-preview .quest-text p {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--text) 65%, var(--muted));
 }
 
-.panel[aria-label="Focus Preview"] .quest-row:hover .quest-icon {
-  opacity: 1;
-  color: var(--text);
+.panel[aria-label="Focus Preview"] .quests-preview .quest-complete {
+  appearance: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  border: 1px solid color-mix(in srgb, var(--stroke2) 65%, transparent);
+  background: color-mix(in srgb, rgba(120, 220, 255, 0.22) 60%, transparent);
+  color: color-mix(in srgb, var(--text) 92%, white);
+
+  transition: transform 120ms ease, background 120ms ease,
+    border-color 120ms ease;
+}
+
+.panel[aria-label="Focus Preview"] .quests-preview .quest-complete:hover {
   transform: translateY(-1px);
+  background: color-mix(in srgb, rgba(120, 220, 255, 0.28) 70%, transparent);
+  border-color: color-mix(in srgb, var(--stroke2) 85%, transparent);
 }
 
+/* ===== COMPLETED STATE ===== */
 .panel[aria-label="Focus Preview"] .quest-row.is-complete {
   opacity: 0.65;
 }
@@ -781,9 +811,10 @@ input:focus-visible {
   border-color: color-mix(in srgb, rgba(95, 255, 210, 0.95) 70%, transparent);
 }
 
-.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-icon {
-  color: rgba(95, 255, 210, 0.85);
-  opacity: 1;
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-complete {
+  cursor: default;
+  background: color-mix(in srgb, var(--card2) 22%, transparent);
+  border-color: color-mix(in srgb, var(--stroke) 55%, transparent);
 }
 
 .mode {
@@ -824,9 +855,7 @@ input:focus-visible {
   transform: translateY(-50%);
   background: color-mix(in srgb, var(--text) 85%, white);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
-  transition:
-    left 180ms ease,
-    background 180ms ease;
+  transition: left 180ms ease, background 180ms ease;
 }
 
 .mode input:checked + .mode-ui {
@@ -860,6 +889,34 @@ input:focus-visible {
   font-size: 0.92rem;
 }
 
+.line-graph {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: var(--radius2);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.line-graph1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.line-graph2 {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.line-graph-svg {
+  width: 100%;
+  height: 260px;
+  display: block;
+}
+
 .line-axis {
   stroke: var(--stroke2);
   stroke-width: 1.5;
@@ -874,12 +931,7 @@ input:focus-visible {
 
 .line-y text,
 .line-x text {
-  font-family:
-    "Space Grotesk",
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, sans-serif;
   font-size: 12px;
   fill: var(--muted);
 }
@@ -892,161 +944,16 @@ input:focus-visible {
   padding-right: 16px;
 }
 
-.checkin-card {
-  margin-top: 10px;
-  border: 1px solid color-mix(in srgb, var(--stroke) 70%, transparent);
-  border-radius: calc(var(--radius2) + 6px);
-  padding: 14px;
-  background:
-    radial-gradient(
-      820px 260px at 18% 0%,
-      rgba(34, 211, 238, 0.12),
-      transparent 58%
-    ),
-    radial-gradient(
-      760px 260px at 92% 10%,
-      rgba(168, 85, 247, 0.1),
-      transparent 60%
-    ),
-    color-mix(in srgb, var(--card) 72%, transparent);
-  box-shadow: var(--shadow);
+.panel[aria-label="Focus Preview"] .quest-check {
+  cursor: pointer;
 }
 
-.checkin-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.panel[aria-label="Focus Preview"] .quest-row.is-complete {
+  opacity: 0.6;
 }
 
-.checkin-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--stroke) 70%, transparent);
-  background: color-mix(in srgb, var(--card2) 18%, transparent);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-}
-
-.checkin-score {
-  font-weight: 950;
-  color: color-mix(in srgb, var(--text) 78%, var(--muted));
-}
-
-.checkin-bars {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
-}
-
-.cbar {
-  display: grid;
-  grid-template-columns: 82px 1fr 44px;
-  gap: 10px;
-  align-items: center;
-}
-
-.cbar-k {
-  color: var(--muted);
-  font-weight: 900;
-}
-
-.cbar-track {
-  height: 10px;
-  border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
-  overflow: hidden;
-}
-
-.cbar-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(34, 211, 238, 0.78),
-    rgba(168, 85, 247, 0.55)
-  );
-  transition: width 220ms ease;
-}
-
-.cbar-v {
-  text-align: right;
-  font-weight: 950;
-  color: color-mix(in srgb, var(--text) 72%, var(--muted));
-}
-
-.checkin-actions {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn.ghost {
-  border: 1px solid var(--stroke2);
-  background: color-mix(in srgb, var(--card) 60%, transparent);
-}
-
-.checkin-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.checkin-date {
-  border-radius: 12px;
-  border: 1px solid var(--stroke);
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  color: var(--text);
-  padding: 8px 10px;
-  outline: none;
-}
-
-.checkin-date:focus {
-  border-color: rgba(34, 211, 238, 0.28);
-}
-
-.checkin-snippet {
-  margin-top: 12px;
-  padding: 12px 12px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--stroke) 55%, transparent);
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  color: color-mix(in srgb, var(--text) 78%, var(--muted));
-  line-height: 1.5;
-  font-weight: 650;
-  min-height: 52px;
-}
-
-.checkin-divider {
-  margin: 14px 0 12px;
-  height: 1px;
-  background: color-mix(in srgb, var(--stroke) 75%, transparent);
-  border-radius: 999px;
-}
-
-.panel[aria-label="Daily Check-in Panel"] .checkin-card {
-  margin-top: 0;
-}
-
-.panel[aria-label="Daily Check-in Panel"] .panel-head {
-  margin-bottom: 12px;
-}
-
-.panel[aria-label="Appearance Panel"] .panel-head {
-  margin-bottom: 12px;
-}
-
-.panel[aria-label="Appearance Panel"] .mode {
-  margin-top: 0;
-}
-
-.panel[aria-label="Appearance Panel"] .mode-hint {
-  margin-top: 10px;
+.panel[aria-label="Focus Preview"] .quest-row.is-complete .quest-check {
+  background: color-mix(in srgb, rgba(95, 255, 210, 0.75) 70%, transparent);
+  border-color: color-mix(in srgb, rgba(95, 255, 210, 1) 70%, transparent);
+  cursor: default;
 }
