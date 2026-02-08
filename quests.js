@@ -7,7 +7,7 @@
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
 
-  // Helper to get account-specific storage key
+ 
   function getAccountKey(baseKey) {
     try {
       const raw = localStorage.getItem("aurakCurrentUser");
@@ -24,7 +24,7 @@
   const showCompleted = document.getElementById("showCompleted");
   const questList = document.getElementById("questList");
 
-  // Display username at the top
+  
   function displayUsername() {
     try {
       const raw = localStorage.getItem("aurakCurrentUser");

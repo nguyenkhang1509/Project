@@ -23,7 +23,7 @@ export async function patchUserDoc(uid, payload) {
   await updateDoc(ref, { ...payload, updatedAt: serverTimestamp() });
 }
 /**
- * Gets the current user from localStorage
+
  */
 export function getCurrentUser() {
   try {
@@ -35,10 +35,10 @@ export function getCurrentUser() {
 }
 
 /**
- * Creates an account-specific storage key using the user's UID
- * @param {string} baseKey - The base key name (e.g., "quests", "totalXP")
- * @param {string} uid - The user's UID. If not provided, uses current user's UID
- * @returns {string} The account-specific key
+
+ * @param {string} baseKey 
+ * @param {string} uid 
+ * @returns {string}
  */
 export function getStorageKey(baseKey, uid = null) {
   const userId = uid || getCurrentUser()?.uid;
@@ -50,7 +50,7 @@ export function getStorageKey(baseKey, uid = null) {
 }
 
 /**
- * Clears all account-specific data for a given user
+ 
  * @param {string} uid - The user's UID
  */
 export function clearAccountData(uid) {
@@ -71,9 +71,7 @@ export function clearAccountData(uid) {
   });
 }
 
-/**
- * Logs out the current user and clears their account data
- */
+
 export function logout() {
   const user = getCurrentUser();
   if (user && user.uid) {

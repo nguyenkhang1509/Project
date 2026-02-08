@@ -3,7 +3,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { clearAccountData } from "./userStore.js";
+
 const regForm = document.getElementById("register-form");
 const nameInput = document.getElementById("display-name");
 const regEmailInput = document.getElementById("reg-email");
@@ -11,7 +11,7 @@ const regPassInput = document.getElementById("reg-pass");
 const regPassConfirmInput = document.getElementById("reg-pass-confirm");
 const termsCheckbox = document.getElementById("terms-checkbox");
 
-// Các vùng hiển thị lỗi tương ứng cho từng input
+
 const nameError = document.getElementById("name-error");
 const regEmailError = document.getElementById("reg-email-error");
 const regPassError = document.getElementById("reg-pass-error");
@@ -22,7 +22,7 @@ const registerFormError = document.getElementById("register-form-error");
 // Nút hiện / ẩn mật khẩu khi đăng ký
 const toggleRegPassBtn = document.getElementById("toggle-reg-pass");
 
-// Mỗi lần người dùng bấm đăng ký thì xóa toàn bộ lỗi cũ
+
 function clearRegisterErrors() {
   nameError.textContent = "";
   regEmailError.textContent = "";
@@ -72,7 +72,7 @@ if (regForm) {
 
     let valid = true;
 
-    // Name validation (required + max length)
+   
     if (!nameValue) {
       nameError.textContent = "Display name is required.";
       valid = false;
@@ -81,7 +81,7 @@ if (regForm) {
       valid = false;
     }
 
-    // Email validation
+    
     if (!emailValue) {
       regEmailError.textContent = "Email is required.";
       valid = false;
@@ -131,12 +131,6 @@ if (regForm) {
       );
 
       await updateProfile(cred.user, { displayName: nameValue });
-
-      // Clear old account data if there was a previous user
-      const previousUser = JSON.parse(localStorage.getItem("aurakCurrentUser") || "null");
-      if (previousUser && previousUser.uid && previousUser.uid !== cred.user.uid) {
-        clearAccountData(previousUser.uid);
-      }
 
       const newUser = {
         uid: cred.user.uid,
