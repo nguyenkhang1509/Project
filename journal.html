@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling — Journal</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="journal.css" />
+
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("aurak_theme") === "light") {
+            const r = document.documentElement.style;
+            r.setProperty("--bg", "#f6f8ff");
+            r.setProperty("--bg2", "#eef2ff");
+            r.setProperty("--card", "rgba(2, 6, 23, 0.05)");
+            r.setProperty("--card2", "rgba(2, 6, 23, 0.08)");
+            r.setProperty("--stroke", "rgba(2, 6, 23, 0.12)");
+            r.setProperty("--stroke2", "rgba(2, 6, 23, 0.18)");
+            r.setProperty("--text", "#081022");
+            r.setProperty("--muted", "rgba(8, 16, 34, 0.62)");
+            r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.1)");
+            r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.1)");
+            r.setProperty("--shadow", "0 18px 50px rgba(2, 6, 23, 0.1)");
+            r.setProperty("--shadow2", "0 24px 70px rgba(2, 6, 23, 0.14)");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+  </head>
+
+  <body>
+    <main class="dashboard-screen journal-page" aria-label="AuraK Journal">
+      <aside class="sidebar" aria-label="AuraK Sidebar">
+        <div class="sidebar-top">
+          <a
+            class="brand brand-link"
+            href="dashboard.html"
+            aria-label="Go to Dashboard"
+          >
+            <span class="brand-glow" aria-hidden="true"></span>
+            <span class="brand-logoWrap" aria-hidden="true">
+              <img
+                class="brand-logo"
+                src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+                alt=""
+                width="46"
+                height="46"
+              />
+            </span>
+            <span class="brand-text">
+              <span class="brand-name">AURAK</span>
+              <span class="brand-sub">Levelling System</span>
+            </span>
+            <span class="brand-chip" aria-hidden="true">ONLINE</span>
+          </a>
+
+          <div class="side-card side-card-top" aria-label="Account Card">
+            <div class="side-avatar" aria-hidden="true"></div>
+            <div class="side-meta">
+              <div class="side-user" id="sideUser">—</div>
+              <div class="side-sub" id="sideSub">—</div>
+            </div>
+          </div>
+
+          <nav class="side-nav" aria-label="Sidebar Navigation">
+            <a class="side-link" href="dashboard.html">
+              <i class="fa fa-chart-line side-fa"></i>
+              Dashboard
+            </a>
+
+            <a class="side-link" href="profile.html">
+              <i class="fa fa-user side-fa"></i>
+              Profile
+            </a>
+
+            <a class="side-link" href="info.html">
+              <i class="fa-solid fa-chart-simple side-fa"></i>
+              Stats
+            </a>
+
+            <a class="side-link" href="quests.html">
+              <i class="fa-solid fa-list-check side-fa"></i>
+              Quest
+            </a>
+
+            <a class="side-link" href="aura.html">
+              <i class="fa-solid fa-comment side-fa"></i>
+              Aura System
+            </a>
+
+            <a class="side-link" href="journal.html">
+              <i class="fa-solid fa-book side-fa"></i>
+              Journal
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <p class="sidebar-tip">
+            Tip: Keep streaks small but consistent. Consistency compounds.
+          </p>
+          <a class="btn-logout" href="login.html">Logout</a>
+        </div>
+      </aside>
+
+      <section class="main" aria-label="Journal Main">
+        <header class="topbar" aria-label="Top Bar">
+          <div class="top-left" aria-label="Profile & XP">
+            <div class="profile-name" id="dashName">—</div>
+
+            <div class="profile-xp">
+              <span class="profile-level" id="dashLevel">—</span>
+              <span class="profile-xptext" id="dashXpText">—</span>
+            </div>
+
+            <div class="xpbar" aria-label="XP Progress">
+              <div class="xpbar-bg">
+                <div class="xpbar-fill" id="dashXpFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-actions" aria-label="Actions">
+            <a class="btn primary" href="quests.html">Start Challenge</a>
+          </div>
+        </header>
+
+        <div class="jc-glow jc-glow1" aria-hidden="true"></div>
+        <div class="jc-glow jc-glow2" aria-hidden="true"></div>
+
+        <section class="jc-shell" aria-label="Journal Overview">
+          <article class="panel jc-hero" aria-label="Daily Check-In Panel">
+            <div class="jc-heroLabel">
+              <i class="fa-solid fa-feather-pointed"></i>
+              <span>Journal</span>
+            </div>
+
+            <h1 class="jc-title">Your Aura, logged.</h1>
+            <p class="jc-sub">
+              Track your mood, energy, and focus — then write one line that
+              builds tomorrow’s standard.
+            </p>
+
+            <div class="jc-actionsRow">
+              <button class="btn primary" id="startCheckIn">
+                Start Check-In
+              </button>
+            </div>
+
+            <div class="jc-metaRow" aria-label="Daily meta">
+              <div class="jc-metaPill">
+                <span class="jc-metaK">Today</span>
+                <span class="jc-metaV" id="todayStatus">—</span>
+              </div>
+              <div class="jc-metaPill">
+                <span class="jc-metaK">Streak</span>
+                <span class="jc-metaV" id="journalStreak">—</span>
+              </div>
+              <div class="jc-metaPill">
+                <span class="jc-metaK">Last</span>
+                <span class="jc-metaV" id="lastEntry">—</span>
+              </div>
+            </div>
+
+            <div class="jc-snapshot" aria-label="Daily snapshot">
+              <div class="jc-snapTitle">Daily snapshot</div>
+              <div class="jc-snapLine" id="snapLine">—</div>
+              <div class="jc-snapHint" id="snapHint">
+                Complete a check-in to generate.
+              </div>
+            </div>
+          </article>
+
+          <article class="panel jc-side" aria-label="Today and week">
+            <div class="jc-sideHead">
+              <div class="jc-sideTitle">Today</div>
+              <div class="jc-sideSub">Quick context, calm and clear.</div>
+            </div>
+
+            <div class="jc-todayLines" aria-label="Today lines">
+              <div class="jc-line">
+                <span class="jc-lineK"
+                  ><i class="fa-regular fa-face-smile"></i> Mood</span
+                >
+                <span class="jc-lineV" id="insMood">—</span>
+              </div>
+              <div class="jc-line">
+                <span class="jc-lineK"
+                  ><i class="fa-solid fa-bolt"></i> Energy</span
+                >
+                <span class="jc-lineV" id="insRest">—</span>
+              </div>
+              <div class="jc-line jc-lineWrap">
+                <span class="jc-lineK"
+                  ><i class="fa-solid fa-bullseye"></i> Focus</span
+                >
+                <span class="jc-lineV" id="insFocusInline">—</span>
+              </div>
+            </div>
+
+            <div class="jc-week" aria-label="This week">
+              <div class="jc-weekTop">
+                <div class="jc-weekTitle">This week</div>
+                <div class="jc-weekSub">Tap a day to preview.</div>
+              </div>
+              <div class="jc-weekStrip" id="weekStrip" role="list"></div>
+
+              <div
+                class="jc-preview"
+                id="dayPreview"
+                aria-label="Selected day preview"
+              >
+                <div class="jc-previewTop">
+                  <div class="jc-previewDate" id="previewDate">—</div>
+                  <div class="jc-previewMeta" id="previewMeta">—</div>
+                </div>
+                <div class="jc-previewText" id="previewText">
+                  Select a day to view your reflection.
+                </div>
+              </div>
+            </div>
+
+            <div class="jc-trend" aria-label="Mood trend">
+              <div class="jc-trendTop">
+                <div>
+                  <div class="jc-trendTitle">Mood trend</div>
+                  <div class="jc-trendSub">Last 7 check-ins</div>
+                </div>
+                <div class="jc-trendMeta" id="trendMeta">—</div>
+              </div>
+
+              <div class="jc-trendChart" id="trendChart" aria-hidden="true">
+                <svg
+                  class="jc-chartSvg"
+                  viewBox="0 0 300 110"
+                  preserveAspectRatio="none"
+                >
+                  <path id="trendGrid" class="jc-grid" d=""></path>
+                  <path id="trendPath" class="jc-linePath" d=""></path>
+                  <path id="trendFill" class="jc-fill" d=""></path>
+                  <g id="trendDots"></g>
+                </svg>
+                <div class="jc-chartEmpty" id="trendEmpty">
+                  Log 2+ check-ins to reveal your pattern.
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel jc-recent" aria-label="Recent Entries">
+            <div class="jc-recentHead">
+              <div class="jc-recentTitle">Recent</div>
+              <div class="jc-recentSub">Your last 7 check-ins show here.</div>
+            </div>
+            <div class="jc-list" id="recentList"></div>
+          </article>
+        </section>
+
+        <div class="jc-overlay" id="journalOverlay" aria-hidden="true">
+          <div
+            class="jc-sheet"
+            id="journalSheet"
+            data-step="0"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Daily Check-In"
+          >
+            <div class="jc-sheetTop">
+              <div class="jc-sheetTitle">Daily Check-In</div>
+              <button class="jc-close" id="closeCheckIn" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div class="jc-progress" aria-label="Progress">
+              <div class="jc-dots" id="jpDots"></div>
+            </div>
+
+            <div class="jc-stage" id="journalStage">
+              <section class="jc-step" data-step="0">
+                <div class="jc-stepBody">
+                  <div class="jc-qTitle">How are you feeling?</div>
+                  <div class="jc-qSub">Choose one.</div>
+
+                  <div class="jc-moodRow" role="radiogroup" aria-label="Mood">
+                    <button class="jc-mood" data-mood="1" aria-label="Drained">
+                      <span class="jc-mIcon"
+                        ><i class="fa-regular fa-face-sad-tear"></i
+                      ></span>
+                      <span class="jc-mLabel">Drained</span>
+                    </button>
+                    <button class="jc-mood" data-mood="2" aria-label="Low">
+                      <span class="jc-mIcon"
+                        ><i class="fa-regular fa-face-frown"></i
+                      ></span>
+                      <span class="jc-mLabel">Low</span>
+                    </button>
+                    <button class="jc-mood" data-mood="3" aria-label="Stable">
+                      <span class="jc-mIcon"
+                        ><i class="fa-regular fa-face-meh"></i
+                      ></span>
+                      <span class="jc-mLabel">Stable</span>
+                    </button>
+                    <button class="jc-mood" data-mood="4" aria-label="Charged">
+                      <span class="jc-mIcon"
+                        ><i class="fa-regular fa-face-smile"></i
+                      ></span>
+                      <span class="jc-mLabel">Charged</span>
+                    </button>
+                    <button class="jc-mood" data-mood="5" aria-label="Peak">
+                      <span class="jc-mIcon"
+                        ><i class="fa-regular fa-face-grin-stars"></i
+                      ></span>
+                      <span class="jc-mLabel">Peak</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="jc-step" data-step="1">
+                <div class="jc-stepBody">
+                  <div class="jc-qTitle">Energy today</div>
+                  <div class="jc-qSub">Slide to match your current energy.</div>
+
+                  <div class="jc-readout">
+                    <span class="jc-readIcon" id="restIcon"
+                      ><i class="fa-solid fa-bolt"></i
+                    ></span>
+                    <span class="jc-readText" id="restText">Stable</span>
+                    <span class="jc-readNum" id="restNum">55</span>
+                  </div>
+
+                  <div class="jc-sliderWrap">
+                    <input
+                      id="restRange"
+                      class="jc-range"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="55"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section class="jc-step" data-step="2">
+                <div class="jc-stepBody">
+                  <div class="jc-qTitle">Focus today</div>
+                  <div class="jc-qSub">Pick up to 3 priorities.</div>
+
+                  <div class="jc-chipGrid" id="focusGrid">
+                    <button class="jc-chip" data-focus="Work" aria-label="Work">
+                      <i class="fa-solid fa-briefcase"></i><span>Work</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Self-care"
+                      aria-label="Self-care"
+                    >
+                      <i class="fa-solid fa-leaf"></i><span>Self-care</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Connections"
+                      aria-label="Connections"
+                    >
+                      <i class="fa-solid fa-users"></i><span>Connections</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Hobbies"
+                      aria-label="Hobbies"
+                    >
+                      <i class="fa-solid fa-palette"></i><span>Hobbies</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Fitness"
+                      aria-label="Fitness"
+                    >
+                      <i class="fa-solid fa-dumbbell"></i><span>Fitness</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Chores"
+                      aria-label="Chores"
+                    >
+                      <i class="fa-solid fa-house"></i><span>Chores</span>
+                    </button>
+                    <button
+                      class="jc-chip"
+                      data-focus="Learning"
+                      aria-label="Learning"
+                    >
+                      <i class="fa-solid fa-book"></i><span>Learning</span>
+                    </button>
+                  </div>
+
+                  <div class="jc-counter" id="focusCounter">0 / 3 selected</div>
+                </div>
+              </section>
+
+              <section class="jc-step" data-step="3">
+                <div class="jc-stepBody jc-stepWide">
+                  <div class="jc-qTitle">Self Reflection</div>
+                  <div class="jc-qSub">One line. Make tomorrow easier.</div>
+
+                  <div class="jc-pills" id="promptPills">
+                    <button class="jc-pill" data-prompt="More sleep.">
+                      <i class="fa-solid fa-moon"></i><span>More sleep</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="Less distraction.">
+                      <i class="fa-solid fa-ban"></i
+                      ><span>Less distraction</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="Getting fuel.">
+                      <i class="fa-solid fa-fire-flame-simple"></i
+                      ><span>Fuel</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="A clear plan.">
+                      <i class="fa-solid fa-map"></i><span>Clear plan</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="One small win.">
+                      <i class="fa-solid fa-check"></i><span>Small win</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="Talk to someone.">
+                      <i class="fa-solid fa-comments"></i><span>Reach out</span>
+                    </button>
+                    <button class="jc-pill" data-prompt="Move my body.">
+                      <i class="fa-solid fa-person-running"></i
+                      ><span>Movement</span>
+                    </button>
+                  </div>
+
+                  <textarea
+                    id="reflection"
+                    class="jc-input"
+                    rows="7"
+                    placeholder="Start writing..."
+                  ></textarea>
+                  <div class="jc-smallMeta"></div>
+                </div>
+              </section>
+
+              <section class="jc-step" data-step="4">
+                <div class="jc-stepBody">
+                  <div class="jc-qTitle">Was this helpful?</div>
+                  <div class="jc-qSub">Quick feedback.</div>
+
+                  <div
+                    class="jc-helpRow"
+                    role="radiogroup"
+                    aria-label="Helpful"
+                  >
+                    <button class="jc-help" data-help="No">
+                      <i class="fa-regular fa-thumbs-down"></i><span>No</span>
+                    </button>
+                    <button class="jc-help" data-help="A little">
+                      <i class="fa-regular fa-hand"></i><span>Somewhat</span>
+                    </button>
+                    <button class="jc-help" data-help="Yes">
+                      <i class="fa-regular fa-thumbs-up"></i><span>Yes</span>
+                    </button>
+                  </div>
+
+                  <button class="btn primary jc-wideBtn" id="saveFinish">
+                    Save & Finish
+                  </button>
+                </div>
+              </section>
+              <section class="jc-step" data-step="5">
+                <div class="jc-stepBody">
+                  <div class="jc-qTitle">Check-in saved</div>
+                  <div class="jc-qSub">Thanks for taking a moment today.</div>
+
+                  <div
+                    class="jc-helpRow"
+                    style="grid-template-columns: 1fr; margin-top: 14px"
+                  >
+                    <button class="btn primary jc-wideBtn" id="thanksContinue">
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div
+              class="jc-nav"
+              aria-label="Navigation"
+              style="border-top: 0; background: transparent"
+            >
+              <button class="jc-back" id="jBack" aria-label="Back">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <div aria-hidden="true"></div>
+
+              <button class="jc-next" id="jNext" aria-label="Next">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="journal.js"></script>
+  </body>
+</html>
