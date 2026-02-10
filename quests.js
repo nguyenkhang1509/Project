@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "aurak_quests_v4";
   const XP_STORAGE_KEY = "totalXP";
+  const DAILY_RESET_KEY = "dailyQuestResetDate";
 
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
@@ -17,6 +18,58 @@
       }
     } catch {}
     return baseKey;
+  }
+
+  function readCurrentUser() {
+    try {
+      const raw = localStorage.getItem("aurakCurrentUser");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function readUserProfile(uid) {
+    if (!uid) return null;
+    try {
+      const raw = localStorage.getItem(`aurak_user_profile_${uid}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function averageStat(stats) {
+    if (!stats) return null;
+    const keys = [
+      "Physical",
+      "Intellectual",
+      "Mental",
+      "Confidence",
+      "Discipline",
+    ];
+    const vals = keys
+      .map((k) => Number(stats[k]))
+      .filter((v) => Number.isFinite(v));
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+
+  function rankFromAverage(avg) {
+    if (!Number.isFinite(avg)) return "—";
+    if (avg >= 90) return "S";
+    if (avg >= 80) return "A";
+    if (avg >= 60) return "B";
+    if (avg >= 40) return "C";
+    if (avg >= 20) return "D";
+    return "E";
+  }
+
+  function getISODate(d = new Date()) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }
 
   const tabs = Array.from(document.querySelectorAll(".qtab"));
@@ -99,6 +152,24 @@
     } catch {}
   }
 
+  function ensureDailyQuestReset(state) {
+    const today = getISODate();
+    const resetKey = getAccountKey(DAILY_RESET_KEY);
+    const lastReset = localStorage.getItem(resetKey);
+    if (lastReset === today) return false;
+
+    state.completed = {};
+    saveState(state);
+    try {
+      localStorage.setItem(getAccountKey(XP_STORAGE_KEY), "0");
+    } catch {}
+    try {
+      localStorage.setItem(getAccountKey("completedQuests"), JSON.stringify([]));
+    } catch {}
+    localStorage.setItem(resetKey, today);
+    return true;
+  }
+
   function ensureToastEl() {
     let el = document.getElementById("aurak-toast");
     if (el) return el;
@@ -178,10 +249,17 @@
 
     const xp = Number.isFinite(totalXp) ? totalXp : 0;
     const info = getLevelInfo(xp);
+    const user = readCurrentUser();
+    const profile = readUserProfile(user?.uid);
+    const stats = (user && user.stats) || (profile && profile.stats) || null;
+    const avg = averageStat(stats);
+    const rank = rankFromAverage(avg);
+    const sideSub = document.getElementById("sideSub");
 
     dashLevel.textContent = `LVL ${info.level}`;
     dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
     dashXpFill.style.width = `${Math.round(info.progress * 100)}%`;
+    if (sideSub) sideSub.textContent = `Rank ${rank}`;
   }
 
   const state = loadState();
@@ -189,6 +267,8 @@
   state.activeFilter = state.activeFilter || "all";
   state.showCompleted =
     typeof state.showCompleted === "boolean" ? state.showCompleted : true;
+
+  ensureDailyQuestReset(state);
 
   cards.forEach((card, i) => {
     const qid = getCardId(card, i);

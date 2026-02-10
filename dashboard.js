@@ -11,6 +11,17 @@ function getAccountStorageKey(baseKey) {
   return getStorageKey(baseKey);
 }
 
+function readUserProfile(uid) {
+  if (!uid) return null;
+  const key = getStorageKey("aurak_user_profile", uid);
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function getLevelInfo(totalXp) {
   let level = 1;
   let req = BASE_XP_PER_LEVEL;
@@ -27,18 +38,56 @@ function getLevelInfo(totalXp) {
   return { level, req, progress, remaining };
 }
 
+function averageStat(stats) {
+  if (!stats) return null;
+  const keys = [
+    "Physical",
+    "Intellectual",
+    "Mental",
+    "Confidence",
+    "Discipline",
+  ];
+  const vals = keys
+    .map((k) => Number(stats[k]))
+    .filter((v) => Number.isFinite(v));
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function rankFromAverage(avg) {
+  if (!Number.isFinite(avg)) return "—";
+  if (avg >= 90) return "S";
+  if (avg >= 80) return "A";
+  if (avg >= 60) return "B";
+  if (avg >= 40) return "C";
+  if (avg >= 20) return "D";
+  return "E";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const user = getCurrentUser();
 
   if (!user) return;
 
+  if (!user.stats) {
+    const profile = readUserProfile(user.uid);
+    if (profile?.stats) {
+      user.stats = profile.stats;
+      localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+    }
+  }
+
+  ensureDailyQuestReset();
+
   const displayName = user.displayName || user.name || user.username || "User";
 
   const dashName = document.getElementById("dashName");
   const sideUser = document.getElementById("sideUser");
+  const sideSub = document.getElementById("sideSub");
 
   if (dashName) dashName.textContent = displayName;
   if (sideUser) sideUser.textContent = displayName;
+  if (sideSub) sideSub.textContent = "Rank —";
 
   let completedQuests = JSON.parse(
     localStorage.getItem(getAccountStorageKey("completedQuests")),
@@ -124,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadAndRenderPreviewTasks() {
+  ensureDailyQuestReset();
   if (
     typeof HabiticaAPI === "undefined" ||
     typeof HABITICA_CONFIG === "undefined"
@@ -203,6 +253,7 @@ async function loadAndRenderPreviewTasks() {
 }
 
 function completePreviewQuest(checkEl) {
+  ensureDailyQuestReset();
   const row = checkEl.closest(".quest-row");
   if (!row) return;
 
@@ -273,19 +324,27 @@ function updateXP() {
   }
 
   const info = getLevelInfo(totalXP);
+  const user = getCurrentUser();
+  const profile = readUserProfile(user?.uid);
+  const stats = (user && user.stats) || (profile && profile.stats) || null;
+  const avg = averageStat(stats);
+  const rank = rankFromAverage(avg);
   const dashLevel = document.getElementById("dashLevel");
   const dashXpText = document.getElementById("dashXpText");
   const dashXpFill = document.getElementById("dashXpFill");
   const tileXpGained = document.getElementById("tileXpGained");
+  const sideSub = document.getElementById("sideSub");
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
   if (dashXpFill)
     dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
   if (tileXpGained) tileXpGained.textContent = totalXP;
+  if (sideSub) sideSub.textContent = `Rank ${rank}`;
 }
 
 function updateGraph() {
+  ensureDailyQuestReset();
   const dayOfWeek = new Date().getDay();
   const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
@@ -349,6 +408,7 @@ function updateGraph() {
 }
 
 window.completeQuest = function (checkEl) {
+  ensureDailyQuestReset();
   const row = checkEl.closest(".quest-row");
   if (!row) return;
   const nowComplete = row.classList.toggle("is-complete");
@@ -429,6 +489,31 @@ function getISODate(d = new Date()) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function ensureDailyQuestReset() {
+  const today = getISODate();
+  const resetKey = getAccountStorageKey("dailyQuestResetDate");
+  const lastReset = localStorage.getItem(resetKey);
+  if (lastReset === today) return false;
+
+  try {
+    const raw = localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY));
+    const state = raw ? JSON.parse(raw) : {};
+    state.completed = {};
+    localStorage.setItem(
+      getAccountStorageKey(QUEST_STORAGE_KEY),
+      JSON.stringify(state),
+    );
+  } catch {}
+
+  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), "0");
+  localStorage.setItem(
+    getAccountStorageKey("completedQuests"),
+    JSON.stringify([]),
+  );
+  localStorage.setItem(resetKey, today);
+  return true;
 }
 
 function getJournalStore() {

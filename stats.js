@@ -1,4 +1,4 @@
-import { mergeUserDoc } from "./userStore.js";
+import { mergeUserDoc, getStorageKey } from "./userStore.js";
 
 function safeParse(key) {
   try {
@@ -7,6 +7,12 @@ function safeParse(key) {
   } catch {
     return null;
   }
+}
+
+function readUserProfile(uid) {
+  if (!uid) return null;
+  const key = getStorageKey("aurak_user_profile", uid);
+  return safeParse(key);
 }
 
 function clamp(n, min, max) {
@@ -37,6 +43,10 @@ function computeLevel(xpNow) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = safeParse("aurakCurrentUser");
+  const profile = readUserProfile(user?.uid);
+  if (user && !user.stats && profile?.stats) {
+    user.stats = profile.stats;
+  }
 
   const statsWrap = document.getElementById("stats");
   const summaryText = document.getElementById("summaryText");
@@ -74,7 +84,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     updatedAt: new Date().toISOString(),
   };
 
+  const dashboardKey = getStorageKey("aurakDashboard", user.uid);
   localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
+  localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
   const updatedUser = { ...user, dashboard: dashboardPayload };
   localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
 
@@ -160,6 +172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {
       localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
+      localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
       localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
     });
   }

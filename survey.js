@@ -1,5 +1,5 @@
 // survey.js
-import { mergeUserDoc } from "./userStore.js";
+import { mergeUserDoc, getStorageKey } from "./userStore.js";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -140,6 +140,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const updatedLocal = { ...user, survey: surveyData, stats };
     setCurrentUser(updatedLocal);
+    const profileKey = getStorageKey("aurak_user_profile", user.uid);
+    localStorage.setItem(
+      profileKey,
+      JSON.stringify({
+        stats,
+        survey: surveyData,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
 
     window.location.href = "loading.html";
 

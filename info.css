@@ -23,6 +23,12 @@
   border-color: color-mix(in srgb, var(--stroke2) 70%, transparent);
 }
 
+.avg-stat {
+  margin-top: 10px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
 .dopamine-panel {
   grid-column: 1 / 2;
 }

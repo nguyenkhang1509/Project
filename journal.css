@@ -118,6 +118,13 @@
   padding: 14px 14px;
 }
 
+.jc-actionsRow .btn.is-disabled,
+.jc-actionsRow .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .jc-metaRow {
   margin-top: 12px;
   display: flex;

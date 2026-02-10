@@ -24,6 +24,12 @@ function safeParse(key) {
   }
 }
 
+function readUserProfile(uid) {
+  if (!uid) return null;
+  const key = `aurak_user_profile_${uid}`;
+  return safeParse(key);
+}
+
 function clearErrors() {
   emailError.textContent = "";
   passwordError.textContent = "";
@@ -74,9 +80,8 @@ if (form) {
 
       await fbUser.reload();
 
-      const existingUser = safeParse("aurakCurrentUser");
-
       const displayName = fbUser.displayName || "Player";
+      const profile = readUserProfile(fbUser.uid);
 
       const currentUser = {
         uid: fbUser.uid,
@@ -84,9 +89,8 @@ if (form) {
         name: displayName,
         displayName: displayName,
         lastLoginAt: new Date().toISOString(),
-        ...(existingUser && existingUser.stats
-          ? { stats: existingUser.stats }
-          : {}),
+        ...(profile?.stats ? { stats: profile.stats } : {}),
+        ...(profile?.survey ? { survey: profile.survey } : {}),
       };
 
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));

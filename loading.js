@@ -7,6 +7,12 @@ function safeParse(key) {
   }
 }
 
+function readUserProfile(uid) {
+  if (!uid) return null;
+  const key = `aurak_user_profile_${uid}`;
+  return safeParse(key);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const subtitle = document.getElementById("subtitle");
   const welcomeText = document.getElementById("welcomeText");
@@ -14,6 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusText = document.getElementById("statusText");
 
   const user = safeParse("aurakCurrentUser");
+  const profile = readUserProfile(user?.uid);
+  if (user && !user.stats && profile?.stats) {
+    user.stats = profile.stats;
+    localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+  }
 
   if (!user || !user.stats) {
     if (subtitle) subtitle.textContent = "No survey data found. Returning…";

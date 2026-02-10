@@ -83,6 +83,42 @@ function getLevelInfo(totalXp) {
   return { level, req, progress, remaining };
 }
 
+function readUserProfile(uid) {
+  if (!uid) return null;
+  try {
+    const raw = localStorage.getItem(`aurak_user_profile_${uid}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function averageStat(stats) {
+  if (!stats) return null;
+  const keys = [
+    "Physical",
+    "Intellectual",
+    "Mental",
+    "Confidence",
+    "Discipline",
+  ];
+  const vals = keys
+    .map((k) => Number(stats[k]))
+    .filter((v) => Number.isFinite(v));
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function rankFromAverage(avg) {
+  if (!Number.isFinite(avg)) return "—";
+  if (avg >= 90) return "S";
+  if (avg >= 80) return "A";
+  if (avg >= 60) return "B";
+  if (avg >= 40) return "C";
+  if (avg >= 20) return "D";
+  return "E";
+}
+
 function setActiveSidebar() {
   const links = Array.from(document.querySelectorAll(".side-nav .side-link"));
   links.forEach((a) => a.classList.remove("active"));
@@ -111,16 +147,19 @@ function hydrateIdentity() {
   if (sideUser) sideUser.textContent = display;
   if (dashName) dashName.textContent = display;
 
-  const sub = user?.email || user?.uid || "—";
-  if (sideSub) sideSub.textContent = sub;
 
   const xpKey = getStorageKey(XP_KEY_BASE);
   const totalXp = Number(readJSON(xpKey, 0)) || 0;
   const lvl = getLevelInfo(totalXp);
+  const profile = readUserProfile(user?.uid);
+  const stats = (user && user.stats) || (profile && profile.stats) || null;
+  const avg = averageStat(stats);
+  const rank = rankFromAverage(avg);
 
   if (dashLevel) dashLevel.textContent = `Level ${lvl.level}`;
   if (dashXpText) dashXpText.textContent = `${lvl.remaining} / ${lvl.req} XP`;
   if (dashXpFill) dashXpFill.style.width = `${Math.round(lvl.progress * 100)}%`;
+  if (sideSub) sideSub.textContent = `Rank ${rank}`;
 }
 
 function moodWord(m) {
@@ -258,6 +297,14 @@ function setSnapshot(todayEntry) {
   hint.textContent = "Generated from today’s check-in.";
 }
 
+function setCheckInButtonState(isDone) {
+  const btn = document.getElementById("startCheckIn");
+  if (!btn) return;
+  btn.disabled = !!isDone;
+  btn.classList.toggle("is-disabled", !!isDone);
+  btn.textContent = isDone ? "Check-In Completed" : "Start Check-In";
+}
+
 function renderRecent() {
   const entries = readEntries();
   const streak = computeStreak(entries);
@@ -275,7 +322,7 @@ function renderRecent() {
     lastEntry.textContent = entries[0]?.date
       ? formatShortDate(entries[0].date)
       : "—";
-
+  setCheckInButtonState(!!todayEntry);
   setTodayContext(todayEntry);
   setSnapshot(todayEntry);
 
@@ -875,3 +922,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRecent();
   bindCheckIn();
 });
+
+
