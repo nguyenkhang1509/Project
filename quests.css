@@ -364,6 +364,39 @@ input:focus-visible {
   gap: 14px;
 }
 
+.qsection {
+  display: grid;
+  gap: 12px;
+}
+
+.qsection-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.qsection-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.qsection-hint {
+  margin: 0;
+  color: color-mix(in srgb, var(--muted) 92%, transparent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.qsection-list {
+  display: grid;
+  gap: 14px;
+}
+
 .qcard {
   display: grid;
   grid-template-columns: 40px 1fr 140px;
@@ -577,5 +610,10 @@ input:focus-visible {
   }
   .main {
     padding: 18px 16px 22px;
+  }
+  .qsection-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 }

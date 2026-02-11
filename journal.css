@@ -44,9 +44,7 @@
   margin-top: 14px;
   display: grid;
   grid-template-columns: 1.12fr 0.88fr;
-  grid-template-areas:
-    "hero side"
-    "recent side";
+  grid-template-rows: min-content min-content;
   gap: 14px;
   align-items: start;
 }
@@ -54,15 +52,13 @@
 @media (max-width: 1080px) {
   .jc-shell {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "hero"
-      "side"
-      "recent";
+    grid-template-rows: auto;
   }
 }
 
 .jc-hero {
-  grid-area: hero;
+  grid-column: 1;
+  grid-row: 1;
   padding: 18px;
   overflow: hidden;
   position: relative;
@@ -70,16 +66,18 @@
 }
 
 .jc-side {
-  grid-area: side;
+  grid-column: 2;
+  grid-row: 1 / span 2;
   padding: 18px;
   overflow: hidden;
   position: relative;
 }
 
 .jc-recent {
-  grid-area: recent;
+  grid-column: 1;
+  grid-row: 2;
   padding: 18px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .jc-heroLabel {
@@ -513,9 +511,16 @@
 
 .jc-recentHead {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.jc-recentIntro {
+  display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 10px;
 }
 
 .jc-recentTitle {
@@ -528,10 +533,64 @@
   font-size: 12px;
 }
 
+.jc-recentToggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in srgb, var(--card2) 56%, transparent);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    filter 0.18s ease;
+}
+
+.jc-recentToggle:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--stroke2) 80%, transparent);
+  filter: brightness(1.04);
+}
+
+.jc-recentToggle i {
+  transition: transform 0.2s ease;
+}
+
 .jc-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
+  max-height: 3000px;
+  opacity: 1;
+  transition: max-height 0.24s ease, opacity 0.18s ease;
+}
+
+.jc-recent.is-collapsed .jc-list {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.jc-recent.is-collapsed .jc-recentToggle i {
+  transform: rotate(180deg);
+}
+
+.jc-recent.is-collapsed .jc-recentHead {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1080px) {
+  .jc-hero,
+  .jc-side,
+  .jc-recent {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
 
 .jc-item {
@@ -1127,6 +1186,10 @@
 }
 
 @media (max-width: 520px) {
+  .jc-recentHead {
+    align-items: center;
+  }
+
   .jc-helpRow {
     grid-template-columns: 1fr;
   }

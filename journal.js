@@ -3,6 +3,7 @@ import { getStorageKey, getCurrentUser } from "./userStore.js";
 const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const XP_KEY_BASE = "totalXP";
 const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
+const RECENT_COLLAPSE_KEY_BASE = "aurak_journal_recent_collapsed_v1";
 
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
@@ -564,6 +565,36 @@ function writeDashboardReflection(entry) {
   writeJSON(key, payload);
 }
 
+function setRecentCollapsed(collapsed) {
+  const panel = document.querySelector(".jc-recent");
+  const toggle = document.getElementById("recentToggle");
+  if (!panel || !toggle) return;
+
+  panel.classList.toggle("is-collapsed", !!collapsed);
+  toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  toggle.setAttribute(
+    "aria-label",
+    collapsed ? "Expand recent entries" : "Collapse recent entries",
+  );
+}
+
+function initRecentToggle() {
+  const toggle = document.getElementById("recentToggle");
+  if (!toggle) return;
+
+  const prefKey = getStorageKey(RECENT_COLLAPSE_KEY_BASE);
+  const stored = readJSON(prefKey, false);
+  setRecentCollapsed(!!stored);
+
+  toggle.addEventListener("click", () => {
+    const panel = document.querySelector(".jc-recent");
+    if (!panel) return;
+    const nextCollapsed = !panel.classList.contains("is-collapsed");
+    setRecentCollapsed(nextCollapsed);
+    writeJSON(prefKey, nextCollapsed);
+  });
+}
+
 function bindCheckIn() {
   const thanksContinue = document.getElementById("thanksContinue");
   if (thanksContinue) {
@@ -919,6 +950,7 @@ function renderTrend(entries) {
 document.addEventListener("DOMContentLoaded", () => {
   setActiveSidebar();
   hydrateIdentity();
+  initRecentToggle();
   renderRecent();
   bindCheckIn();
 });

@@ -279,37 +279,23 @@ function completePreviewQuest(checkEl) {
     );
   } catch {}
 
+  let xpDelta = Number(row.getAttribute("data-xp"));
+  if (!Number.isFinite(xpDelta)) {
+    const expEl = row.querySelector(".reward.exp");
+    const txt = expEl?.textContent || "";
+    const m = txt.match(/\+(\d+)/);
+    xpDelta = m ? Number(m[1]) : 0;
+  }
+  if (!Number.isFinite(xpDelta)) xpDelta = 0;
+
   let totalXP = 0;
   try {
-    const state =
-      JSON.parse(
-        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
-      ) || {};
-    state.completed = state.completed || {};
-    Object.keys(state.completed).forEach((questId) => {
-      if (state.completed[questId]) {
-        const questCard = document.querySelector(`[data-qid="${questId}"]`);
-        if (questCard) {
-          const xpValue = questCard.getAttribute("data-xp");
-          if (xpValue) {
-            totalXP += Number(xpValue);
-          } else {
-            const expEl = questCard.querySelector(".reward.exp");
-            if (expEl) {
-              const txt = expEl.textContent || "";
-              const m = txt.match(/\+(\d+)/);
-              if (m) totalXP += Number(m[1]);
-            }
-          }
-        }
-      }
-    });
+    const stored = localStorage.getItem(getAccountStorageKey(XP_STORAGE_KEY));
+    totalXP = Math.max(0, Number(stored) || 0);
   } catch {}
+  totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
-  localStorage.setItem(
-    getAccountStorageKey(XP_STORAGE_KEY),
-    totalXP.toString(),
-  );
+  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
   updateGraph();
   updateXP();
 }
@@ -449,37 +435,23 @@ window.completeQuest = function (checkEl) {
     );
   }
 
+  let xpDelta = Number(row.getAttribute("data-xp"));
+  if (!Number.isFinite(xpDelta)) {
+    const expEl = row.querySelector(".reward.exp");
+    const txt = expEl?.textContent || "";
+    const m = txt.match(/\+(\d+)/);
+    xpDelta = m ? Number(m[1]) : 0;
+  }
+  if (!Number.isFinite(xpDelta)) xpDelta = 0;
+
   let totalXP = 0;
   try {
-    const state =
-      JSON.parse(
-        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
-      ) || {};
-    state.completed = state.completed || {};
-    Object.keys(state.completed).forEach((qid) => {
-      if (state.completed[qid]) {
-        const card = document.querySelector(`[data-qid="${qid}"]`);
-        if (card) {
-          const xpValue = card.getAttribute("data-xp");
-          if (xpValue) {
-            totalXP += Number(xpValue);
-          } else {
-            const expEl = card.querySelector(".reward.exp");
-            if (expEl) {
-              const txt = expEl.textContent || "";
-              const m = txt.match(/\+(\d+)/);
-              if (m) totalXP += Number(m[1]);
-            }
-          }
-        }
-      }
-    });
+    const stored = localStorage.getItem(getAccountStorageKey(XP_STORAGE_KEY));
+    totalXP = Math.max(0, Number(stored) || 0);
   } catch {}
+  totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
-  localStorage.setItem(
-    getAccountStorageKey(XP_STORAGE_KEY),
-    totalXP.toString(),
-  );
+  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
   updateGraph();
   updateXP();
 };
@@ -507,7 +479,6 @@ function ensureDailyQuestReset() {
     );
   } catch {}
 
-  localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), "0");
   localStorage.setItem(
     getAccountStorageKey("completedQuests"),
     JSON.stringify([]),

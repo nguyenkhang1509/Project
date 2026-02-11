@@ -268,8 +268,20 @@
 
           <article class="panel jc-recent" aria-label="Recent Entries">
             <div class="jc-recentHead">
-              <div class="jc-recentTitle">Recent</div>
-              <div class="jc-recentSub">Your last 7 check-ins show here.</div>
+              <div class="jc-recentIntro">
+                <div class="jc-recentTitle">Recent</div>
+                <div class="jc-recentSub">Your last 7 check-ins show here.</div>
+              </div>
+              <button
+                class="jc-recentToggle"
+                id="recentToggle"
+                type="button"
+                aria-expanded="true"
+                aria-controls="recentList"
+                aria-label="Collapse recent entries"
+              >
+                <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+              </button>
             </div>
             <div class="jc-list" id="recentList"></div>
           </article>

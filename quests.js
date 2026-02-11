@@ -7,6 +7,13 @@
 
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
+  const DAY_SLOTS = [
+    { key: "morning", title: "Morning", hint: "Protect early focus." },
+    { key: "noon", title: "Noon", hint: "Sustain momentum." },
+    { key: "afternoon", title: "Afternoon", hint: "Deep work and execution." },
+    { key: "evening", title: "Evening", hint: "Reset and recover." },
+    { key: "night", title: "Night", hint: "Wind down clean." },
+  ];
 
  
   function getAccountKey(baseKey) {
@@ -123,6 +130,38 @@
     return card.getAttribute("data-qid") || `${type}__${safeId(name)}`;
   }
 
+  function getSlotByIndex(index) {
+    return DAY_SLOTS[index % DAY_SLOTS.length]?.key || "morning";
+  }
+
+  function buildSectionShell() {
+    if (!questList) return;
+    questList.innerHTML = "";
+    DAY_SLOTS.forEach((slot) => {
+      const section = document.createElement("section");
+      section.className = "qsection";
+      section.setAttribute("data-slot", slot.key);
+      section.innerHTML = `
+        <header class="qsection-head">
+          <h3 class="qsection-title">${slot.title}</h3>
+          <p class="qsection-hint">${slot.hint}</p>
+        </header>
+        <div class="qsection-list" data-slot-list="${slot.key}"></div>
+      `;
+      questList.appendChild(section);
+    });
+  }
+
+  function renderCardsBySlot() {
+    buildSectionShell();
+    cards.forEach((card, index) => {
+      const slot = card.dataset.slot || getSlotByIndex(index);
+      card.dataset.slot = slot;
+      const bucket = questList.querySelector(`[data-slot-list="${slot}"]`);
+      if (bucket) bucket.appendChild(card);
+    });
+  }
+
   function parseExp(card) {
     const expEl = card.querySelector(".reward.exp");
     if (!expEl) return 0;
@@ -160,9 +199,6 @@
 
     state.completed = {};
     saveState(state);
-    try {
-      localStorage.setItem(getAccountKey(XP_STORAGE_KEY), "0");
-    } catch {}
     try {
       localStorage.setItem(getAccountKey("completedQuests"), JSON.stringify([]));
     } catch {}
@@ -304,29 +340,30 @@
   function loadXpTotal() {
     try {
       const stored = localStorage.getItem(getAccountKey(XP_STORAGE_KEY));
-      return stored ? Math.max(0, Number(stored) || 0) : 0;
+      if (stored === null) return null;
+      return Math.max(0, Number(stored) || 0);
     } catch {
-      return 0;
+      return null;
     }
   }
 
   function updateCountsRemainingOnly() {
     const countBy = {
       all: 0,
-      physical: 0,
-      intellectual: 0,
-      discipline: 0,
-      confidence: 0,
-      mental: 0,
+      morning: 0,
+      noon: 0,
+      afternoon: 0,
+      evening: 0,
+      night: 0,
     };
 
     cards.forEach((card) => {
-      const type = card.dataset.type;
+      const slot = card.dataset.slot || "morning";
       const isDone = card.dataset.completed === "true";
       if (isDone) return;
 
       countBy.all += 1;
-      if (countBy[type] !== undefined) countBy[type] += 1;
+      if (countBy[slot] !== undefined) countBy[slot] += 1;
     });
 
     document.querySelectorAll(".qcount").forEach((el) => {
@@ -342,11 +379,18 @@
     const includeDone = showCompleted.checked;
 
     cards.forEach((card) => {
-      const type = card.dataset.type;
+      const slot = card.dataset.slot || "morning";
       const isDone = card.dataset.completed === "true";
-      const matchType = filter === "all" ? true : type === filter;
+      const matchType = filter === "all" ? true : slot === filter;
       const matchDone = includeDone ? true : !isDone;
       card.style.display = matchType && matchDone ? "" : "none";
+    });
+
+    document.querySelectorAll(".qsection").forEach((section) => {
+      const hasVisibleCards = Array.from(
+        section.querySelectorAll(".qcard"),
+      ).some((card) => card.style.display !== "none");
+      section.style.display = hasVisibleCards ? "" : "none";
     });
 
     updateCountsRemainingOnly();
@@ -403,7 +447,8 @@
     });
   });
 
-  let xpTotal = loadXpTotal() || recomputeXpTotal();
+  let xpTotal = loadXpTotal();
+  if (!Number.isFinite(xpTotal)) xpTotal = recomputeXpTotal();
   renderXp(xpTotal);
   persistXpTotal(xpTotal);
 
@@ -426,15 +471,17 @@
 
     saveState(state);
 
-    const before = xpTotal;
-    xpTotal = recomputeXpTotal();
+    const xpDelta = parseExp(card);
+    const signedDelta = makeDone ? xpDelta : -xpDelta;
+    xpTotal = Math.max(0, xpTotal + signedDelta);
     persistXpTotal(xpTotal);
     renderXp(xpTotal);
 
-    const delta = xpTotal - before;
-    if (delta !== 0) {
+    if (signedDelta !== 0) {
       toast(
-        delta > 0 ? `Quest completed +${delta} XP` : `Quest undone ${delta} XP`,
+        signedDelta > 0
+          ? `Quest completed +${signedDelta} XP`
+          : `Quest undone ${signedDelta} XP`,
       );
     } else {
       toast(makeDone ? "Quest completed" : "Quest marked incomplete");
@@ -487,18 +534,17 @@
         return;
       }
 
-      questList.innerHTML = "";
       cards = [];
 
-      challenges.forEach((challenge) => {
+      challenges.forEach((challenge, index) => {
         const cardHTML = api.generateCardHTML(challenge, challenge.category);
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = cardHTML;
         const card = tempDiv.firstElementChild;
-        questList.appendChild(card);
 
         const qid = challenge.id;
         card.setAttribute("data-qid", qid);
+        card.dataset.slot = getSlotByIndex(index);
 
         const isDone = !!state.completed[qid];
         card.dataset.completed = isDone ? "true" : "false";
@@ -514,8 +560,11 @@
         cards.push(card);
       });
 
+      renderCardsBySlot();
+
       showCompleted.checked = !!state.showCompleted;
-      xpTotal = recomputeXpTotal();
+      const storedXp = loadXpTotal();
+      xpTotal = Number.isFinite(storedXp) ? storedXp : recomputeXpTotal();
       persistXpTotal(xpTotal);
       renderXp(xpTotal);
       applyFilter();
