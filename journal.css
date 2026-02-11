@@ -1,4 +1,3 @@
-
 .journal-page {
   position: relative;
   overflow: hidden;
@@ -567,7 +566,9 @@
   overflow: hidden;
   max-height: 3000px;
   opacity: 1;
-  transition: max-height 0.24s ease, opacity 0.18s ease;
+  transition:
+    max-height 0.24s ease,
+    opacity 0.18s ease;
 }
 
 .jc-recent.is-collapsed .jc-list {

@@ -1,7 +1,6 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("pass");
@@ -73,7 +72,7 @@ if (form) {
       const cred = await signInWithEmailAndPassword(
         auth,
         emailValue,
-        passValue
+        passValue,
       );
 
       const fbUser = cred.user;

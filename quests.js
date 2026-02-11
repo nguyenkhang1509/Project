@@ -15,7 +15,6 @@
     { key: "night", title: "Night", hint: "Wind down clean." },
   ];
 
- 
   function getAccountKey(baseKey) {
     try {
       const raw = localStorage.getItem("aurakCurrentUser");
@@ -84,13 +83,13 @@
   const showCompleted = document.getElementById("showCompleted");
   const questList = document.getElementById("questList");
 
-  
   function displayUsername() {
     try {
       const raw = localStorage.getItem("aurakCurrentUser");
       const user = raw ? JSON.parse(raw) : null;
       if (user) {
-        const displayName = user.displayName || user.name || user.username || "User";
+        const displayName =
+          user.displayName || user.name || user.username || "User";
         const dashName = document.getElementById("dashName");
         const sideUser = document.getElementById("sideUser");
         if (dashName) dashName.textContent = displayName;
@@ -111,7 +110,6 @@
     return;
   }
 
-  
   displayUsername();
 
   let cards = Array.from(document.querySelectorAll(".qcard"));
@@ -200,7 +198,10 @@
     state.completed = {};
     saveState(state);
     try {
-      localStorage.setItem(getAccountKey("completedQuests"), JSON.stringify([]));
+      localStorage.setItem(
+        getAccountKey("completedQuests"),
+        JSON.stringify([]),
+      );
     } catch {}
     localStorage.setItem(resetKey, today);
     return true;

@@ -283,7 +283,7 @@
                   <div class="pillar-val" id="valDiscipline">—</div>
                 </div>
               </div>
-            <div class="pillar-hint avg-stat" id="avgStat">Average —</div>
+              <div class="pillar-hint avg-stat" id="avgStat">Average —</div>
             </div>
           </section>
 
@@ -524,7 +524,6 @@
         return Math.max(a, Math.min(b, n));
       }
 
-
       function getISODate(d) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -654,7 +653,6 @@
                 Discipline: 0,
               };
 
-
         const avg = averageStat(stats);
         setText("sideSub", `Rank ${rankFromAverage(avg)}`);
         if (avg !== null) {
@@ -662,7 +660,6 @@
         } else {
           setText("avgStat", "Average —");
         }
-
 
         const outerPoints = [
           { x: 100, y: 18 },
@@ -836,10 +833,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
