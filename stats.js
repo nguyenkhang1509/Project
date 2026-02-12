@@ -32,8 +32,7 @@ function computeXPFromStats(stats) {
       stats.Intellectual +
       stats.Mental +
       stats.Confidence +
-      stats.Discipline) /
-    5;
+      stats.Discipline) / 5;
 
   return clamp(Math.round(avg * 50), 0, 5000);
 }
@@ -129,13 +128,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       statsWrap.appendChild(row);
 
-      setTimeout(
-        () => {
-          const fill = row.querySelector(".bar-fill");
-          if (fill) fill.style.width = pct + "%";
-        },
-        120 + idx * 120,
-      );
+      setTimeout(() => {
+        const fill = row.querySelector(".bar-fill");
+        if (fill) fill.style.width = pct + "%";
+      }, 120 + idx * 120);
     });
   }
 
@@ -171,6 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     weaknessBox.innerHTML = `<span>${weakness[0]} : ${weakness[1]}</span>`;
     topStats.appendChild(weaknessBox);
   }
+
 
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {

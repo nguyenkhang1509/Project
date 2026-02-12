@@ -35,15 +35,13 @@ body {
 
 body {
   margin: 0;
-  font-family:
-    "Space Grotesk",
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(900px 600px at 12% 10%, var(--aquaSoft), transparent 60%),
+  background: radial-gradient(
+      900px 600px at 12% 10%,
+      var(--aquaSoft),
+      transparent 60%
+    ),
     radial-gradient(900px 600px at 88% 14%, var(--violetSoft), transparent 60%),
     linear-gradient(180deg, var(--bg), var(--bg2));
 }
@@ -96,8 +94,7 @@ input:focus-visible {
   content: "";
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       800px 180px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 55%
@@ -177,10 +174,7 @@ input:focus-visible {
   border-radius: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease,
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease,
     filter 140ms ease;
   display: inline-flex;
   align-items: center;
@@ -209,12 +203,8 @@ input:focus-visible {
 }
 
 .sidebar .side-link {
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    filter 140ms ease;
+  transition: transform 140ms ease, background 140ms ease,
+    border-color 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 }
 
 .sidebar .side-link:hover {
@@ -267,10 +257,7 @@ input:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease,
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease,
     filter 140ms ease;
 }
 
@@ -287,8 +274,7 @@ input:focus-visible {
 
 .qtab.is-active {
   border-color: color-mix(in srgb, var(--aqua) 32%, var(--stroke));
-  background:
-    radial-gradient(
+  background: radial-gradient(
       420px 120px at 20% 0%,
       color-mix(in srgb, var(--aquaSoft) 70%, transparent),
       transparent 65%
@@ -318,10 +304,7 @@ input:focus-visible {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--stroke) 70%, transparent);
   background: color-mix(in srgb, var(--card) 60%, transparent);
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease,
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease,
     filter 140ms ease;
 }
 
@@ -344,6 +327,7 @@ input:focus-visible {
   margin: 0;
 }
 
+
 .sc-ui {
   width: 22px;
   height: 22px;
@@ -362,9 +346,7 @@ input:focus-visible {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
   transform: scale(0.9);
-  transition:
-    transform 140ms ease,
-    background 140ms ease;
+  transition: transform 140ms ease, background 140ms ease;
 }
 
 #showCompleted:checked + .sc-ui::after {
@@ -423,18 +405,14 @@ input:focus-visible {
   padding: 18px;
   border-radius: var(--radius2);
   border: 1px solid var(--stroke);
-  background:
-    radial-gradient(
+  background: radial-gradient(
       900px 220px at 0% 0%,
       color-mix(in srgb, var(--aquaSoft) 70%, transparent),
       transparent 60%
     ),
     color-mix(in srgb, var(--card) 75%, transparent);
   box-shadow: var(--shadow2);
-  transition:
-    transform 140ms ease,
-    border 140ms ease,
-    filter 140ms ease;
+  transition: transform 140ms ease, border 140ms ease, filter 140ms ease;
 }
 
 .qcard:hover {
@@ -544,10 +522,7 @@ input:focus-visible {
     color-mix(in srgb, var(--card) 60%, transparent)
   );
   box-shadow: var(--shadow);
-  transition:
-    transform 140ms ease,
-    filter 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, filter 140ms ease, border 140ms ease;
 }
 
 .qbtn:hover {

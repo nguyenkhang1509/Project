@@ -15,11 +15,7 @@ export async function readUserDoc(uid) {
 
 export async function mergeUserDoc(uid, payload) {
   const ref = doc(db, "users", uid);
-  await setDoc(
-    ref,
-    { ...payload, updatedAt: serverTimestamp() },
-    { merge: true },
-  );
+  await setDoc(ref, { ...payload, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 export async function patchUserDoc(uid, payload) {
@@ -74,6 +70,7 @@ export function clearAccountData(uid) {
     localStorage.removeItem(storageKey);
   });
 }
+
 
 export function logout() {
   const user = getCurrentUser();

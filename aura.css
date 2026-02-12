@@ -55,15 +55,13 @@ body {
 
 body {
   margin: 0;
-  font-family:
-    "Space Grotesk",
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(900px 600px at 12% 10%, var(--aquaSoft), transparent 60%),
+  background: radial-gradient(
+      900px 600px at 12% 10%,
+      var(--aquaSoft),
+      transparent 60%
+    ),
     radial-gradient(900px 600px at 88% 14%, var(--violetSoft), transparent 60%),
     linear-gradient(180deg, var(--bg), var(--bg2));
 }
@@ -98,10 +96,7 @@ input:focus-visible {
   text-align: center;
   margin-right: 10px;
   font-size: 1.1rem;
-  transition:
-    transform 140ms ease,
-    filter 140ms ease,
-    opacity 140ms ease;
+  transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
 }
 
 .sidebar {
@@ -123,8 +118,7 @@ input:focus-visible {
   content: "";
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       600px 220px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 55%
@@ -170,8 +164,7 @@ input:focus-visible {
 .brand-glow {
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       520px 160px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 60%
@@ -244,10 +237,7 @@ input:focus-visible {
 
 .brand:hover {
   transform: translateY(-1px);
-  transition:
-    transform 160ms ease,
-    border 160ms ease,
-    background 160ms ease;
+  transition: transform 160ms ease, border 160ms ease, background 160ms ease;
   border-color: color-mix(in srgb, var(--aqua) 28%, var(--stroke));
 }
 
@@ -270,8 +260,7 @@ input:focus-visible {
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       circle at 30% 30%,
       rgba(34, 211, 238, 0.35),
       transparent 55%
@@ -313,10 +302,7 @@ input:focus-visible {
   border: 1px solid transparent;
   color: var(--text);
   background: color-mix(in srgb, var(--card) 70%, transparent);
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
   position: relative;
 }
 
@@ -367,10 +353,7 @@ input:focus-visible {
   border-radius: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
 }
 
 .btn-logout:hover {
@@ -404,8 +387,7 @@ input:focus-visible {
   content: "";
   position: absolute;
   inset: -2px;
-  background:
-    radial-gradient(
+  background: radial-gradient(
       800px 180px at 20% 0%,
       rgba(34, 211, 238, 0.18),
       transparent 55%
@@ -485,10 +467,7 @@ input:focus-visible {
   border-radius: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
 }
 
 .btn:hover {
@@ -635,10 +614,7 @@ input:focus-visible {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border 140ms ease;
 }
 
 #sendButton:hover {

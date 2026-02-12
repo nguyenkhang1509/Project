@@ -24,8 +24,7 @@
   function applyTheme(theme) {
     const root = document.documentElement;
     if (theme === "light") {
-      for (const [k, v] of Object.entries(LIGHT_VARS))
-        root.style.setProperty(k, v);
+      for (const [k, v] of Object.entries(LIGHT_VARS)) root.style.setProperty(k, v);
       root.dataset.theme = "light";
     } else {
       for (const k of Object.keys(LIGHT_VARS)) root.style.removeProperty(k);
