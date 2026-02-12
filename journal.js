@@ -148,7 +148,6 @@ function hydrateIdentity() {
   if (sideUser) sideUser.textContent = display;
   if (dashName) dashName.textContent = display;
 
-
   const xpKey = getStorageKey(XP_KEY_BASE);
   const totalXp = Number(readJSON(xpKey, 0)) || 0;
   const lvl = getLevelInfo(totalXp);
@@ -954,5 +953,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRecent();
   bindCheckIn();
 });
-
-

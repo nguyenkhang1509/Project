@@ -11,7 +11,6 @@ const regPassInput = document.getElementById("reg-pass");
 const regPassConfirmInput = document.getElementById("reg-pass-confirm");
 const termsCheckbox = document.getElementById("terms-checkbox");
 
-
 const nameError = document.getElementById("name-error");
 const regEmailError = document.getElementById("reg-email-error");
 const regPassError = document.getElementById("reg-pass-error");
@@ -21,7 +20,6 @@ const registerFormError = document.getElementById("register-form-error");
 
 // Nút hiện / ẩn mật khẩu khi đăng ký
 const toggleRegPassBtn = document.getElementById("toggle-reg-pass");
-
 
 function clearRegisterErrors() {
   nameError.textContent = "";
@@ -72,7 +70,6 @@ if (regForm) {
 
     let valid = true;
 
-   
     if (!nameValue) {
       nameError.textContent = "Display name is required.";
       valid = false;
@@ -81,7 +78,6 @@ if (regForm) {
       valid = false;
     }
 
-    
     if (!emailValue) {
       regEmailError.textContent = "Email is required.";
       valid = false;
@@ -127,7 +123,7 @@ if (regForm) {
       const cred = await createUserWithEmailAndPassword(
         auth,
         emailValue,
-        passValue
+        passValue,
       );
 
       await updateProfile(cred.user, { displayName: nameValue });

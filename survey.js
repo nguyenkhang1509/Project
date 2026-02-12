@@ -49,7 +49,7 @@ function calculateStats(surveyData) {
     Mental: clamp(
       Math.round(v6 * 0.4 + v2 * 0.2 + v3 * 0.2 + v8 * 0.2),
       10,
-      20
+      20,
     ),
   };
 }
