@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="profile.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraK Levelling - Profile</title>
+  </head>
+  <body>
+    <script>
+      (() => {
+        try {
+          if (localStorage.getItem("aurak_theme") === "light") {
+            const r = document.documentElement.style;
+            r.setProperty("--bg", "#f6f8ff");
+            r.setProperty("--bg2", "#eef2ff");
+            r.setProperty("--card", "rgba(2, 6, 23, 0.05)");
+            r.setProperty("--card2", "rgba(2, 6, 23, 0.08)");
+            r.setProperty("--stroke", "rgba(2, 6, 23, 0.12)");
+            r.setProperty("--stroke2", "rgba(2, 6, 23, 0.18)");
+            r.setProperty("--text", "#081022");
+            r.setProperty("--muted", "rgba(8, 16, 34, 0.62)");
+            r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.1)");
+            r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.1)");
+            r.setProperty("--shadow", "0 18px 50px rgba(2, 6, 23, 0.1)");
+            r.setProperty("--shadow2", "0 24px 70px rgba(2, 6, 23, 0.14)");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+    />
+
+    <main class="dashboard-screen" aria-label="AuraK Dashboard">
+      <aside class="sidebar" aria-label="AuraK Sidebar">
+        <div class="sidebar-top">
+          <a
+            class="brand brand-link"
+            href="dashboard.html"
+            aria-label="Go to Dashboard"
+          >
+            <span class="brand-glow" aria-hidden="true"></span>
+
+            <span class="brand-logoWrap" aria-hidden="true">
+              <img
+                class="brand-logo"
+                src="https://api.sherbert.cimpress.io/v2/assets/re9hUY37Gzuv1nIqI83XS~200?signature=0aea1d3748e733558e0db947596d340cc66d53ae"
+                alt=""
+                width="46"
+                height="46"
+              />
+            </span>
+
+            <span class="brand-text">
+              <span class="brand-name">AURAK</span>
+              <span class="brand-sub">Levelling System</span>
+            </span>
+
+            <span class="brand-chip" aria-hidden="true">ONLINE</span>
+          </a>
+
+          <div class="side-card side-card-top" aria-label="Account Card">
+            <div class="side-avatar" aria-hidden="true"></div>
+            <div class="side-meta">
+              <div class="side-user" id="sideUser">—</div>
+              <div class="side-sub" id="sideSub">—</div>
+            </div>
+          </div>
+
+          <nav class="side-nav" aria-label="Sidebar Navigation">
+            <a class="side-link" href="dashboard.html">
+              <i class="fa fa-chart-line side-fa"></i>
+              Dashboard
+            </a>
+
+            <a class="side-link active" href="profile.html">
+              <i class="fa fa-user side-fa"></i>
+              Profile
+            </a>
+
+            <a class="side-link" href="info.html">
+              <i class="fa-solid fa-chart-simple side-fa"></i>
+              Stats
+            </a>
+
+            <a class="side-link" href="quests.html">
+              <i class="fa-solid fa-list-check"></i>
+              Quest
+            </a>
+
+            <a class="side-link" href="aura.html">
+              <i class="fa-solid fa-comment"></i>
+              Aura System
+            </a>
+
+            <a class="side-link" href="journal.html">
+              <i class="fa-solid fa-book"></i>
+              Journal
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <p class="sidebar-tip">
+            Tip: Keep streaks small but consistent. Consistency compounds.
+          </p>
+
+          <a class="btn-logout" href="login.html">Logout</a>
+        </div>
+      </aside>
+
+      <section class="main" aria-label="Dashboard Main">
+        <header class="topbar" aria-label="Top Bar">
+          <div class="top-left" aria-label="Profile & XP">
+            <div class="profile-name" id="dashName">—</div>
+
+            <div class="profile-xp">
+              <span class="profile-level" id="dashLevel">—</span>
+              <span class="profile-xptext" id="dashXpText">—</span>
+            </div>
+
+            <div class="xpbar" aria-label="XP Progress">
+              <div class="xpbar-bg">
+                <div class="xpbar-fill" id="dashXpFill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="top-actions" aria-label="Actions">
+            <a class="btn primary" href="quests.html">Start Challenge</a>
+          </div>
+        </header>
+      </section>
+    </main>
+  </body>
+  <script src="profile.js"></script>
+</html>
