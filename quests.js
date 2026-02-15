@@ -545,7 +545,7 @@
 
         const qid = challenge.id;
         card.setAttribute("data-qid", qid);
-        card.dataset.slot = getSlotByIndex(index);
+        card.dataset.slot = challenge.slot || getSlotByIndex(index);
 
         const isDone = !!state.completed[qid];
         card.dataset.completed = isDone ? "true" : "false";

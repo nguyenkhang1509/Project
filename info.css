@@ -35,7 +35,6 @@
 
 .panel[aria-label="Achievements"] {
   grid-column: 2 / 3;
-  margin-top: -50px;
 }
 
 .streak-pill {

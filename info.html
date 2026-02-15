@@ -752,6 +752,162 @@
         renderDopamine();
       }
 
+      function readQuestCompletedState() {
+        try {
+          const raw = localStorage.getItem(getAccountKey("aurak_quests_v4"));
+          const parsed = raw ? JSON.parse(raw) : {};
+          if (!parsed || typeof parsed !== "object") return {};
+          const completed = parsed.completed;
+          if (!completed || typeof completed !== "object") return {};
+          return completed;
+        } catch {
+          return {};
+        }
+      }
+
+      function calcSlotDopamine(completed, rule) {
+        let totalWeight = 0;
+        let doneWeight = 0;
+
+        rule.ids.forEach((id) => {
+          const w = Number(rule.weights[id]) || 1;
+          totalWeight += w;
+          if (completed[id]) doneWeight += w;
+        });
+
+        if (totalWeight <= 0) return 50;
+
+        const ratio = doneWeight / totalWeight;
+        let level = rule.base + (1 - ratio) * rule.spike - ratio * rule.drop;
+
+        if (rule.triggerId && !completed[rule.triggerId]) {
+          level += rule.triggerBoost;
+        }
+
+        return clamp(level, 0, 100);
+      }
+
+      function interpolateAnchors(anchors, xHour) {
+        if (!anchors.length) return 50;
+        if (xHour <= anchors[0].h) return anchors[0].v;
+        if (xHour >= anchors[anchors.length - 1].h) return anchors[anchors.length - 1].v;
+
+        for (let i = 1; i < anchors.length; i++) {
+          const a = anchors[i - 1];
+          const b = anchors[i];
+          if (xHour <= b.h) {
+            const t = (xHour - a.h) / (b.h - a.h);
+            return a.v + (b.v - a.v) * t;
+          }
+        }
+
+        return anchors[anchors.length - 1].v;
+      }
+
+      function buildDopamineCurve(completed) {
+        const rules = {
+          morning: {
+            ids: ["system-1", "system-2", "system-3", "system-5", "system-6"],
+            weights: {
+              "system-1": 1,
+              "system-2": 1,
+              "system-3": 2,
+              "system-5": 1,
+              "system-6": 1,
+            },
+            base: 50,
+            spike: 30,
+            drop: 22,
+            triggerId: "system-3",
+            triggerBoost: 14,
+          },
+          noon: {
+            ids: ["system-25", "system-10", "system-11"],
+            weights: {
+              "system-25": 1,
+              "system-10": 1,
+              "system-11": 1,
+            },
+            base: 55,
+            spike: 24,
+            drop: 14,
+            triggerId: "system-11",
+            triggerBoost: 8,
+          },
+          afternoon: {
+            ids: ["system-17", "system-18"],
+            weights: {
+              "system-17": 2,
+              "system-18": 1,
+            },
+            base: 60,
+            spike: 24,
+            drop: 16,
+            triggerId: "system-17",
+            triggerBoost: 12,
+          },
+          evening: {
+            ids: ["system-22"],
+            weights: {
+              "system-22": 1,
+            },
+            base: 52,
+            spike: 16,
+            drop: 10,
+            triggerId: "system-22",
+            triggerBoost: 8,
+          },
+        };
+
+        const morning = calcSlotDopamine(completed, rules.morning);
+        const noon = calcSlotDopamine(completed, rules.noon);
+        const afternoon = calcSlotDopamine(completed, rules.afternoon);
+        const evening = calcSlotDopamine(completed, rules.evening);
+
+        const hasNoonWork =
+          !!completed["system-9"] ||
+          !!completed["system-13"] ||
+          !!completed["system-14"];
+        const hasAfternoonWork =
+          !!completed["system-16"] || !!completed["system-20"];
+        const hasTraining = !!completed["system-15"] || !!completed["system-19"];
+
+        const noonStabilized = clamp(
+          hasNoonWork ? noon * 0.45 + 50 * 0.55 : noon + 8,
+          0,
+          100,
+        );
+        const afternoonStabilized = clamp(
+          hasAfternoonWork || hasTraining
+            ? afternoon * 0.4 + 50 * 0.6
+            : afternoon + 10,
+          0,
+          100,
+        );
+
+        // Force low early-morning start, then let completed/missed DPL tasks shape the rise.
+        const morningStart = 30;
+        const morningCore = clamp(morning, 0, 100);
+
+        const anchors = [
+          { h: 6, v: morningStart },
+          { h: 9, v: morningCore },
+          { h: 12, v: noonStabilized },
+          { h: 15, v: noonStabilized * 0.25 + afternoonStabilized * 0.75 },
+          { h: 18, v: afternoonStabilized },
+          { h: 21, v: evening },
+          { h: 24, v: clamp(evening - 8, 0, 100) },
+        ];
+
+        const n = 25;
+        const out = [];
+        for (let i = 0; i < n; i++) {
+          const hour = 6 + (18 * i) / (n - 1);
+          out.push(clamp(interpolateAnchors(anchors, hour), 0, 100));
+        }
+        return out;
+      }
+
       function renderDopamine() {
         const svg = document.querySelector(".dopamine-graph-svg");
         if (!svg) return;
@@ -768,25 +924,8 @@
           plot.appendChild(path);
         }
 
-        const today = new Date();
-        const iso = getISODate(today);
-
-        const moodRaw = localStorage.getItem("aurak_mood_today");
-        const mood = moodRaw ? clamp(parseInt(moodRaw, 10) || 0, 0, 100) : 50;
-
-        const journal = (() => {
-          try {
-            return JSON.parse(localStorage.getItem("aurak_journal_v1") || "{}");
-          } catch {
-            return {};
-          }
-        })();
-
-        const entry = journal[iso] || {};
-        const baseline =
-          typeof entry.baseline === "number" ? entry.baseline : 45;
-
-        const curve = buildDopamineCurve({ baseline, mood });
+        const completed = readQuestCompletedState();
+        const curve = buildDopamineCurve(completed);
 
         const xL = 96;
         const xR = 700;
@@ -802,23 +941,25 @@
 
         const d = pts.length ? "M" + pts.join(" L") : "";
         path.setAttribute("d", d);
-      }
 
-      function buildDopamineCurve({ baseline, mood }) {
-        const out = [];
-        const n = 25;
-        const moodBoost = (mood - 50) * 0.25;
-
-        for (let i = 0; i < n; i++) {
-          const t = i / (n - 1);
-          const peak = Math.exp(-Math.pow((t - 0.45) / 0.18, 2)) * 35;
-          const eveningDip = Math.exp(-Math.pow((t - 0.85) / 0.12, 2)) * -18;
-          const wave = Math.sin(t * Math.PI * 2) * 6;
-          const val = baseline + moodBoost + peak + eveningDip + wave;
-          out.push(clamp(val, 0, 100));
+        const tracked = [
+          "system-1",
+          "system-2",
+          "system-3",
+          "system-5",
+          "system-6",
+          "system-25",
+          "system-10",
+          "system-11",
+          "system-17",
+          "system-18",
+          "system-22",
+        ];
+        const done = tracked.filter((id) => !!completed[id]).length;
+        const note = document.querySelector(".dopamine-panel .panel-note");
+        if (note) {
+          note.textContent = `DPL complete ${done}/${tracked.length}. Lower line = better control.`;
         }
-
-        return out;
       }
 
       document.addEventListener("DOMContentLoaded", render);
@@ -826,7 +967,8 @@
       window.addEventListener("storage", (e) => {
         if (
           e.key === getAccountKey("completedQuests") ||
-          e.key === getAccountKey(DAILY_DONE_KEY)
+          e.key === getAccountKey(DAILY_DONE_KEY) ||
+          e.key === getAccountKey("aurak_quests_v4")
         )
           render();
       });

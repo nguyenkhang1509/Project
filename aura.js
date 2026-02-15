@@ -60,7 +60,8 @@ function hydrateIdentity() {
   const user = getCurrentUser();
   if (!user) return;
 
-  const displayName = user.displayName || user.name || user.username || "User";
+  const displayName =
+    user.displayName || user.name || user.username || "User";
 
   const sideUser = document.getElementById("sideUser");
   const sideSub = document.getElementById("sideSub");
