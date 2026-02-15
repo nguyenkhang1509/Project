@@ -2,6 +2,9 @@ import { getStorageKey, getCurrentUser } from "./userStore.js";
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
+const TASK_HISTORY_KEY = "dailyTaskHistory";
+const JOURNAL_KEY_BASE = "aurak_journal_v1";
+const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 
@@ -52,6 +55,69 @@ function averageStat(stats) {
     .filter((v) => Number.isFinite(v));
   if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function readTaskHistoryMap() {
+  try {
+    const raw = localStorage.getItem(getAccountStorageKey(TASK_HISTORY_KEY));
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeTaskHistoryMap(map) {
+  try {
+    localStorage.setItem(getAccountStorageKey(TASK_HISTORY_KEY), JSON.stringify(map));
+  } catch {}
+}
+
+function updateTaskHistoryForToday(qid, qname, isDone) {
+  const today = getISODate();
+  const map = readTaskHistoryMap();
+  const day = map[today] && typeof map[today] === "object" ? map[today] : {};
+
+  if (isDone) day[qid] = qname || qid;
+  else delete day[qid];
+
+  if (Object.keys(day).length > 0) map[today] = day;
+  else delete map[today];
+
+  writeTaskHistoryMap(map);
+}
+
+function prettifyQuestId(qid) {
+  const raw = String(qid || "").trim();
+  if (!raw) return "Completed task";
+  return raw
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function snapshotCompletedTasksForDate(dateStr, state) {
+  if (!dateStr || !state || typeof state !== "object") return;
+  const completed = state.completed && typeof state.completed === "object" ? state.completed : {};
+  const completedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
+  if (!completedIds.length) return;
+
+  const rows = Array.from(document.querySelectorAll(".quest-row"));
+  const nameById = new Map();
+  rows.forEach((row) => {
+    const qid = row.getAttribute("data-qid");
+    if (!qid) return;
+    const qname = row.querySelector("h4")?.textContent?.trim();
+    if (qname) nameById.set(qid, qname);
+  });
+
+  const map = readTaskHistoryMap();
+  const day = map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+  completedIds.forEach((qid) => {
+    if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
+  });
+  map[dateStr] = day;
+  writeTaskHistoryMap(map);
 }
 
 function rankFromAverage(avg) {
@@ -163,7 +229,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("storage", (e) => {
     if (
       e.key === getAccountStorageKey(QUEST_STORAGE_KEY) ||
-      e.key === getAccountStorageKey(XP_STORAGE_KEY)
+      e.key === getAccountStorageKey(XP_STORAGE_KEY) ||
+      e.key === getAccountStorageKey(TASK_HISTORY_KEY)
     ) {
       updateXP();
       updateGraph();
@@ -278,6 +345,8 @@ function completePreviewQuest(checkEl) {
       JSON.stringify(state),
     );
   } catch {}
+  const qname = row.querySelector("h4")?.textContent?.trim() || qid;
+  updateTaskHistoryForToday(qid, qname, nowComplete);
 
   let xpDelta = Number(row.getAttribute("data-xp"));
   if (!Number.isFinite(xpDelta)) {
@@ -331,27 +400,47 @@ function updateXP() {
 
 function updateGraph() {
   ensureDailyQuestReset();
+  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const dayOfWeek = new Date().getDay();
   const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-  let lastResetDate = localStorage.getItem(
-    getAccountStorageKey("weeklyGraphResetDate"),
-  );
-  let weeklyData = JSON.parse(
-    localStorage.getItem(getAccountStorageKey("weeklyQuestData")),
-  ) || [0, 0, 0, 0, 0, 0, 0];
+  const resetKey = getAccountStorageKey("weeklyGraphResetDate");
+  const dataKey = getAccountStorageKey("weeklyQuestData");
+  let lastResetDate = localStorage.getItem(resetKey);
+  let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
+    0, 0, 0, 0, 0, 0, 0,
+  ];
+  const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
+  const legacyWeeklyData = JSON.parse(localStorage.getItem("weeklyQuestData")) || [
+    0, 0, 0, 0, 0, 0, 0,
+  ];
+  const hasCurrentData =
+    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
+  const hasLegacyData =
+    Array.isArray(legacyWeeklyData) && legacyWeeklyData.some((v) => Number(v) > 0);
+
+  if (!hasCurrentData && hasLegacyData) {
+    weeklyData = legacyWeeklyData.slice(0, 7);
+    if (!lastResetDate && legacyResetDate) lastResetDate = legacyResetDate;
+  }
 
   const currentMonday = new Date();
   currentMonday.setDate(currentMonday.getDate() - dayIndex);
   currentMonday.setHours(0, 0, 0, 0);
   const currentMondayStr = currentMonday.toISOString().split("T")[0];
 
-  if (lastResetDate !== currentMondayStr) {
+  const hasPersistedData =
+    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
+  if (!lastResetDate) {
+    localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
+  } else if (lastResetDate !== currentMondayStr) {
     weeklyData = [0, 0, 0, 0, 0, 0, 0];
-    localStorage.setItem(
-      getAccountStorageKey("weeklyGraphResetDate"),
-      currentMondayStr,
-    );
+    localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
+  } else if (!hasPersistedData && lastResetDate === currentMondayStr) {
+    localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   }
 
   let completedCount = 0;
@@ -365,10 +454,17 @@ function updateGraph() {
   } catch {}
   weeklyData[dayIndex] = completedCount;
 
-  localStorage.setItem(
-    getAccountStorageKey("weeklyQuestData"),
-    JSON.stringify(weeklyData),
-  );
+  localStorage.setItem(dataKey, JSON.stringify(weeklyData));
+  localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
+
+  const history = readTaskHistoryMap();
+  const weeklyTasks = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(currentMonday);
+    d.setDate(currentMonday.getDate() + i);
+    const iso = getISODate(d);
+    weeklyTasks.push(Object.values(history[iso] || {}).filter(Boolean));
+  }
 
   const svgs = document.querySelectorAll(".line-graph-svg");
   svgs.forEach((svg) => {
@@ -390,6 +486,108 @@ function updateGraph() {
 
     const d = points.length > 0 ? "M" + points.join(" L") : "";
     path.setAttribute("d", d);
+
+    let tooltip = document.getElementById("taskGraphTooltip");
+    if (!tooltip) {
+      const container = svg.closest(".line-graph");
+      if (container) {
+        tooltip = document.createElement("div");
+        tooltip.className = "graph-tooltip";
+        tooltip.id = "taskGraphTooltip";
+        tooltip.hidden = true;
+        container.appendChild(tooltip);
+      }
+    }
+
+    let group = svg.querySelector(".data-points");
+    if (!group) {
+      group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      group.classList.add("data-points");
+      svg.appendChild(group);
+    }
+    group.innerHTML = "";
+
+    weeklyData.forEach((val, i) => {
+      const x = 60 + i * 100;
+      const y = 220 - (Math.min(val, 20) / 20) * 200;
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", String(x));
+      circle.setAttribute("cy", String(y));
+      circle.setAttribute("r", "5");
+      circle.setAttribute("fill", "var(--aqua)");
+      circle.setAttribute("opacity", "0.95");
+
+      group.appendChild(circle);
+    });
+
+    let hitGroup = svg.querySelector(".data-hitboxes");
+    if (!hitGroup) {
+      hitGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      hitGroup.classList.add("data-hitboxes");
+      svg.appendChild(hitGroup);
+    }
+    hitGroup.innerHTML = "";
+
+    const showTooltip = (evt, i) => {
+      if (!tooltip) return;
+      const tasks = weeklyTasks[i] || [];
+      const count = Number(weeklyData[i] || 0);
+      const lines =
+        tasks.length > 0
+          ? tasks
+          : count > 0
+            ? []
+            : ["No tasks completed"];
+      tooltip.innerHTML = `
+        <div class="gtt-day">${dayLabels[i]} - ${count} done</div>
+        ${lines.map((t) => `<div class="gtt-item">${t}</div>`).join("")}
+      `;
+      tooltip.hidden = false;
+      tooltip.style.visibility = "hidden";
+
+      const rect = svg.getBoundingClientRect();
+      const container = svg.closest(".line-graph");
+      const containerRect = container?.getBoundingClientRect() || rect;
+      const tooltipW = tooltip.offsetWidth || 220;
+      const tooltipH = tooltip.offsetHeight || 120;
+      const pad = 8;
+
+      const anchorX = evt.clientX - containerRect.left;
+      const anchorY = evt.clientY - containerRect.top;
+
+      let left = anchorX - tooltipW - 14;
+      let top = anchorY - tooltipH / 2;
+
+      const maxLeft = Math.max(pad, containerRect.width - tooltipW - pad);
+      const maxTop = Math.max(pad, containerRect.height - tooltipH - pad);
+      left = Math.min(Math.max(pad, left), maxLeft);
+      top = Math.min(Math.max(pad, top), maxTop);
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.style.visibility = "visible";
+    };
+
+    const hideTooltip = () => {
+      if (tooltip) {
+        tooltip.hidden = true;
+        tooltip.style.visibility = "";
+      }
+    };
+
+    for (let i = 0; i < 7; i++) {
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", String(60 + i * 100 - 45));
+      rect.setAttribute("y", "20");
+      rect.setAttribute("width", "90");
+      rect.setAttribute("height", "200");
+      rect.setAttribute("fill", "transparent");
+      rect.style.pointerEvents = "all";
+      rect.addEventListener("mousemove", (e) => showTooltip(e, i));
+      rect.addEventListener("mouseenter", (e) => showTooltip(e, i));
+      rect.addEventListener("mouseleave", hideTooltip);
+      hitGroup.appendChild(rect);
+    }
   });
 }
 
@@ -423,6 +621,8 @@ window.completeQuest = function (checkEl) {
           JSON.stringify(state),
         );
       } catch {}
+      const qname = row.querySelector("h4")?.textContent?.trim() || qid;
+      updateTaskHistoryForToday(qid, qname, nowComplete);
     }
 
     let completedQuests = JSON.parse(
@@ -472,6 +672,7 @@ function ensureDailyQuestReset() {
   try {
     const raw = localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY));
     const state = raw ? JSON.parse(raw) : {};
+    if (lastReset) snapshotCompletedTasksForDate(lastReset, state);
     state.completed = {};
     localStorage.setItem(
       getAccountStorageKey(QUEST_STORAGE_KEY),
@@ -489,11 +690,56 @@ function ensureDailyQuestReset() {
 
 function getJournalStore() {
   try {
-    const raw = localStorage.getItem("aurakJournal");
-    return raw ? JSON.parse(raw) : {};
+    const key = getAccountStorageKey(JOURNAL_KEY_BASE);
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.entries)) {
+        const map = {};
+        parsed.entries.forEach((e) => {
+          if (e?.date) map[e.date] = e;
+        });
+        return map;
+      }
+      if (parsed && typeof parsed === "object") return parsed;
+    }
+
+    const legacyRaw = localStorage.getItem("aurakJournal");
+    return legacyRaw ? JSON.parse(legacyRaw) : {};
   } catch {
     return {};
   }
+}
+
+function getDashboardReflectionEntry() {
+  try {
+    const key = getAccountStorageKey(DASH_REFLECTION_KEY_BASE);
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeCheckinEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const rawMood = Number(entry.mood);
+  const rawBaseline = Number(
+    Number.isFinite(Number(entry.baseline)) ? entry.baseline : entry.rest,
+  );
+  const mood10Source = Number.isFinite(rawMood) ? rawMood : 0;
+  const baselineSource = Number.isFinite(rawBaseline) ? rawBaseline : 0;
+  const mood10 =
+    mood10Source <= 5
+      ? Math.max(0, Math.min(10, mood10Source * 2))
+      : Math.max(0, Math.min(10, mood10Source));
+  const baseline10 = Math.max(0, Math.min(10, baselineSource / 10));
+  return {
+    mood10,
+    baseline10,
+    reflection: String(entry.reflection || "").trim(),
+  };
 }
 
 function pct(v) {
@@ -503,7 +749,12 @@ function pct(v) {
 function renderDailyCheckin() {
   const today = getISODate();
   const journal = getJournalStore();
-  const entry = journal[today];
+  let entry = journal[today];
+  if (!entry) {
+    const refl = getDashboardReflectionEntry();
+    if (refl?.date === today) entry = refl;
+  }
+  const normalized = normalizeCheckinEntry(entry);
 
   const datePill = document.getElementById("dashCheckinDatePill");
   const moodFill = document.getElementById("dashMoodFill");
@@ -514,7 +765,7 @@ function renderDailyCheckin() {
 
   datePill.textContent = today;
 
-  if (!entry) {
+  if (!normalized) {
     moodFill.style.width = "0%";
     baseFill.style.width = "0%";
     moodVal.textContent = "—";
@@ -523,17 +774,19 @@ function renderDailyCheckin() {
     return;
   }
 
-  const moodPercent = pct((entry.mood / 10) * 100);
-  const basePercent = pct((entry.baseline / 10) * 100);
+  const moodPercent = pct((normalized.mood10 / 10) * 100);
+  const basePercent = pct((normalized.baseline10 / 10) * 100);
 
   moodFill.style.width = moodPercent + "%";
   baseFill.style.width = basePercent + "%";
 
-  moodVal.textContent = entry.mood + "/10";
-  baseVal.textContent = entry.baseline + "/10";
+  moodVal.textContent = normalized.mood10.toFixed(1).replace(".0", "") + "/10";
+  baseVal.textContent =
+    normalized.baseline10.toFixed(1).replace(".0", "") + "/10";
 
   snippet.textContent =
-    entry.reflection.slice(0, 120) + (entry.reflection.length > 120 ? "…" : "");
+    normalized.reflection.slice(0, 120) +
+    (normalized.reflection.length > 120 ? "…" : "");
 }
 
 document

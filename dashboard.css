@@ -928,6 +928,7 @@ input:focus-visible {
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow);
   overflow: hidden;
+  position: relative;
 }
 
 .line-graph1 {
@@ -974,6 +975,46 @@ input:focus-visible {
 
 .line-x text {
   opacity: 0.9;
+}
+
+.graph-tooltip {
+  position: absolute;
+  z-index: 20;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke2);
+  border: 1px solid color-mix(in srgb, var(--stroke2) 85%, transparent);
+  background: var(--card);
+  background:
+    radial-gradient(
+      420px 180px at 15% 0%,
+      rgba(34, 211, 238, 0.16),
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--card2) 92%, #020617 8%);
+  box-shadow: var(--shadow2);
+  color: var(--text);
+  font-size: 0.84rem;
+  font-family:
+    "Space Grotesk",
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    sans-serif;
+  line-height: 1.35;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+.graph-tooltip .gtt-day {
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+.graph-tooltip .gtt-item {
+  color: var(--muted);
 }
 
 .side-link i {

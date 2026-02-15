@@ -7,180 +7,89 @@ class HabiticaAPI {
 
   generateDemoData() {
     return {
-      "system-1": {
-        name: "No screen time after waking up - 30 to 60 min",
-        summary: "Discipline/Mental - DPL",
-        slot: "morning",
-        xp: 100,
-        dpl: true,
-        dplImpact: 1,
+      "physical-1": {
+        name: "Stretching routine - 10 to 15 minutes",
+        summary: "Improve mobility, reduce injury risk",
       },
-      "system-2": {
-        name: "No social media - full morning block",
-        summary: "Discipline/Mental - DPL",
-        slot: "morning",
-        xp: 100,
-        dpl: true,
-        dplImpact: 1,
+      "physical-2": {
+        name: "Workout Session - Strength Training",
+        summary: "45 minutes of intense workout focusing on strength",
       },
-      "system-3": {
-        name: "No pornography/gaming - full morning block",
-        summary: "Discipline/Mental - DPL",
-        slot: "morning",
-        xp: 85,
-        dpl: true,
-        dplImpact: 2,
+      "physical-3": {
+        name: "Sport Activities - 30 minutes",
+        summary: "Full-body cardio",
       },
-      "system-4": {
-        name: "Drink water right after waking up - 1 full cup",
-        summary: "Physical - Low XP",
-        slot: "morning",
-        xp: 40,
-      },
-      "system-5": {
-        name: "Sunlight exposure - 5 to 10 minutes",
-        summary: "Physical - Low XP - DPL",
-        slot: "morning",
-        xp: 40,
-        dpl: true,
-        dplImpact: 1,
-      },
-      "system-6": {
-        name: "Deep breathing/Meditation - 3 to 5 minutes",
-        summary: "Mental/Physical - Low XP - DPL",
-        slot: "morning",
-        xp: 40,
-        dpl: true,
-        dplImpact: 1,
-      },
-      "system-7": {
-        name: "Plan the day - 5 minutes",
-        summary: "Discipline - Low XP",
-        slot: "morning",
-        xp: 40,
-      },
-      "system-8": {
-        name: "Speak up in class, in a meeting",
-        summary: "Confidence - Mid XP",
-        slot: "morning",
-        xp: 70,
+      "physical-4": {
+        name: "Mindful walking - 10 minutes",
+        summary: "Light cardio to boost mood, reduces anxiety",
       },
 
-      "system-9": {
-        name: "Study/deep work sessions - school hours",
-        summary: "Intellectual - Low XP",
-        slot: "noon",
-        xp: 40,
+      "intellectual-1": {
+        name: "Read book/article daily - 15 to 30 minutes",
+        summary: "Expand vocabulary, enrich knowledge, sharpen thinking",
       },
-      "system-25": {
-        name: "Light meal (Low carb/high protein)",
-        summary: "Physical/Discipline - DPL",
-        slot: "noon",
-        xp: 70,
-        dpl: true,
-        dplImpact: 1,
+      "intellectual-2": {
+        name: "Practice active recall",
+        summary: "Quiz yourself instead of just reading",
       },
-      "system-10": {
-        name: "Eat without phone - entire meal",
-        summary: "Discipline - DPL",
-        slot: "noon",
-        xp: 70,
-        dpl: true,
-        dplImpact: 1,
+      "intellectual-3": {
+        name: "Learning something new everyday",
+        summary: "A new skill or concept strengthens your brain",
       },
-      "system-11": {
-        name: "No social media scrolling - noon block",
-        summary: "Mental - DPL",
-        slot: "noon",
-        xp: 100,
-        dpl: true,
-        dplImpact: 1,
-      },
-      "system-12": {
-        name: "Walk after eating - 5 to 15 minutes",
-        summary: "Physical - Mid XP",
-        slot: "noon",
-        xp: 70,
-      },
-      "system-13": {
-        name: "Speak up in class, in a meeting",
-        summary: "Confidence - Mid XP",
-        slot: "noon",
-        xp: 70,
-      },
-      "system-14": {
-        name: "Lead a discussion at school, work",
-        summary: "Confidence - High XP",
-        slot: "noon",
-        xp: 100,
+      "intellectual-4": {
+        name: "Teach someone else",
+        summary: "build deeper understanding about the knowledge",
       },
 
-      "system-15": {
-        name: "Physical Exercise - 30 minutes to 1 hour",
-        summary: "Physical - High XP",
-        slot: "afternoon",
-        xp: 100,
+      "discipline-1": {
+        name: "Write a daily journal",
+        summary: "Reflect on wins, failures, and lessons learned",
       },
-      "system-16": {
-        name: "Skill Practice or homework - 30 to 60 minutes",
-        summary: "Intellectual - Low XP",
-        slot: "afternoon",
-        xp: 40,
+      "discipline-2": {
+        name: "Plan Next Week",
+        summary: "Set 3 goals and 5 priorities for next week",
       },
-      "system-17": {
-        name: "No gaming/pornography - afternoon block",
-        summary: "Mental - DPL",
-        slot: "afternoon",
-        xp: 100,
-        dpl: true,
-        dplImpact: 2,
+      "discipline-3": {
+        name: "No Phone for 2 Hours",
+        summary: "Focused time without digital distractions",
       },
-      "system-18": {
-        name: "Limit social media - under 30 minutes",
-        summary: "Mental - DPL",
-        slot: "afternoon",
-        xp: 100,
-        dpl: true,
-        dplImpact: 1,
-      },
-      "system-19": {
-        name: "Sport Activity - 30 minutes",
-        summary: "Physical - High XP",
-        slot: "afternoon",
-        xp: 100,
-      },
-      "system-20": {
-        name: "Lead a discussion at school, work",
-        summary: "Confidence - Mid XP",
-        slot: "afternoon",
-        xp: 70,
+      "discipline-4": {
+        name: "Budget Review",
+        summary: "Review spending and adjust weekly budget",
       },
 
-      "system-21": {
-        name: "Share a story during dinner",
-        summary: "Confidence - Low XP",
-        slot: "evening",
-        xp: 40,
+      "confidence-1": {
+        name: "Speak Up in Meeting",
+        summary: "Share 1 idea or ask 1 question confidently",
       },
-      "system-22": {
-        name: "Controlled entertainment - under 60 minutes",
-        summary: "Discipline - DPL",
-        slot: "evening",
-        xp: 70,
-        dpl: true,
-        dplImpact: 1,
+      "confidence-2": {
+        name: "Compliment Someone",
+        summary: "Give genuine, specific compliment to 1 person",
       },
-      "system-23": {
-        name: "Reading book/article - 10 to 20 minutes",
-        summary: "Intellectual - High XP",
-        slot: "evening",
-        xp: 100,
+      "confidence-3": {
+        name: "Lead a Discussion",
+        summary: "Facilitate or lead a team discussion or meeting",
       },
-      "system-24": {
-        name: "Sleep at least 7 hours",
-        summary: "Mental - High XP",
-        slot: "evening",
-        xp: 100,
+      "confidence-4": {
+        name: "Share Your Work",
+        summary: "Present your work or ideas to others",
+      },
+
+      "mental-1": {
+        name: "5 to 10 minutes in silence thinking about your goals and life",
+        summary: "Mindfulness meditation with focus on breath",
+      },
+      "mental-2": {
+        name: "Gratitude Practice",
+        summary: "Write down 5 things you're grateful for",
+      },
+      "mental-3": {
+        name: "Limit screen time daily",
+        summary: "Reduces mental overload and improves focus",
+      },
+      "mental-4": {
+        name: "Get good sleep",
+        summary: "Get at least 7 hours of sleep everyday",
       },
     };
   }
@@ -219,10 +128,6 @@ class HabiticaAPI {
         id: challengeId,
         name: this.demoData[challengeId].name,
         summary: this.demoData[challengeId].summary,
-        slot: this.demoData[challengeId].slot,
-        xp: this.demoData[challengeId].xp,
-        dpl: !!this.demoData[challengeId].dpl,
-        dplImpact: Number(this.demoData[challengeId].dplImpact) || 0,
       };
       this.cache.set(challengeId, demoChallenge);
       return demoChallenge;
@@ -249,10 +154,9 @@ class HabiticaAPI {
   }
 
   generateCardHTML(challenge, category) {
-    const xpReward = Number.isFinite(Number(challenge.xp))
-      ? Number(challenge.xp)
-      : this.config.defaultXpPerCategory[category] ||
-        this.config.defaultXpPerCategory.mental;
+    const xpReward =
+      this.config.defaultXpPerCategory[category] ||
+      this.config.defaultXpPerCategory.mental;
     const statReward =
       this.config.defaultStatPerCategory[category] ||
       this.config.defaultStatPerCategory.mental;
@@ -291,17 +195,6 @@ class HabiticaAPI {
         <button class="qbtn" type="button">Complete</button>
       </article>
     `;
-  }
-
-  getCategoryIcon(category) {
-    const icons = {
-      physical: "fa-dumbbell",
-      intellectual: "fa-brain",
-      discipline: "fa-shield-halved",
-      confidence: "fa-fire",
-      mental: "fa-moon",
-    };
-    return icons[category] || "fa-star";
   }
 
   getCategoryLabel(category) {

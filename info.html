@@ -355,14 +355,19 @@
           >
             <div class="panel-head">
               <h2 class="panel-appaea">Dopamine Loading</h2>
-              <span class="panel-note">Simulated daily dopamine curve</span>
+              <span class="panel-note" id="dopamineNote"
+                >Click graph to fill DPL checklist</span
+              >
             </div>
 
             <svg
+              id="dopamineGraph"
               class="dopamine-graph-svg"
               viewBox="0 0 720 260"
               preserveAspectRatio="none"
               aria-label="Dopamine loading line graph"
+              role="button"
+              tabindex="0"
             >
               <defs>
                 <clipPath id="dopClip">
@@ -417,6 +422,41 @@
               <g class="dop-plot" clip-path="url(#dopClip)"></g>
             </svg>
           </section>
+
+          <div
+            class="dpl-modal"
+            id="dplModal"
+            aria-hidden="true"
+            hidden
+          >
+            <div class="dpl-backdrop" id="dplBackdrop"></div>
+            <section
+              class="dpl-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="dplTitle"
+            >
+              <header class="dpl-head">
+                <h3 id="dplTitle">Dopamine Loading Checklist</h3>
+                <button class="dpl-close" id="dplClose" type="button">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </header>
+
+              <p class="dpl-sub" id="dplHint">
+                Tick at least 3 DPL tasks to generate today's graph.
+              </p>
+
+              <div class="dpl-list" id="dplList"></div>
+
+              <footer class="dpl-foot">
+                <div class="dpl-count" id="dplCount">0 selected</div>
+                <button class="btn primary" id="dplSave" type="button">
+                  Apply to Graph
+                </button>
+              </footer>
+            </section>
+          </div>
 
           <section class="panel" aria-label="Achievements">
             <div class="panel-head">
@@ -494,6 +534,21 @@
 
     <script>
       const DAILY_DONE_KEY = "aurak_daily_done_v1";
+      const DPL_TRACK_KEY = "aurak_dpl_tracking_v1";
+      const DPL_MIN_REQUIRED = 3;
+      const DPL_TASKS = [
+        { id: "dpl-1", label: "No screen time after waking up (30-60 min)", slot: "morning", weight: 1 },
+        { id: "dpl-2", label: "No social media - full morning block", slot: "morning", weight: 1 },
+        { id: "dpl-3", label: "No pornography/gaming - full morning block", slot: "morning", weight: 2 },
+        { id: "dpl-4", label: "Sunlight exposure - 5 to 10 minutes", slot: "morning", weight: 1 },
+        { id: "dpl-5", label: "Deep breathing/Meditation - 3 to 5 minutes", slot: "morning", weight: 1 },
+        { id: "dpl-6", label: "Light meal (Low carb/high protein)", slot: "noon", weight: 1 },
+        { id: "dpl-7", label: "Eat without phone - entire meal", slot: "noon", weight: 1 },
+        { id: "dpl-8", label: "No social media scrolling - noon block", slot: "noon", weight: 1 },
+        { id: "dpl-9", label: "No gaming/pornography - afternoon block", slot: "afternoon", weight: 2 },
+        { id: "dpl-10", label: "Limit social media - under 30 minutes", slot: "afternoon", weight: 1 },
+        { id: "dpl-11", label: "Controlled entertainment - under 60 minutes", slot: "evening", weight: 1 },
+      ];
 
       function getCurrentUser() {
         try {
@@ -752,39 +807,33 @@
         renderDopamine();
       }
 
-      function readQuestCompletedState() {
+      function readDplMap() {
         try {
-          const raw = localStorage.getItem(getAccountKey("aurak_quests_v4"));
+          const raw = localStorage.getItem(getAccountKey(DPL_TRACK_KEY));
           const parsed = raw ? JSON.parse(raw) : {};
-          if (!parsed || typeof parsed !== "object") return {};
-          const completed = parsed.completed;
-          if (!completed || typeof completed !== "object") return {};
-          return completed;
+          return parsed && typeof parsed === "object" ? parsed : {};
         } catch {
           return {};
         }
       }
 
-      function calcSlotDopamine(completed, rule) {
-        let totalWeight = 0;
-        let doneWeight = 0;
+      function writeDplMap(map) {
+        try {
+          localStorage.setItem(getAccountKey(DPL_TRACK_KEY), JSON.stringify(map));
+        } catch {}
+      }
 
-        rule.ids.forEach((id) => {
-          const w = Number(rule.weights[id]) || 1;
-          totalWeight += w;
-          if (completed[id]) doneWeight += w;
-        });
 
-        if (totalWeight <= 0) return 50;
+      function getTodayDplCheckedIds() {
+        const map = readDplMap();
+        const list = map[getISODate(new Date())];
+        return Array.isArray(list) ? list.filter(Boolean) : [];
+      }
 
-        const ratio = doneWeight / totalWeight;
-        let level = rule.base + (1 - ratio) * rule.spike - ratio * rule.drop;
-
-        if (rule.triggerId && !completed[rule.triggerId]) {
-          level += rule.triggerBoost;
-        }
-
-        return clamp(level, 0, 100);
+      function setTodayDplCheckedIds(ids) {
+        const map = readDplMap();
+        map[getISODate(new Date())] = Array.from(new Set(ids));
+        writeDplMap(map);
       }
 
       function interpolateAnchors(anchors, xHour) {
@@ -804,116 +853,89 @@
         return anchors[anchors.length - 1].v;
       }
 
-      function buildDopamineCurve(completed) {
-        const rules = {
-          morning: {
-            ids: ["system-1", "system-2", "system-3", "system-5", "system-6"],
-            weights: {
-              "system-1": 1,
-              "system-2": 1,
-              "system-3": 2,
-              "system-5": 1,
-              "system-6": 1,
-            },
-            base: 50,
-            spike: 30,
-            drop: 22,
-            triggerId: "system-3",
-            triggerBoost: 14,
-          },
-          noon: {
-            ids: ["system-25", "system-10", "system-11"],
-            weights: {
-              "system-25": 1,
-              "system-10": 1,
-              "system-11": 1,
-            },
-            base: 55,
-            spike: 24,
-            drop: 14,
-            triggerId: "system-11",
-            triggerBoost: 8,
-          },
-          afternoon: {
-            ids: ["system-17", "system-18"],
-            weights: {
-              "system-17": 2,
-              "system-18": 1,
-            },
-            base: 60,
-            spike: 24,
-            drop: 16,
-            triggerId: "system-17",
-            triggerBoost: 12,
-          },
-          evening: {
-            ids: ["system-22"],
-            weights: {
-              "system-22": 1,
-            },
-            base: 52,
-            spike: 16,
-            drop: 10,
-            triggerId: "system-22",
-            triggerBoost: 8,
-          },
-        };
-
-        const morning = calcSlotDopamine(completed, rules.morning);
-        const noon = calcSlotDopamine(completed, rules.noon);
-        const afternoon = calcSlotDopamine(completed, rules.afternoon);
-        const evening = calcSlotDopamine(completed, rules.evening);
-
-        const hasNoonWork =
-          !!completed["system-9"] ||
-          !!completed["system-13"] ||
-          !!completed["system-14"];
-        const hasAfternoonWork =
-          !!completed["system-16"] || !!completed["system-20"];
-        const hasTraining = !!completed["system-15"] || !!completed["system-19"];
-
-        const noonStabilized = clamp(
-          hasNoonWork ? noon * 0.45 + 50 * 0.55 : noon + 8,
+      function slotRatio(checkedSet, slot) {
+        const tasks = DPL_TASKS.filter((t) => t.slot === slot);
+        const total = tasks.reduce((n, t) => n + (Number(t.weight) || 1), 0);
+        const done = tasks.reduce(
+          (n, t) => n + (checkedSet.has(t.id) ? Number(t.weight) || 1 : 0),
           0,
-          100,
         );
-        const afternoonStabilized = clamp(
-          hasAfternoonWork || hasTraining
-            ? afternoon * 0.4 + 50 * 0.6
-            : afternoon + 10,
-          0,
-          100,
-        );
+        return total > 0 ? done / total : 0;
+      }
 
-        // Force low early-morning start, then let completed/missed DPL tasks shape the rise.
-        const morningStart = 30;
-        const morningCore = clamp(morning, 0, 100);
+      function seedFromChecked(checkedSet) {
+        let seed = 17;
+        Array.from(checkedSet)
+          .sort()
+          .forEach((id) => {
+            for (let i = 0; i < id.length; i++) {
+              seed = (seed * 33 + id.charCodeAt(i)) % 9973;
+            }
+          });
+        return seed / 9973;
+      }
+
+      function realtimeFluctuation(hour, base, seed) {
+        const now = Date.now();
+        const time = now / 1000;
+        const w1 = Math.sin(hour * 4.8 + time * 0.08 + seed * 10.0) * 1.9;
+        const w2 = Math.sin(hour * 9.1 + time * 0.15 + seed * 19.0) * 1.25;
+        const wobble =
+          (Math.sin(hour * 29.0 + time * 0.11 + seed * 41.0) * 0.5 +
+            Math.cos(hour * 17.0 + time * 0.07 + seed * 23.0) * 0.5) *
+          1.4;
+        let v = base + w1 + w2 + wobble;
+
+        // Keep early-morning low zone genuinely near the bottom.
+        if (hour <= 10.5 && base <= 24) {
+          v = clamp(v, 1, 22);
+        }
+        return v;
+      }
+
+      function buildDopamineCurve(checkedIds) {
+        const checked = new Set(checkedIds);
+        const seed = seedFromChecked(checked);
+        const morningRatio = slotRatio(checked, "morning");
+        const noonRatio = slotRatio(checked, "noon");
+        const afternoonRatio = slotRatio(checked, "afternoon");
+        const eveningRatio = slotRatio(checked, "evening");
+
+        let morning = 10 + (1 - morningRatio) * 58;
+        if (checked.has("dpl-3")) morning -= 14; // no porn/gaming
+        if (checked.has("dpl-1")) morning -= 8; // no screen after wake
+        if (checked.has("dpl-2")) morning -= 7; // no social morning
+        morning = clamp(morning, 1, 95);
+
+        const noon = clamp(50 + (1 - noonRatio) * 18 - noonRatio * 6, 10, 95);
+        const afternoon = clamp(50 + (1 - afternoonRatio) * 20 - afternoonRatio * 6, 10, 95);
+        const evening = clamp(45 + (1 - eveningRatio) * 18 - eveningRatio * 5, 8, 95);
 
         const anchors = [
-          { h: 6, v: morningStart },
-          { h: 9, v: morningCore },
-          { h: 12, v: noonStabilized },
-          { h: 15, v: noonStabilized * 0.25 + afternoonStabilized * 0.75 },
-          { h: 18, v: afternoonStabilized },
+          { h: 6, v: clamp(morning - 3, 1, 20) },
+          { h: 8, v: morning },
+          { h: 12, v: noon },
+          { h: 15, v: noon * 0.3 + afternoon * 0.7 },
+          { h: 18, v: afternoon },
           { h: 21, v: evening },
-          { h: 24, v: clamp(evening - 8, 0, 100) },
+          { h: 24, v: clamp(evening - 10, 0, 100) },
         ];
 
-        const n = 25;
+        const n = 49;
         const out = [];
         for (let i = 0; i < n; i++) {
           const hour = 6 + (18 * i) / (n - 1);
-          out.push(clamp(interpolateAnchors(anchors, hour), 0, 100));
+          const base = interpolateAnchors(anchors, hour);
+          out.push(clamp(realtimeFluctuation(hour, base, seed), 0, 100));
         }
         return out;
       }
 
-      function renderDopamine() {
-        const svg = document.querySelector(".dopamine-graph-svg");
-        if (!svg) return;
+      function ensureDopaminePath() {
+        const svg = document.getElementById("dopamineGraph");
+        if (!svg) return null;
 
         const plot = svg.querySelector(".dop-plot") || svg;
-
         let path = plot.querySelector(".dopamine-line");
         if (!path) {
           path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -923,10 +945,25 @@
           path.setAttribute("stroke-width", "3");
           plot.appendChild(path);
         }
+        return path;
+      }
 
-        const completed = readQuestCompletedState();
-        const curve = buildDopamineCurve(completed);
+      function renderDopamine() {
+        const path = ensureDopaminePath();
+        if (!path) return;
 
+        const checked = getTodayDplCheckedIds();
+        const note = document.getElementById("dopamineNote");
+
+        if (checked.length < DPL_MIN_REQUIRED) {
+          path.setAttribute("d", "");
+          if (note) {
+            note.textContent = `Select at least ${DPL_MIN_REQUIRED} DPL tasks to generate graph (${checked.length}/${DPL_MIN_REQUIRED}).`;
+          }
+          return;
+        }
+
+        const curve = buildDopamineCurve(checked);
         const xL = 96;
         const xR = 700;
         const yTop = 20;
@@ -939,36 +976,100 @@
           return `${x},${y}`;
         });
 
-        const d = pts.length ? "M" + pts.join(" L") : "";
-        path.setAttribute("d", d);
-
-        const tracked = [
-          "system-1",
-          "system-2",
-          "system-3",
-          "system-5",
-          "system-6",
-          "system-25",
-          "system-10",
-          "system-11",
-          "system-17",
-          "system-18",
-          "system-22",
-        ];
-        const done = tracked.filter((id) => !!completed[id]).length;
-        const note = document.querySelector(".dopamine-panel .panel-note");
+        path.setAttribute("d", pts.length ? "M" + pts.join(" L") : "");
         if (note) {
-          note.textContent = `DPL complete ${done}/${tracked.length}. Lower line = better control.`;
+          note.textContent = `DPL checklist ${checked.length}/${DPL_TASKS.length}. Lower line = better control.`;
         }
       }
 
-      document.addEventListener("DOMContentLoaded", render);
+      function renderDplList() {
+        const list = document.getElementById("dplList");
+        if (!list) return;
+        const checked = new Set(getTodayDplCheckedIds());
+        list.innerHTML = "";
+        DPL_TASKS.forEach((task) => {
+          const row = document.createElement("label");
+          row.className = "dpl-item";
+          row.innerHTML = `
+            <input type="checkbox" value="${task.id}" ${checked.has(task.id) ? "checked" : ""} />
+            <span>${task.label}</span>
+          `;
+          list.appendChild(row);
+        });
+        updateDplCount();
+      }
+
+      function updateDplCount() {
+        const list = document.getElementById("dplList");
+        const count = document.getElementById("dplCount");
+        if (!list || !count) return;
+        count.textContent = `${list.querySelectorAll('input[type="checkbox"]:checked').length} selected`;
+      }
+
+      function openDplModal() {
+        const modal = document.getElementById("dplModal");
+        if (!modal) return;
+        renderDplList();
+        modal.hidden = false;
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeDplModal() {
+        const modal = document.getElementById("dplModal");
+        if (!modal) return;
+        modal.hidden = true;
+        modal.setAttribute("aria-hidden", "true");
+      }
+
+      function initDplModal() {
+        const graph = document.getElementById("dopamineGraph");
+        const closeBtn = document.getElementById("dplClose");
+        const backdrop = document.getElementById("dplBackdrop");
+        const saveBtn = document.getElementById("dplSave");
+        const list = document.getElementById("dplList");
+        const hint = document.getElementById("dplHint");
+        if (!graph || !saveBtn || !list) return;
+
+        graph.addEventListener("click", openDplModal);
+        graph.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openDplModal();
+          }
+        });
+        if (closeBtn) closeBtn.addEventListener("click", closeDplModal);
+        if (backdrop) backdrop.addEventListener("click", closeDplModal);
+        list.addEventListener("change", updateDplCount);
+
+        saveBtn.addEventListener("click", () => {
+          const checked = Array.from(
+            list.querySelectorAll('input[type="checkbox"]:checked'),
+          ).map((el) => el.value);
+
+          if (checked.length < DPL_MIN_REQUIRED) {
+            if (hint) {
+              hint.textContent = `Select at least ${DPL_MIN_REQUIRED} tasks. Current: ${checked.length}.`;
+            }
+            return;
+          }
+
+          setTodayDplCheckedIds(checked);
+          closeDplModal();
+          renderDopamine();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initDplModal();
+        render();
+        setInterval(renderDopamine, 30000);
+      });
 
       window.addEventListener("storage", (e) => {
         if (
           e.key === getAccountKey("completedQuests") ||
           e.key === getAccountKey(DAILY_DONE_KEY) ||
-          e.key === getAccountKey("aurak_quests_v4")
+          e.key === getAccountKey(DPL_TRACK_KEY)
         )
           render();
       });

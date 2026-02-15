@@ -161,6 +161,8 @@
 .sd-dot {
   width: 14px;
   height: 14px;
+  display: grid;
+  place-items: center;
   border-radius: 999px;
   border: 1px solid var(--stroke2);
   background: color-mix(in srgb, var(--card) 70%, transparent);
@@ -249,6 +251,7 @@
   width: 100%;
   display: block;
   height: 320px;
+  cursor: pointer;
   border-radius: 18px;
   border: 1px solid var(--stroke);
   background:
@@ -264,6 +267,101 @@
     inset 0 0 0 1px var(--stroke),
     0 14px 34px rgba(0, 0, 0, 0.32);
   overflow: hidden;
+}
+
+.dpl-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+}
+
+.dpl-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.dpl-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(620px, calc(100vw - 28px));
+  max-height: calc(100vh - 40px);
+  transform: translate(-50%, -50%);
+  overflow: auto;
+  border-radius: 20px;
+  border: 1px solid var(--stroke2);
+  background: color-mix(in srgb, var(--card) 92%, #020617 8%);
+  box-shadow: var(--shadow2);
+  padding: 16px;
+}
+
+.dpl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dpl-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.dpl-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  color: var(--text);
+}
+
+.dpl-sub {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.dpl-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dpl-item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: color-mix(in srgb, var(--card2) 68%, transparent);
+}
+
+.dpl-item input {
+  margin-top: 2px;
+}
+
+.dpl-item span {
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.dpl-foot {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dpl-count {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .dopamine-graph-svg text {

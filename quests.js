@@ -4,15 +4,28 @@
   const STORAGE_KEY = "aurak_quests_v4";
   const XP_STORAGE_KEY = "totalXP";
   const DAILY_RESET_KEY = "dailyQuestResetDate";
+  const TASK_HISTORY_KEY = "dailyTaskHistory";
 
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
-  const DAY_SLOTS = [
-    { key: "morning", title: "Morning", hint: "Protect early focus." },
-    { key: "noon", title: "Noon", hint: "Sustain momentum." },
-    { key: "afternoon", title: "Afternoon", hint: "Deep work and execution." },
-    { key: "evening", title: "Evening", hint: "Reset and recover." },
-    { key: "night", title: "Night", hint: "Wind down clean." },
+  const QUEST_CATEGORIES = [
+    { key: "physical", title: "Physical", hint: "Train your body and stamina." },
+    {
+      key: "intellectual",
+      title: "Intellectual",
+      hint: "Sharpen learning and problem solving.",
+    },
+    {
+      key: "discipline",
+      title: "Discipline",
+      hint: "Build structure and self-control.",
+    },
+    {
+      key: "confidence",
+      title: "Confidence",
+      hint: "Practice expression and leadership.",
+    },
+    { key: "mental", title: "Mental", hint: "Protect focus and recovery." },
   ];
 
   function getAccountKey(baseKey) {
@@ -129,13 +142,13 @@
   }
 
   function getSlotByIndex(index) {
-    return DAY_SLOTS[index % DAY_SLOTS.length]?.key || "morning";
+    return QUEST_CATEGORIES[index % QUEST_CATEGORIES.length]?.key || "physical";
   }
 
   function buildSectionShell() {
     if (!questList) return;
     questList.innerHTML = "";
-    DAY_SLOTS.forEach((slot) => {
+    QUEST_CATEGORIES.forEach((slot) => {
       const section = document.createElement("section");
       section.className = "qsection";
       section.setAttribute("data-slot", slot.key);
@@ -189,12 +202,77 @@
     } catch {}
   }
 
+  function readTaskHistoryMap() {
+    try {
+      const raw = localStorage.getItem(getAccountKey(TASK_HISTORY_KEY));
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function writeTaskHistoryMap(map) {
+    try {
+      localStorage.setItem(getAccountKey(TASK_HISTORY_KEY), JSON.stringify(map));
+    } catch {}
+  }
+
+  function updateTaskHistoryForToday(qid, qname, isDone) {
+    const today = getISODate();
+    const map = readTaskHistoryMap();
+    const day = map[today] && typeof map[today] === "object" ? map[today] : {};
+
+    if (isDone) {
+      day[qid] = qname || qid;
+    } else {
+      delete day[qid];
+    }
+
+    if (Object.keys(day).length > 0) map[today] = day;
+    else delete map[today];
+
+    writeTaskHistoryMap(map);
+  }
+
+  function prettifyQuestId(qid) {
+    const raw = String(qid || "").trim();
+    if (!raw) return "Completed task";
+    return raw
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  function snapshotCompletedTasksForDate(state, dateStr) {
+    if (!state || typeof state !== "object" || !dateStr) return;
+    const completed = state.completed && typeof state.completed === "object" ? state.completed : {};
+    const completedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
+    if (!completedIds.length) return;
+
+    const nameById = new Map();
+    cards.forEach((card, index) => {
+      const qid = getCardId(card, index);
+      const qname = card.querySelector(".qname")?.textContent?.trim();
+      if (qid && qname) nameById.set(qid, qname);
+    });
+
+    const map = readTaskHistoryMap();
+    const day = map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+    completedIds.forEach((qid) => {
+      if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
+    });
+    map[dateStr] = day;
+    writeTaskHistoryMap(map);
+  }
+
   function ensureDailyQuestReset(state) {
     const today = getISODate();
     const resetKey = getAccountKey(DAILY_RESET_KEY);
     const lastReset = localStorage.getItem(resetKey);
     if (lastReset === today) return false;
 
+    if (lastReset) snapshotCompletedTasksForDate(state, lastReset);
     state.completed = {};
     saveState(state);
     try {
@@ -351,15 +429,15 @@
   function updateCountsRemainingOnly() {
     const countBy = {
       all: 0,
-      morning: 0,
-      noon: 0,
-      afternoon: 0,
-      evening: 0,
-      night: 0,
+      physical: 0,
+      intellectual: 0,
+      discipline: 0,
+      confidence: 0,
+      mental: 0,
     };
 
     cards.forEach((card) => {
-      const slot = card.dataset.slot || "morning";
+      const slot = card.dataset.slot || "physical";
       const isDone = card.dataset.completed === "true";
       if (isDone) return;
 
@@ -380,7 +458,7 @@
     const includeDone = showCompleted.checked;
 
     cards.forEach((card) => {
-      const slot = card.dataset.slot || "morning";
+      const slot = card.dataset.slot || "physical";
       const isDone = card.dataset.completed === "true";
       const matchType = filter === "all" ? true : slot === filter;
       const matchDone = includeDone ? true : !isDone;
@@ -471,6 +549,8 @@
     if (btn) btn.textContent = makeDone ? "Completed" : "Complete";
 
     saveState(state);
+    const qname = card.querySelector(".qname")?.textContent?.trim() || qid;
+    updateTaskHistoryForToday(qid, qname, makeDone);
 
     const xpDelta = parseExp(card);
     const signedDelta = makeDone ? xpDelta : -xpDelta;
@@ -545,7 +625,7 @@
 
         const qid = challenge.id;
         card.setAttribute("data-qid", qid);
-        card.dataset.slot = challenge.slot || getSlotByIndex(index);
+        card.dataset.slot = challenge.category || getSlotByIndex(index);
 
         const isDone = !!state.completed[qid];
         card.dataset.completed = isDone ? "true" : "false";
