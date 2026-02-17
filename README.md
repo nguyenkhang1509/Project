@@ -25,4 +25,5 @@ This project focuses on building a simple yet polished profile interface using m
 Under active development
 
 ## Author
-Kelvin Du
+Kelvin Du 
+Khang Nguyen
