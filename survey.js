@@ -1,5 +1,5 @@
 // survey.js
-import { mergeUserDoc, getStorageKey } from "./userStore.js";
+import { mergeUserDoc, getStorageKey, startAccountCloudSync } from "./userStore.js";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -16,6 +16,10 @@ function getCurrentUser() {
 
 function setCurrentUser(user) {
   localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+}
+
+function getInitialStatsPendingKey(uid) {
+  return uid ? `aurak_initial_stats_pending_${uid}` : "aurak_initial_stats_pending";
 }
 
 function getRadioAnswer(name) {
@@ -55,6 +59,7 @@ function calculateStats(surveyData) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  void startAccountCloudSync();
   const user = getCurrentUser();
   if (!user?.uid) {
     window.location.href = "login.html";
@@ -149,6 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updatedAt: new Date().toISOString(),
       }),
     );
+    localStorage.setItem(getInitialStatsPendingKey(user.uid), "1");
 
     window.location.href = "loading.html";
 

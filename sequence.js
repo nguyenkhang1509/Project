@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const hasBaseline = !!user.stats;
-  startLink.href = hasBaseline ? "stats.html" : "survey.html";
+  startLink.href = hasBaseline ? "dashboard.html" : "survey.html";
   startLink.textContent = hasBaseline ? "Continue →" : "Start →";
 
   showSlide(index, false);

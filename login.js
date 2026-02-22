@@ -1,5 +1,6 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { startAccountCloudSync } from "./userStore.js";
 
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
@@ -76,11 +77,8 @@ if (form) {
       );
 
       const fbUser = cred.user;
-
-      await fbUser.reload();
-
       const displayName = fbUser.displayName || "Player";
-      const profile = readUserProfile(fbUser.uid);
+      const localProfile = readUserProfile(fbUser.uid);
 
       const currentUser = {
         uid: fbUser.uid,
@@ -88,17 +86,13 @@ if (form) {
         name: displayName,
         displayName: displayName,
         lastLoginAt: new Date().toISOString(),
-        ...(profile?.stats ? { stats: profile.stats } : {}),
-        ...(profile?.survey ? { survey: profile.survey } : {}),
+        ...(localProfile?.stats ? { stats: localProfile.stats } : {}),
+        ...(localProfile?.survey ? { survey: localProfile.survey } : {}),
       };
 
       localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
-
-      if (currentUser.stats) {
-        window.location.href = "loading.html";
-      } else {
-        window.location.href = "sequence.html";
-      }
+      void startAccountCloudSync(fbUser.uid);
+      window.location.href = "loading.html";
     } catch (err) {
       const code = err?.code || "";
 

@@ -1,5 +1,14 @@
-(() => {
+((async () => {
   "use strict";
+
+  try {
+    const store = await import("./userStore.js");
+    if (typeof store.startAccountCloudSync === "function") {
+      void store.startAccountCloudSync();
+    }
+  } catch (err) {
+    console.warn("Cloud sync bootstrap failed:", err);
+  }
 
   const STORAGE_KEY = "aurak_quests_v4";
   const XP_STORAGE_KEY = "totalXP";
@@ -661,4 +670,4 @@
   } else {
     initializeChallenges();
   }
-})();
+})());
