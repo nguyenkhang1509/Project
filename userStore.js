@@ -116,11 +116,42 @@ function collectAccountState(uid) {
 
 function applyAccountState(state) {
   if (!state || typeof state !== "object") return;
+  const changedKeys = [];
   Object.entries(state).forEach(([key, value]) => {
     if (typeof value === "string") {
-      localStorage.setItem(key, value);
+      const prev = localStorage.getItem(key);
+      if (prev !== value) {
+        localStorage.setItem(key, value);
+        changedKeys.push(key);
+      }
     }
   });
+
+  // storage events do not fire in the same tab; emit synthetic events so
+  // active pages can re-render after cloud hydration updates localStorage.
+  changedKeys.forEach((key) => {
+    try {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key,
+          oldValue: null,
+          newValue: localStorage.getItem(key),
+          storageArea: localStorage,
+          url: window.location.href,
+        }),
+      );
+    } catch {}
+  });
+
+  if (changedKeys.length > 0) {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("aurak:account-state-hydrated", {
+          detail: { keys: changedKeys },
+        }),
+      );
+    } catch {}
+  }
 }
 
 export async function hydrateAccountState(uid) {
