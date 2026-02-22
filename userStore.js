@@ -72,8 +72,32 @@ export function getCurrentUser() {
 export function getStorageKey(baseKey, uid = null) {
   const userId = uid || getCurrentUser()?.uid;
   if (!userId) {
-    console.warn(`getStorageKey: No user ID available for key "${baseKey}"`);
-    return baseKey;
+    // Defensive fallback: avoid returning the raw baseKey (which would create
+    // un-namespaced/global keys shared across different installs/clones).
+    // Instead generate or reuse a per-instance ID so anonymous/local data
+    // doesn't collide between different copies of the project.
+    try {
+      let instanceId = localStorage.getItem("aurakInstanceId");
+      if (!instanceId) {
+        if (typeof crypto !== "undefined" && crypto.randomUUID) {
+          instanceId = crypto.randomUUID();
+        } else {
+          instanceId = `${Date.now().toString(36)}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`;
+        }
+        try {
+          localStorage.setItem("aurakInstanceId", instanceId);
+        } catch {}
+      }
+      console.warn(
+        `getStorageKey: No user ID for "${baseKey}", using instance fallback.`,
+      );
+      return `${baseKey}_anon_${instanceId}`;
+    } catch (err) {
+      console.warn(`getStorageKey fallback failed for "${baseKey}":`, err);
+      return `${baseKey}_anon`;
+    }
   }
   return `${baseKey}_${userId}`;
 }
@@ -157,10 +181,50 @@ function applyAccountState(state) {
 export async function hydrateAccountState(uid) {
   if (!uid) return false;
   const cloud = await readUserDoc(uid);
+  if (!cloud || typeof cloud !== "object") return false;
+
+  let hydrated = false;
   const appState = cloud?.appState;
-  if (!appState || typeof appState !== "object") return false;
-  applyAccountState(appState);
-  return true;
+  if (appState && typeof appState === "object") {
+    applyAccountState(appState);
+    hydrated = true;
+  }
+
+  const baselineStats = cloud?.baseline?.stats;
+  const baselineSurvey = cloud?.baseline?.survey;
+  if (baselineStats && typeof baselineStats === "object") {
+    const profileKey = getStorageKey("aurak_user_profile", uid);
+    let profile = {};
+    try {
+      const raw = localStorage.getItem(profileKey);
+      profile = raw ? JSON.parse(raw) : {};
+    } catch {
+      profile = {};
+    }
+    profile = {
+      ...profile,
+      stats: baselineStats,
+      ...(baselineSurvey ? { survey: baselineSurvey } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(profileKey, JSON.stringify(profile));
+
+    try {
+      const rawUser = localStorage.getItem("aurakCurrentUser");
+      const current = rawUser ? JSON.parse(rawUser) : null;
+      if (current?.uid === uid) {
+        const merged = {
+          ...current,
+          stats: baselineStats,
+          ...(baselineSurvey ? { survey: baselineSurvey } : {}),
+        };
+        localStorage.setItem("aurakCurrentUser", JSON.stringify(merged));
+      }
+    } catch {}
+    hydrated = true;
+  }
+
+  return hydrated;
 }
 
 export async function flushAccountState(uid) {

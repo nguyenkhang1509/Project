@@ -93,7 +93,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const dashboardKey = getStorageKey("aurakDashboard", user.uid);
-  localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
   localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
   const updatedUser = { ...user, dashboard: dashboardPayload };
   localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
@@ -181,7 +180,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {
-      localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
       localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
       localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
     });

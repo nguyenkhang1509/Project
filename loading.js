@@ -1,4 +1,4 @@
-import { startAccountCloudSync } from "./userStore.js";
+import { startAccountCloudSync, readUserDoc } from "./userStore.js";
 
 function safeParse(key) {
   try {
@@ -50,8 +50,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const run = async () => {
     let user = resolveUserWithProfile();
     if (!user?.stats) {
-      await awaitCloudWindow(900);
+      await awaitCloudWindow(2500);
       user = resolveUserWithProfile();
+    }
+
+    if (!user || !user.stats) {
+      if (user?.uid) {
+        let cloud = null;
+        try {
+          cloud = await readUserDoc(user.uid);
+        } catch {}
+
+        const baselineStats = cloud?.baseline?.stats;
+        if (baselineStats && typeof baselineStats === "object") {
+          const profileKey = `aurak_user_profile_${user.uid}`;
+          localStorage.setItem(
+            profileKey,
+            JSON.stringify({
+              stats: baselineStats,
+              ...(cloud?.baseline?.survey
+                ? { survey: cloud.baseline.survey }
+                : {}),
+              updatedAt: new Date().toISOString(),
+            }),
+          );
+          const merged = {
+            ...user,
+            stats: baselineStats,
+            ...(cloud?.baseline?.survey ? { survey: cloud.baseline.survey } : {}),
+          };
+          localStorage.setItem("aurakCurrentUser", JSON.stringify(merged));
+          user = merged;
+        }
+      }
     }
 
     if (!user || !user.stats) {
