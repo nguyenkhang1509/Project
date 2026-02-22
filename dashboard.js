@@ -423,19 +423,6 @@ function updateGraph() {
   let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
     0, 0, 0, 0, 0, 0, 0,
   ];
-  const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
-  const legacyWeeklyData = JSON.parse(localStorage.getItem("weeklyQuestData")) || [
-    0, 0, 0, 0, 0, 0, 0,
-  ];
-  const hasCurrentData =
-    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
-  const hasLegacyData =
-    Array.isArray(legacyWeeklyData) && legacyWeeklyData.some((v) => Number(v) > 0);
-
-  if (!hasCurrentData && hasLegacyData) {
-    weeklyData = legacyWeeklyData.slice(0, 7);
-    if (!lastResetDate && legacyResetDate) lastResetDate = legacyResetDate;
-  }
 
   const currentMonday = new Date();
   currentMonday.setDate(currentMonday.getDate() - dayIndex);
@@ -446,14 +433,11 @@ function updateGraph() {
     Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
   if (!lastResetDate) {
     localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   } else if (lastResetDate !== currentMondayStr) {
     weeklyData = [0, 0, 0, 0, 0, 0, 0];
     localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   } else if (!hasPersistedData && lastResetDate === currentMondayStr) {
     localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   }
 
   let completedCount = 0;
@@ -468,7 +452,6 @@ function updateGraph() {
   weeklyData[dayIndex] = completedCount;
 
   localStorage.setItem(dataKey, JSON.stringify(weeklyData));
-  localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
 
   const history = readTaskHistoryMap();
   const weeklyTasks = [];

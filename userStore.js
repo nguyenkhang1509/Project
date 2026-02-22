@@ -177,17 +177,42 @@ export function startAccountCloudSync(uidArg = null) {
   if (existing?.promise) return existing.promise;
 
   const promise = (async () => {
-    try {
-      await hydrateAccountState(uid);
-    } catch (err) {
-      console.warn("Cloud hydrate failed:", err);
-    }
-
+    let allowFlush = false;
     let lastSerialized = "";
     let flushing = false;
 
+    const tryHydrateOnce = async () => {
+      const cloud = await readUserDoc(uid);
+      const appState = cloud?.appState;
+
+      if (appState && typeof appState === "object") {
+        applyAccountState(appState);
+      }
+
+      // Allow writes only after we have successfully read the cloud document.
+      // This prevents a fresh/slow device from overwriting cloud state with
+      // empty local data when initial hydrate fails.
+      allowFlush = true;
+      lastSerialized = JSON.stringify(collectAccountState(uid));
+    };
+
+    try {
+      await tryHydrateOnce();
+    } catch (err) {
+      console.warn("Cloud hydrate failed:", err);
+      allowFlush = false;
+    }
+
     const tryFlush = async () => {
       if (flushing) return;
+      if (!allowFlush) {
+        try {
+          await tryHydrateOnce();
+        } catch (err) {
+          console.warn("Cloud hydrate retry failed:", err);
+          return;
+        }
+      }
       const snapshot = collectAccountState(uid);
       const serialized = JSON.stringify(snapshot);
       if (serialized === lastSerialized) return;
