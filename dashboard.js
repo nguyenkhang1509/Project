@@ -11,6 +11,7 @@ const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
+const CLOUD_WAIT_MS = 1200;
 
 const now = new Date();
 void startAccountCloudSync();
@@ -135,7 +136,14 @@ function rankFromAverage(avg) {
   return "E";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await Promise.race([
+      startAccountCloudSync(),
+      new Promise((resolve) => window.setTimeout(resolve, CLOUD_WAIT_MS)),
+    ]);
+  } catch {}
+
   const user = getCurrentUser();
 
   if (!user) return;

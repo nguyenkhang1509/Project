@@ -4,7 +4,10 @@
   try {
     const store = await import("./userStore.js");
     if (typeof store.startAccountCloudSync === "function") {
-      void store.startAccountCloudSync();
+      await Promise.race([
+        store.startAccountCloudSync(),
+        new Promise((resolve) => window.setTimeout(resolve, 1200)),
+      ]);
     }
   } catch (err) {
     console.warn("Cloud sync bootstrap failed:", err);

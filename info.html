@@ -568,6 +568,18 @@
         return baseKey;
       }
 
+      async function awaitCloudHydrate(ms = 1200) {
+        try {
+          const store = await import("./userStore.js");
+          if (typeof store.startAccountCloudSync === "function") {
+            await Promise.race([
+              store.startAccountCloudSync(),
+              new Promise((resolve) => window.setTimeout(resolve, ms)),
+            ]);
+          }
+        } catch {}
+      }
+
       function readUserProfile(uid) {
         if (!uid) return null;
         try {
@@ -784,17 +796,19 @@
 
         const completedQuests = (() => {
           try {
-            return JSON.parse(
-              localStorage.getItem(getAccountKey("completedQuests")) || "[]",
-            );
+            const raw = localStorage.getItem(getAccountKey("aurak_quests_v4"));
+            const parsed = raw ? JSON.parse(raw) : {};
+            const completed =
+              parsed && typeof parsed === "object" && parsed.completed
+                ? parsed.completed
+                : {};
+            return Object.values(completed).filter(Boolean).length;
           } catch {
-            return [];
+            return 0;
           }
         })();
 
-        const completedToday = Array.isArray(completedQuests)
-          ? completedQuests.filter(Boolean).length
-          : 0;
+        const completedToday = Number(completedQuests) || 0;
 
         const dailyMap = readDailyDoneMap();
         dailyMap[todayISO] = completedToday;
@@ -1084,7 +1098,8 @@
         });
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
+        await awaitCloudHydrate();
         initDplModal();
         render();
         setInterval(renderDopamine, 30000);
@@ -1093,6 +1108,7 @@
       window.addEventListener("storage", (e) => {
         if (
           e.key === getAccountKey("completedQuests") ||
+          e.key === getAccountKey("aurak_quests_v4") ||
           e.key === getAccountKey(DAILY_DONE_KEY) ||
           e.key === getAccountKey(DPL_TRACK_KEY)
         )
