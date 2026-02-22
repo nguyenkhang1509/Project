@@ -536,6 +536,9 @@
       const DAILY_DONE_KEY = "aurak_daily_done_v1";
       const DPL_TRACK_KEY = "aurak_dpl_tracking_v1";
       const DPL_MIN_REQUIRED = 3;
+      const XP_STORAGE_KEY = "totalXP";
+      const BASE_XP_PER_LEVEL = 500;
+      const LEVEL_GROWTH = 1.2;
       const DPL_TASKS = [
         { id: "dpl-1", label: "No screen time after waking up (30-60 min)", slot: "morning", weight: 1 },
         { id: "dpl-2", label: "No social media - full morning block", slot: "morning", weight: 1 },
@@ -610,6 +613,22 @@
         if (avg >= 40) return "C";
         if (avg >= 20) return "D";
         return "E";
+      }
+
+      function getLevelInfo(totalXp) {
+        let level = 1;
+        let req = BASE_XP_PER_LEVEL;
+        let remaining = Number.isFinite(totalXp) ? totalXp : 0;
+
+        for (let guard = 0; guard < 200; guard++) {
+          if (remaining < req) break;
+          remaining -= req;
+          level += 1;
+          req = Math.max(1, Math.round(req * LEVEL_GROWTH));
+        }
+
+        const progress = req > 0 ? remaining / req : 0;
+        return { level, req, progress, remaining };
       }
 
       function localNoon(d) {
@@ -710,6 +729,12 @@
 
         const avg = averageStat(stats);
         setText("sideSub", `Rank ${rankFromAverage(avg)}`);
+        const totalXp = Math.max(
+          0,
+          Number(localStorage.getItem(getAccountKey(XP_STORAGE_KEY))) || 0,
+        );
+        const levelInfo = getLevelInfo(totalXp);
+        setText("statsLevel", `Lv. ${levelInfo.level}`);
         if (avg !== null) {
           setText("avgStat", `Average ${Math.round(avg)} / 100`);
         } else {

@@ -24,7 +24,9 @@ const ACCOUNT_SYNC_BASE_KEYS = [
   "aurakDashboard",
   "aurak_user_profile",
   "aurak_dpl_daily_done_v1",
+  "aurak_daily_done_v1",
   "aurak_dpl_track_v1",
+  "aurak_dpl_tracking_v1",
 ];
 
 const SYNC_INTERVAL_MS = 3000;

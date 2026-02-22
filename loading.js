@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pendingKey = getInitialStatsPendingKey(user.uid);
     const shouldShowInitialStats = localStorage.getItem(pendingKey) === "1";
 
-    await wait(120);
+    await wait(900);
     window.location.href = shouldShowInitialStats ? "stats.html" : "dashboard.html";
   };
 
