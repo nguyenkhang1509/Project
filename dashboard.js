@@ -1,8 +1,4 @@
-import {
-  getStorageKey,
-  getCurrentUser,
-  startAccountCloudSync,
-} from "./userStore.js";
+import { getStorageKey, getCurrentUser } from "./userStore.js";
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
@@ -11,10 +7,8 @@ const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
-const CLOUD_WAIT_MS = 1200;
 
 const now = new Date();
-void startAccountCloudSync();
 
 function getAccountStorageKey(baseKey) {
   return getStorageKey(baseKey);
@@ -75,7 +69,10 @@ function readTaskHistoryMap() {
 
 function writeTaskHistoryMap(map) {
   try {
-    localStorage.setItem(getAccountStorageKey(TASK_HISTORY_KEY), JSON.stringify(map));
+    localStorage.setItem(
+      getAccountStorageKey(TASK_HISTORY_KEY),
+      JSON.stringify(map),
+    );
   } catch {}
 }
 
@@ -104,7 +101,10 @@ function prettifyQuestId(qid) {
 
 function snapshotCompletedTasksForDate(dateStr, state) {
   if (!dateStr || !state || typeof state !== "object") return;
-  const completed = state.completed && typeof state.completed === "object" ? state.completed : {};
+  const completed =
+    state.completed && typeof state.completed === "object"
+      ? state.completed
+      : {};
   const completedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
   if (!completedIds.length) return;
 
@@ -118,7 +118,8 @@ function snapshotCompletedTasksForDate(dateStr, state) {
   });
 
   const map = readTaskHistoryMap();
-  const day = map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+  const day =
+    map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
   completedIds.forEach((qid) => {
     if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
   });
@@ -136,14 +137,7 @@ function rankFromAverage(avg) {
   return "E";
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await Promise.race([
-      startAccountCloudSync(),
-      new Promise((resolve) => window.setTimeout(resolve, CLOUD_WAIT_MS)),
-    ]);
-  } catch {}
-
+document.addEventListener("DOMContentLoaded", () => {
   const user = getCurrentUser();
 
   if (!user) return;
@@ -423,6 +417,20 @@ function updateGraph() {
   let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
     0, 0, 0, 0, 0, 0, 0,
   ];
+  const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
+  const legacyWeeklyData = JSON.parse(
+    localStorage.getItem("weeklyQuestData"),
+  ) || [0, 0, 0, 0, 0, 0, 0];
+  const hasCurrentData =
+    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
+  const hasLegacyData =
+    Array.isArray(legacyWeeklyData) &&
+    legacyWeeklyData.some((v) => Number(v) > 0);
+
+  if (!hasCurrentData && hasLegacyData) {
+    weeklyData = legacyWeeklyData.slice(0, 7);
+    if (!lastResetDate && legacyResetDate) lastResetDate = legacyResetDate;
+  }
 
   const currentMonday = new Date();
   currentMonday.setDate(currentMonday.getDate() - dayIndex);
@@ -433,11 +441,14 @@ function updateGraph() {
     Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
   if (!lastResetDate) {
     localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   } else if (lastResetDate !== currentMondayStr) {
     weeklyData = [0, 0, 0, 0, 0, 0, 0];
     localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   } else if (!hasPersistedData && lastResetDate === currentMondayStr) {
     localStorage.setItem(resetKey, currentMondayStr);
+    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
   }
 
   let completedCount = 0;
@@ -452,6 +463,7 @@ function updateGraph() {
   weeklyData[dayIndex] = completedCount;
 
   localStorage.setItem(dataKey, JSON.stringify(weeklyData));
+  localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
 
   const history = readTaskHistoryMap();
   const weeklyTasks = [];
@@ -506,7 +518,10 @@ function updateGraph() {
     weeklyData.forEach((val, i) => {
       const x = 60 + i * 100;
       const y = 220 - (Math.min(val, 20) / 20) * 200;
-      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      const circle = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle",
+      );
       circle.setAttribute("cx", String(x));
       circle.setAttribute("cy", String(y));
       circle.setAttribute("r", "5");
@@ -529,11 +544,7 @@ function updateGraph() {
       const tasks = weeklyTasks[i] || [];
       const count = Number(weeklyData[i] || 0);
       const lines =
-        tasks.length > 0
-          ? tasks
-          : count > 0
-            ? []
-            : ["No tasks completed"];
+        tasks.length > 0 ? tasks : count > 0 ? [] : ["No tasks completed"];
       tooltip.innerHTML = `
         <div class="gtt-day">${dayLabels[i]} - ${count} done</div>
         ${lines.map((t) => `<div class="gtt-item">${t}</div>`).join("")}
@@ -572,7 +583,10 @@ function updateGraph() {
     };
 
     for (let i = 0; i < 7; i++) {
-      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      const rect = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect",
+      );
       rect.setAttribute("x", String(60 + i * 100 - 45));
       rect.setAttribute("y", "20");
       rect.setAttribute("width", "90");

@@ -1,4 +1,4 @@
-import { mergeUserDoc, getStorageKey, startAccountCloudSync } from "./userStore.js";
+import { mergeUserDoc, getStorageKey } from "./userStore.js";
 
 function safeParse(key) {
   try {
@@ -42,12 +42,7 @@ function computeLevel(xpNow) {
   return Math.floor(clamp(xpNow, 0, 1000000) / 250) + 1;
 }
 
-function getInitialStatsPendingKey(uid) {
-  return uid ? `aurak_initial_stats_pending_${uid}` : "aurak_initial_stats_pending";
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
-  void startAccountCloudSync();
   const user = safeParse("aurakCurrentUser");
   const profile = readUserProfile(user?.uid);
   if (user && !user.stats && profile?.stats) {
@@ -67,8 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (summaryText) summaryText.textContent = "No baseline found.";
     return;
   }
-
-  localStorage.removeItem(getInitialStatsPendingKey(user.uid));
 
   const pillarsPct = {
     physical: stat10to20_toPercent(user.stats.Physical),
@@ -93,6 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const dashboardKey = getStorageKey("aurakDashboard", user.uid);
+  localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
   localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
   const updatedUser = { ...user, dashboard: dashboardPayload };
   localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
@@ -180,6 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {
+      localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
       localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
       localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
     });

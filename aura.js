@@ -1,13 +1,8 @@
-import {
-  getStorageKey,
-  getCurrentUser,
-  startAccountCloudSync,
-} from "./userStore.js";
+import { getStorageKey, getCurrentUser } from "./userStore.js";
 
 const XP_KEY_BASE = "totalXP";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
-void startAccountCloudSync();
 
 function getLevelInfo(totalXp) {
   let level = 1;
@@ -65,8 +60,7 @@ function hydrateIdentity() {
   const user = getCurrentUser();
   if (!user) return;
 
-  const displayName =
-    user.displayName || user.name || user.username || "User";
+  const displayName = user.displayName || user.name || user.username || "User";
 
   const sideUser = document.getElementById("sideUser");
   const sideSub = document.getElementById("sideSub");

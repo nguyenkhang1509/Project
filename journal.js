@@ -1,8 +1,4 @@
-import {
-  getStorageKey,
-  getCurrentUser,
-  startAccountCloudSync,
-} from "./userStore.js";
+import { getStorageKey, getCurrentUser } from "./userStore.js";
 
 const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const XP_KEY_BASE = "totalXP";
@@ -13,7 +9,6 @@ const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 
 const stepsCount = 6;
-void startAccountCloudSync();
 
 const state = {
   mood: null,

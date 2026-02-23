@@ -3,7 +3,6 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { mergeUserDoc, startAccountCloudSync } from "./userStore.js";
 
 const regForm = document.getElementById("register-form");
 const nameInput = document.getElementById("display-name");
@@ -138,14 +137,6 @@ if (regForm) {
       };
 
       localStorage.setItem("aurakCurrentUser", JSON.stringify(newUser));
-      await mergeUserDoc(cred.user.uid, {
-        identity: {
-          email: emailValue,
-          displayName: nameValue,
-          createdAt: new Date().toISOString(),
-        },
-      });
-      void startAccountCloudSync(cred.user.uid);
 
       // Đăng ký thành công → chuyển sang trang đăng nhập
       window.location.href = "sequence.html";

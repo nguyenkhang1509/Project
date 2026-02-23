@@ -536,9 +536,6 @@
       const DAILY_DONE_KEY = "aurak_daily_done_v1";
       const DPL_TRACK_KEY = "aurak_dpl_tracking_v1";
       const DPL_MIN_REQUIRED = 3;
-      const XP_STORAGE_KEY = "totalXP";
-      const BASE_XP_PER_LEVEL = 500;
-      const LEVEL_GROWTH = 1.2;
       const DPL_TASKS = [
         { id: "dpl-1", label: "No screen time after waking up (30-60 min)", slot: "morning", weight: 1 },
         { id: "dpl-2", label: "No social media - full morning block", slot: "morning", weight: 1 },
@@ -566,18 +563,6 @@
         const user = getCurrentUser();
         if (user?.uid) return `${baseKey}_${user.uid}`;
         return baseKey;
-      }
-
-      async function awaitCloudHydrate(ms = 1200) {
-        try {
-          const store = await import("./userStore.js");
-          if (typeof store.startAccountCloudSync === "function") {
-            await Promise.race([
-              store.startAccountCloudSync(),
-              new Promise((resolve) => window.setTimeout(resolve, ms)),
-            ]);
-          }
-        } catch {}
       }
 
       function readUserProfile(uid) {
@@ -625,22 +610,6 @@
         if (avg >= 40) return "C";
         if (avg >= 20) return "D";
         return "E";
-      }
-
-      function getLevelInfo(totalXp) {
-        let level = 1;
-        let req = BASE_XP_PER_LEVEL;
-        let remaining = Number.isFinite(totalXp) ? totalXp : 0;
-
-        for (let guard = 0; guard < 200; guard++) {
-          if (remaining < req) break;
-          remaining -= req;
-          level += 1;
-          req = Math.max(1, Math.round(req * LEVEL_GROWTH));
-        }
-
-        const progress = req > 0 ? remaining / req : 0;
-        return { level, req, progress, remaining };
       }
 
       function localNoon(d) {
@@ -741,12 +710,6 @@
 
         const avg = averageStat(stats);
         setText("sideSub", `Rank ${rankFromAverage(avg)}`);
-        const totalXp = Math.max(
-          0,
-          Number(localStorage.getItem(getAccountKey(XP_STORAGE_KEY))) || 0,
-        );
-        const levelInfo = getLevelInfo(totalXp);
-        setText("statsLevel", `Lv. ${levelInfo.level}`);
         if (avg !== null) {
           setText("avgStat", `Average ${Math.round(avg)} / 100`);
         } else {
@@ -796,19 +759,17 @@
 
         const completedQuests = (() => {
           try {
-            const raw = localStorage.getItem(getAccountKey("aurak_quests_v4"));
-            const parsed = raw ? JSON.parse(raw) : {};
-            const completed =
-              parsed && typeof parsed === "object" && parsed.completed
-                ? parsed.completed
-                : {};
-            return Object.values(completed).filter(Boolean).length;
+            return JSON.parse(
+              localStorage.getItem(getAccountKey("completedQuests")) || "[]",
+            );
           } catch {
-            return 0;
+            return [];
           }
         })();
 
-        const completedToday = Number(completedQuests) || 0;
+        const completedToday = Array.isArray(completedQuests)
+          ? completedQuests.filter(Boolean).length
+          : 0;
 
         const dailyMap = readDailyDoneMap();
         dailyMap[todayISO] = completedToday;
@@ -1098,8 +1059,7 @@
         });
       }
 
-      document.addEventListener("DOMContentLoaded", async () => {
-        await awaitCloudHydrate();
+      document.addEventListener("DOMContentLoaded", () => {
         initDplModal();
         render();
         setInterval(renderDopamine, 30000);
@@ -1108,7 +1068,6 @@
       window.addEventListener("storage", (e) => {
         if (
           e.key === getAccountKey("completedQuests") ||
-          e.key === getAccountKey("aurak_quests_v4") ||
           e.key === getAccountKey(DAILY_DONE_KEY) ||
           e.key === getAccountKey(DPL_TRACK_KEY)
         )
