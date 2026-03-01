@@ -158,299 +158,206 @@
           </div>
         </header>
 
-        <div class="pf-wrap">
-          <div class="pf-shell">
-            <div class="pf-shell-top">
-              <div class="pf-shellTitle">
-                <span class="pf-shellDot" aria-hidden="true"></span>
-                Profile Center
-              </div>
-              <div class="pf-shellSub">Identity • Membership • Highlights</div>
-            </div>
+       <div class="pr-wrap" aria-label="Profile Content">
+  <div class="pr-head">
+    <div class="pr-kicker">PROFILE</div>
+    <div class="pr-title">Your Identity</div>
+  </div>
 
-            <section class="pf-hero" aria-label="Profile Hero">
-              <div class="pf-hero-left">
-                <div class="pf-avatar" aria-hidden="true">
-                  <div class="pf-avatar-ring"></div>
-                  <i class="fa-solid fa-user-astronaut"></i>
-                </div>
+  <section class="pr-card pr-identity" aria-label="Your Identity">
+    <div class="pr-identityRow">
+      <div class="pr-avatar" aria-hidden="true">
+        <span class="pr-letter" id="prAvatarLetter">S</span>
+      </div>
 
-                <div class="pf-identity">
-                  <div class="pf-nameRow">
-                    <div class="pf-name" id="pfName">—</div>
-                    <span class="pf-pill" id="pfPlanPill">FREE</span>
-                  </div>
+      <div class="pr-id">
+        <div class="pr-name" id="pfName">—</div>
+        <div class="pr-tag" id="pfTagline">—</div>
+        <div class="pr-subRow">
+          <span class="pr-handle" id="pfHandle">—</span>
+          <span class="pr-join" id="prJoined">Joined —</span>
+        </div>
+      </div>
 
-                  <div class="pf-tagline" id="pfTagline">—</div>
+      <button class="pr-edit" id="prEditBtn" type="button">
+        Edit Profile
+      </button>
+    </div>
+  </section>
 
-                  <div class="pf-badges">
-                    <span class="pf-badge">
-                      <i class="fa-solid fa-ranking-star"></i>
-                      <span id="pfRankBadge">Rank —</span>
-                    </span>
-                    <span class="pf-badge">
-                      <i class="fa-solid fa-layer-group"></i>
-                      <span id="pfAvgBadge">Avg —</span>
-                    </span>
-                    <span class="pf-badge">
-                      <i class="fa-solid fa-bolt"></i>
-                      <span id="pfXpBadge">XP —</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
+  <div class="pr-stack" aria-label="Profile Panels">
+    <section class="pr-card pr-info" aria-label="Hunter Info">
+      <div class="pr-cardHead">HUNTER INFO</div>
 
-              <div class="pf-hero-right">
-                <button class="pf-btn primary" id="pfSaveBtn" type="button">
-                  <i class="fa-solid fa-floppy-disk"></i>
-                  Save Profile
-                </button>
+      <div class="pr-rows">
+        <div class="pr-row">
+          <span class="k">Level</span>
+          <span class="v" id="pfLevel">—</span>
+        </div>
+        <div class="pr-row">
+          <span class="k">Rank</span>
+          <span class="v" id="pfRank">—</span>
+        </div>
+        <div class="pr-row">
+          <span class="k">Streak</span>
+          <span class="v" id="prStreak">—</span>
+        </div>
+        <div class="pr-row">
+          <span class="k">Title</span>
+          <span class="v" id="prTitle">—</span>
+        </div>
+      </div>
+    </section>
 
-                <div class="pf-heroMeta">
-                  <div class="pf-saved" id="pfLastSaved">—</div>
-                  <span class="pf-dirty" id="pfDirty" aria-hidden="true"
-                    >Unsaved</span
-                  >
-                </div>
-              </div>
+    <section class="pr-card pr-sub" aria-label="Subscription">
+      <div class="pr-subTop">
+        <div class="pr-cardHead">SUBSCRIPTION</div>
+        <span class="pr-pill" id="pfPlanBadge">—</span>
+      </div>
 
-              <div class="pf-hero-glow pf-g1" aria-hidden="true"></div>
-              <div class="pf-hero-glow pf-g2" aria-hidden="true"></div>
-            </section>
+      <div class="pr-subName" id="pfPlanName">—</div>
+      <div class="pr-subDesc" id="pfPlanDesc">—</div>
 
-            <div class="pf-grid pf-vertical">
-              <section class="pf-card" id="pfAbout" aria-label="About">
-                <div class="pf-head">
-                  <div class="pf-title">
-                    <i class="fa-solid fa-id-card"></i>
-                    About You
-                  </div>
-                  <div class="pf-mini" id="pfHandle">—</div>
-                </div>
+      <button class="pr-upgrade" id="pfUpgradeBtn" type="button">
+        Upgrade to Premium
+      </button>
 
-                <div class="pf-form">
-                  <div class="pf-cols">
-                    <label class="pf-field">
-                      <div class="pf-labRow">
-                        <span>Display name</span>
-                        <span class="pf-hint" id="pfNameHint">Public</span>
-                      </div>
-                      <input
-                        id="pfInputName"
-                        type="text"
-                        placeholder="Your name"
-                        maxlength="28"
-                        autocomplete="nickname"
-                      />
-                      <div class="pf-countRow">
-                        <span class="pf-help">Shown on your identity card</span>
-                        <span class="pf-count" id="pfNameCount">0/28</span>
-                      </div>
-                    </label>
+      <script>
+        document.getElementById("pfUpgradeBtn").onclick = () => {
+          window.location.href = "subscription.html";
+        };
+      </script>
+    </section>
+  </div>
 
-                    <label class="pf-field">
-                      <div class="pf-labRow">
-                        <span>Tagline</span>
-                        <span class="pf-hint">Short</span>
-                      </div>
-                      <input
-                        id="pfInputTagline"
-                        type="text"
-                        placeholder="Student • Builder • Athlete"
-                        maxlength="44"
-                        autocomplete="off"
-                      />
-                      <div class="pf-countRow">
-                        <span class="pf-help">One-line identity</span>
-                        <span class="pf-count" id="pfTagCount">0/44</span>
-                      </div>
-                    </label>
-                  </div>
+  <!-- Edit modal -->
+  <div class="pr-modal" id="prModal" aria-hidden="true">
+    <div class="pr-modalCard" role="dialog" aria-modal="true">
+      <div class="pr-modalHead">
+        <div class="pr-modalTitle">Edit Profile</div>
+        <button
+          class="pr-x"
+          id="prModalClose"
+          type="button"
+          aria-label="Close"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-                  <label class="pf-field">
-                    <div class="pf-labRow">
-                      <span>Bio</span>
-                      <span class="pf-hint">Optional</span>
-                    </div>
-                    <textarea
-                      id="pfInputBio"
-                      rows="4"
-                      placeholder="Write your AuraK story (short + sharp)."
-                      maxlength="240"
-                    ></textarea>
-                    <div class="pf-countRow">
-                      <span class="pf-help"
-                        >Keep it tight — your why + your direction</span
-                      >
-                      <span class="pf-count" id="pfBioCount">0/240</span>
-                    </div>
-                  </label>
+      <div class="pr-modalBody">
+        <label class="pr-field">
+          <span>Display name</span>
+          <input
+            id="pfInputName"
+            type="text"
+            placeholder="Your name"
+            maxlength="28"
+            autocomplete="nickname"
+          />
+          <div class="pr-miniRow">
+            <span class="pr-mini" id="pfNameCount">0/28</span>
+          </div>
+        </label>
 
-                  <div class="pf-socials">
-                    <div class="pf-social">
-                      <i class="fa-brands fa-instagram"></i>
-                      <input
-                        id="pfIg"
-                        type="text"
-                        placeholder="instagram handle"
-                        autocomplete="off"
-                        inputmode="text"
-                      />
-                      <button
-                        class="pf-miniBtn"
-                        id="pfIgClear"
-                        type="button"
-                        aria-label="Clear Instagram"
-                      >
-                        <i class="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
-                    <div class="pf-social">
-                      <i class="fa-brands fa-github"></i>
-                      <input
-                        id="pfGh"
-                        type="text"
-                        placeholder="github username"
-                        autocomplete="off"
-                        inputmode="text"
-                      />
-                      <button
-                        class="pf-miniBtn"
-                        id="pfGhClear"
-                        type="button"
-                        aria-label="Clear GitHub"
-                      >
-                        <i class="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
-                    <div class="pf-social">
-                      <i class="fa-solid fa-link"></i>
-                      <input
-                        id="pfLink"
-                        type="text"
-                        placeholder="portfolio link"
-                        autocomplete="url"
-                        inputmode="url"
-                      />
-                      <button
-                        class="pf-miniBtn"
-                        id="pfLinkClear"
-                        type="button"
-                        aria-label="Clear Link"
-                      >
-                        <i class="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
-                  </div>
+        <label class="pr-field">
+          <span>Tagline</span>
+          <input
+            id="pfInputTagline"
+            type="text"
+            placeholder="Student • Builder • Athlete"
+            maxlength="44"
+            autocomplete="off"
+          />
+          <div class="pr-miniRow">
+            <span class="pr-mini" id="pfTagCount">0/44</span>
+          </div>
+        </label>
 
-                  <div class="pf-preview" aria-label="Public Preview">
-                    <div class="pf-previewTop">
-                      <div class="pf-previewTitle">
-                        <i class="fa-solid fa-eye"></i> Public preview
-                      </div>
-                      <div class="pf-previewHint">Auto-updates</div>
-                    </div>
+        <label class="pr-field">
+          <span>Bio</span>
+          <textarea
+            id="pfInputBio"
+            rows="4"
+            placeholder="Write your AuraK story (short + sharp)."
+            maxlength="240"
+          ></textarea>
+          <div class="pr-miniRow">
+            <span class="pr-mini" id="pfBioCount">0/240</span>
+          </div>
+        </label>
 
-                    <div class="pf-previewCard">
-                      <div class="pf-previewName" id="pfNamePreview">—</div>
-                      <div class="pf-previewTag" id="pfTaglinePreview">—</div>
-                      <div class="pf-previewBio" id="pfBioPreview">
-                        Add a short bio to define your identity.
-                      </div>
+        <div class="pr-socials" aria-label="Social links">
+          <div class="pr-social">
+            <i class="fa-brands fa-instagram"></i>
+            <input
+              id="pfIg"
+              type="text"
+              placeholder="instagram handle"
+              autocomplete="off"
+              inputmode="text"
+            />
+            <button
+              class="pr-miniBtn"
+              id="pfIgClear"
+              type="button"
+              aria-label="Clear Instagram"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
 
-                      <div class="pf-previewLinks">
-                        <span class="pf-plink" id="pfIgPreview"
-                          ><i class="fa-brands fa-instagram"></i
-                          ><span>—</span></span
-                        >
-                        <span class="pf-plink" id="pfGhPreview"
-                          ><i class="fa-brands fa-github"></i
-                          ><span>—</span></span
-                        >
-                        <span class="pf-plink" id="pfLinkPreview"
-                          ><i class="fa-solid fa-link"></i><span>—</span></span
-                        >
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
+          <div class="pr-social">
+            <i class="fa-brands fa-github"></i>
+            <input
+              id="pfGh"
+              type="text"
+              placeholder="github username"
+              autocomplete="off"
+              inputmode="text"
+            />
+            <button
+              class="pr-miniBtn"
+              id="pfGhClear"
+              type="button"
+              aria-label="Clear GitHub"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
 
-              <section
-                class="pf-card"
-                id="pfMembership"
-                aria-label="Membership"
-              >
-                <div class="pf-head">
-                  <div class="pf-title">
-                    <i class="fa-solid fa-crown"></i>
-                    Membership
-                  </div>
-                  <span class="pf-pill soft" id="pfPlanBadge">—</span>
-                </div>
-
-                <div class="pf-mrow">
-                  <div class="pf-mmain">
-                    <div class="pf-mname" id="pfPlanName">—</div>
-                    <div class="pf-mdesc" id="pfPlanDesc">—</div>
-                  </div>
-                </div>
-
-                <div class="pf-perks" id="pfPerks"></div>
-
-                <div class="pf-actions">
-                  <button class="pf-btn" id="pfUpgradeBtn" type="button">
-                    <i class="fa-solid fa-arrow-up-right-dots"></i>
-                    Upgrade
-                  </button>
-
-                  <script>
-                    document.getElementById("pfUpgradeBtn").onclick = () => {
-                      window.location.href = "subscription.html";
-                    };
-                  </script>
-                </div>
-              </section>
-
-              <section
-                class="pf-card"
-                id="pfHighlights"
-                aria-label="Highlights"
-              >
-                <div class="pf-head">
-                  <div class="pf-title">
-                    <i class="fa-solid fa-sparkles"></i>
-                    Highlights
-                  </div>
-                  <div class="pf-mini">Profile stats</div>
-                </div>
-
-                <div class="pf-tiles">
-                  <div class="pf-tile">
-                    <div class="k" id="pfTotalXP">—</div>
-                    <div class="l">Total XP</div>
-                  </div>
-                  <div class="pf-tile">
-                    <div class="k" id="pfLevel">—</div>
-                    <div class="l">Level</div>
-                  </div>
-                  <div class="pf-tile">
-                    <div class="k" id="pfRank">—</div>
-                    <div class="l">Rank</div>
-                  </div>
-                  <div class="pf-tile">
-                    <div class="k" id="pfAvg">—</div>
-                    <div class="l">Avg Pillar</div>
-                  </div>
-                </div>
-
-                <div class="pf-quote" id="pfQuote">
-                  Build the identity. Then let the system reinforce it.
-                </div>
-              </section>
-            </div>
+          <div class="pr-social">
+            <i class="fa-solid fa-link"></i>
+            <input
+              id="pfLink"
+              type="text"
+              placeholder="portfolio link"
+              autocomplete="url"
+              inputmode="url"
+            />
+            <button
+              class="pr-miniBtn"
+              id="pfLinkClear"
+              type="button"
+              aria-label="Clear Link"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
         </div>
+
+        <div class="pr-saveRow">
+          <div class="pr-saveMeta">
+            <div class="pr-saved" id="pfLastSaved">—</div>
+            <span class="pr-dirty" id="pfDirty" aria-hidden="true">Unsaved</span>
+          </div>
+
+          <button class="pr-save" id="pfSaveBtn" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
       </section>
     </main>
 
