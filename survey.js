@@ -1,5 +1,8 @@
-// survey.js
-import { mergeUserDoc, getStorageKey } from "./userStore.js";
+import {
+  mergeUserState,
+  writeCachedUserDoc,
+  writeCurrentUser,
+} from "./userStore.js";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -15,7 +18,7 @@ function getCurrentUser() {
 }
 
 function setCurrentUser(user) {
-  localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+  writeCurrentUser(user);
 }
 
 function getRadioAnswer(name) {
@@ -94,13 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
-  // Start
   startBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     showStep(1);
   });
 
-  // Next
   nextBtns.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -109,7 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Back
   backBtns.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -137,29 +137,30 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const stats = calculateStats(surveyData);
-
     const updatedLocal = { ...user, survey: surveyData, stats };
-    setCurrentUser(updatedLocal);
-    const profileKey = getStorageKey("aurak_user_profile", user.uid);
-    localStorage.setItem(
-      profileKey,
-      JSON.stringify({
+    const nextState = {
+      profile: {
+        displayName: updatedLocal.displayName || updatedLocal.name || "Player",
         stats,
         survey: surveyData,
         updatedAt: new Date().toISOString(),
-      }),
-    );
-
-    window.location.href = "loading.html";
-
-    mergeUserDoc(user.uid, {
+      },
+      displayName: updatedLocal.displayName || updatedLocal.name || "Player",
+      stats,
+      survey: surveyData,
       baseline: {
         stats,
         survey: surveyData,
         completedAt: new Date().toISOString(),
       },
-    }).catch((err) => {
-      console.warn("Firestore baseline save failed (non-blocking):", err);
+    };
+
+    setCurrentUser(updatedLocal);
+    writeCachedUserDoc(user.uid, nextState);
+    void mergeUserState(user.uid, nextState).catch((error) => {
+      console.warn("Survey Firestore sync failed:", error);
     });
+
+    window.location.href = "loading.html";
   });
 });

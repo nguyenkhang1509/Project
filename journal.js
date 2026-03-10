@@ -1,4 +1,11 @@
-import { getStorageKey, getCurrentUser } from "./userStore.js";
+import {
+  getCurrentUser,
+  getStorageKey,
+  mergeUserState,
+  readCachedUserProfile,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
 
 const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const XP_KEY_BASE = "totalXP";
@@ -85,13 +92,7 @@ function getLevelInfo(totalXp) {
 }
 
 function readUserProfile(uid) {
-  if (!uid) return null;
-  try {
-    const raw = localStorage.getItem(`aurak_user_profile_${uid}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return uid ? readCachedUserProfile(uid) : null;
 }
 
 function averageStat(stats) {
@@ -223,6 +224,12 @@ function upsertTodayEntry(payload) {
     });
 
   writeJSON(key, { entries });
+  const user = getCurrentUser();
+  if (user?.uid) {
+    void mergeUserState(user.uid, { journal: { entries } }).catch((error) => {
+      console.warn("Journal sync failed:", error);
+    });
+  }
   return entries;
 }
 
@@ -562,6 +569,14 @@ function writeDashboardReflection(entry) {
     updatedAt: Date.now(),
   };
   writeJSON(key, payload);
+  const user = getCurrentUser();
+  if (user?.uid) {
+    void mergeUserState(user.uid, { dashboardReflection: payload }).catch(
+      (error) => {
+        console.warn("Dashboard reflection sync failed:", error);
+      },
+    );
+  }
 }
 
 function setRecentCollapsed(collapsed) {
@@ -946,7 +961,25 @@ function renderTrend(entries) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = getCurrentUser();
+  if (user?.uid) {
+    try {
+      await syncUserState(user.uid);
+    } catch (error) {
+      console.warn("Journal cloud sync failed:", error);
+    }
+
+    const profile = readUserProfile(user.uid);
+    if (!user.stats && profile?.stats) {
+      writeCurrentUser({
+        ...user,
+        stats: profile.stats,
+        ...(profile.survey ? { survey: profile.survey } : {}),
+      });
+    }
+  }
+
   setActiveSidebar();
   hydrateIdentity();
   initRecentToggle();

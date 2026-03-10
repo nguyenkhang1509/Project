@@ -2,7 +2,12 @@ import { auth } from "./firebase.js";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import {
+  mergeUserState,
+  writeCachedUserDoc,
+  writeCurrentUser,
+} from "./userStore.js";
 
 const regForm = document.getElementById("register-form");
 const nameInput = document.getElementById("display-name");
@@ -136,7 +141,25 @@ if (regForm) {
         createdAt: new Date().toISOString(),
       };
 
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(newUser));
+      const initialState = {
+        profile: {
+          displayName: nameValue,
+          updatedAt: new Date().toISOString(),
+        },
+        displayName: nameValue,
+        totalXP: 0,
+        quests: { completed: {} },
+        weeklyQuestData: [0, 0, 0, 0, 0, 0, 0],
+        dailyTaskHistory: {},
+        completedQuests: [],
+        journal: { entries: [] },
+      };
+
+      writeCurrentUser(newUser);
+      writeCachedUserDoc(cred.user.uid, initialState);
+      void mergeUserState(cred.user.uid, initialState).catch((error) => {
+        console.warn("Initial Firestore signup sync failed:", error);
+      });
 
       // Đăng ký thành công → chuyển sang trang đăng nhập
       window.location.href = "sequence.html";

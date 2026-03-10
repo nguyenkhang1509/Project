@@ -1,4 +1,10 @@
-import { getStorageKey, getCurrentUser } from "./userStore.js";
+import {
+  getCurrentUser,
+  getStorageKey,
+  readCachedUserProfile,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
 
 const XP_KEY_BASE = "totalXP";
 const BASE_XP_PER_LEVEL = 500;
@@ -20,16 +26,6 @@ function getLevelInfo(totalXp) {
   return { level, req, progress, remaining };
 }
 
-function readUserProfile(uid) {
-  if (!uid) return null;
-  try {
-    const raw = localStorage.getItem(`aurak_user_profile_${uid}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 function averageStat(stats) {
   if (!stats) return null;
   const keys = [
@@ -40,14 +36,14 @@ function averageStat(stats) {
     "Discipline",
   ];
   const vals = keys
-    .map((k) => Number(stats[k]))
-    .filter((v) => Number.isFinite(v));
+    .map((key) => Number(stats[key]))
+    .filter((value) => Number.isFinite(value));
   if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
 function rankFromAverage(avg) {
-  if (!Number.isFinite(avg)) return "—";
+  if (!Number.isFinite(avg)) return "-";
   if (avg >= 90) return "S";
   if (avg >= 80) return "A";
   if (avg >= 60) return "B";
@@ -56,9 +52,22 @@ function rankFromAverage(avg) {
   return "E";
 }
 
-function hydrateIdentity() {
-  const user = getCurrentUser();
-  if (!user) return;
+async function hydrateIdentity() {
+  let user = getCurrentUser();
+  if (!user?.uid) return;
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Aura cloud sync failed:", error);
+  }
+
+  const profile = readCachedUserProfile(user.uid);
+  if (!user.stats && profile?.stats) {
+    user = { ...user, stats: profile.stats };
+    writeCurrentUser(user);
+  }
 
   const displayName = user.displayName || user.name || user.username || "User";
 
@@ -75,16 +84,18 @@ function hydrateIdentity() {
   const xpKey = getStorageKey(XP_KEY_BASE);
   const totalXp = Number(localStorage.getItem(xpKey) || "0") || 0;
   const info = getLevelInfo(totalXp);
-  const profile = readUserProfile(user?.uid);
-  const stats = (user && user.stats) || (profile && profile.stats) || null;
+  const stats = user.stats || profile?.stats || null;
   const avg = averageStat(stats);
   const rank = rankFromAverage(avg);
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
-  if (dashXpFill)
+  if (dashXpFill) {
     dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
+  }
   if (sideSub) sideSub.textContent = `Rank ${rank}`;
 }
 
-document.addEventListener("DOMContentLoaded", hydrateIdentity);
+document.addEventListener("DOMContentLoaded", () => {
+  void hydrateIdentity();
+});

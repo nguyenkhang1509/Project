@@ -1,29 +1,16 @@
-import { mergeUserDoc, getStorageKey } from "./userStore.js";
-
-function safeParse(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function readUserProfile(uid) {
-  if (!uid) return null;
-  const key = getStorageKey("aurak_user_profile", uid);
-  return safeParse(key);
-}
+import {
+  getCurrentUser,
+  getStorageKey,
+  mergeUserState,
+  patchUserDoc,
+  readCachedUserProfile,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
+import { deleteField } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
-}
-
-function stat10to20_toPercent(v) {
-  const num = Number(v);
-  const n = Number.isFinite(num) ? num : 10;
-  const t = (n - 10) / 10;
-  return clamp(Math.round(t * 100), 0, 100);
 }
 
 function computeXPFromStats(stats) {
@@ -43,10 +30,24 @@ function computeLevel(xpNow) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = safeParse("aurakCurrentUser");
-  const profile = readUserProfile(user?.uid);
+  let user = getCurrentUser();
+
+  if (!user?.uid) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Stats cloud sync failed:", error);
+  }
+
+  const profile = readCachedUserProfile(user.uid);
   if (user && !user.stats && profile?.stats) {
-    user.stats = profile.stats;
+    user = { ...user, stats: profile.stats, ...(profile.survey ? { survey: profile.survey } : {}) };
+    writeCurrentUser(user);
   }
 
   const statsWrap = document.getElementById("stats");
@@ -63,14 +64,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const pillarsPct = {
-    physical: stat10to20_toPercent(user.stats.Physical),
-    intellectual: stat10to20_toPercent(user.stats.Intellectual),
-    mental: stat10to20_toPercent(user.stats.Mental),
-    confidence: stat10to20_toPercent(user.stats.Confidence),
-    discipline: stat10to20_toPercent(user.stats.Discipline),
-  };
-
   const xpTotal = computeXPFromStats(user.stats);
   const levelNow = computeLevel(xpTotal);
   const xpInto = xpTotal % 250;
@@ -81,19 +74,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     xpTotal,
     xpIntoLevel: xpInto,
     xpToNextLevel: 250,
-    pillars: pillarsPct,
     updatedAt: new Date().toISOString(),
   };
 
   const dashboardKey = getStorageKey("aurakDashboard", user.uid);
   localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
   localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
-  const updatedUser = { ...user, dashboard: dashboardPayload };
-  localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
 
-  mergeUserDoc(user.uid, { dashboard: dashboardPayload }).catch((e) => {
-    console.warn("Dashboard Firestore write failed (non-blocking):", e);
-  });
+  const updatedUser = { ...user, dashboard: dashboardPayload };
+  writeCurrentUser(updatedUser);
+  void mergeUserState(user.uid, { dashboard: dashboardPayload })
+    .then(() =>
+      patchUserDoc(user.uid, {
+        "dashboard.pillars": deleteField(),
+      }),
+    )
+    .catch((error) => {
+      console.warn("Dashboard Firestore write failed:", error);
+    });
 
   const coreKeys = [
     "Physical",
@@ -103,10 +101,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     "Discipline",
   ];
 
-  const coreEntries = coreKeys.map((k) => {
-    const num = Number(user.stats[k]);
-    const v = Number.isFinite(num) ? num : 10;
-    return [k, clamp(v, 10, 20)];
+  const coreEntries = coreKeys.map((key) => {
+    const num = Number(user.stats[key]);
+    const value = Number.isFinite(num) ? num : 10;
+    return [key, clamp(value, 10, 20)];
   });
 
   if (statsWrap) {
@@ -129,13 +127,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       statsWrap.appendChild(row);
 
-      setTimeout(
-        () => {
-          const fill = row.querySelector(".bar-fill");
-          if (fill) fill.style.width = pct + "%";
-        },
-        120 + idx * 120,
-      );
+      setTimeout(() => {
+        const fill = row.querySelector(".bar-fill");
+        if (fill) fill.style.width = pct + "%";
+      }, 120 + idx * 120);
     });
   }
 
@@ -174,9 +169,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (enterBtn) {
     enterBtn.addEventListener("click", () => {
-      localStorage.setItem("aurakDashboard", JSON.stringify(dashboardPayload));
-      localStorage.setItem(dashboardKey, JSON.stringify(dashboardPayload));
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(updatedUser));
+      writeCurrentUser(updatedUser);
     });
   }
 });

@@ -1,4 +1,12 @@
-import { getStorageKey, getCurrentUser } from "./userStore.js";
+import {
+  getCurrentUser,
+  getStorageKey,
+  mergeUserState,
+  readCachedUserProfile,
+  subscribeToUserState,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
@@ -15,14 +23,7 @@ function getAccountStorageKey(baseKey) {
 }
 
 function readUserProfile(uid) {
-  if (!uid) return null;
-  const key = getStorageKey("aurak_user_profile", uid);
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return uid ? readCachedUserProfile(uid) : null;
 }
 
 function getLevelInfo(totalXp) {
@@ -74,6 +75,13 @@ function writeTaskHistoryMap(map) {
       JSON.stringify(map),
     );
   } catch {}
+
+  const user = getCurrentUser();
+  if (user?.uid) {
+    void mergeUserState(user.uid, { dailyTaskHistory: map }).catch((error) => {
+      console.warn("Task history sync failed:", error);
+    });
+  }
 }
 
 function updateTaskHistoryForToday(qid, qname, isDone) {
@@ -137,16 +145,23 @@ function rankFromAverage(avg) {
   return "E";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const user = getCurrentUser();
+document.addEventListener("DOMContentLoaded", async () => {
+  let user = getCurrentUser();
 
   if (!user) return;
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Dashboard cloud sync failed:", error);
+  }
 
   if (!user.stats) {
     const profile = readUserProfile(user.uid);
     if (profile?.stats) {
       user.stats = profile.stats;
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+      writeCurrentUser(user);
     }
   }
 
@@ -231,7 +246,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateGraph();
   updateXP();
-  loadAndRenderPreviewTasks();
+  await loadAndRenderPreviewTasks();
+  renderDailyCheckin();
+
+  if (user.uid) {
+    subscribeToUserState(
+      user.uid,
+      async () => {
+        updateXP();
+        updateGraph();
+        await loadAndRenderPreviewTasks();
+        renderDailyCheckin();
+      },
+      (error) => {
+        console.warn("Dashboard realtime sync failed:", error);
+      },
+    );
+  }
 
   window.addEventListener("storage", (e) => {
     if (
@@ -241,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
       updateXP();
       updateGraph();
-      loadAndRenderPreviewTasks();
+      void loadAndRenderPreviewTasks();
     }
   });
 });
@@ -326,7 +357,7 @@ async function loadAndRenderPreviewTasks() {
   }
 }
 
-function completePreviewQuest(checkEl) {
+async function completePreviewQuest(checkEl) {
   ensureDailyQuestReset();
   const row = checkEl.closest(".quest-row");
   if (!row) return;
@@ -340,8 +371,9 @@ function completePreviewQuest(checkEl) {
     checkEl.setAttribute("aria-pressed", nowComplete ? "true" : "false");
   }
 
+  let state = {};
   try {
-    let state =
+    state =
       JSON.parse(
         localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
       ) || {};
@@ -372,6 +404,24 @@ function completePreviewQuest(checkEl) {
   totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
+  if (!state.completed) {
+    try {
+      state =
+        JSON.parse(
+          localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+        ) || {};
+    } catch {}
+  }
+  const user = getCurrentUser();
+  if (user?.uid) {
+    await mergeUserState(user.uid, {
+      quests: state,
+      totalXP,
+      dailyTaskHistory: readTaskHistoryMap(),
+    }).catch((error) => {
+      console.warn("Preview quest sync failed:", error);
+    });
+  }
   updateGraph();
   updateXP();
 }
@@ -417,6 +467,10 @@ function updateGraph() {
   let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
     0, 0, 0, 0, 0, 0, 0,
   ];
+  const previousResetDate = lastResetDate;
+  const previousWeeklyData = Array.isArray(weeklyData)
+    ? weeklyData.slice(0, 7)
+    : [0, 0, 0, 0, 0, 0, 0];
   const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
   const legacyWeeklyData = JSON.parse(
     localStorage.getItem("weeklyQuestData"),
@@ -464,6 +518,19 @@ function updateGraph() {
 
   localStorage.setItem(dataKey, JSON.stringify(weeklyData));
   localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
+
+  const graphChanged =
+    previousResetDate !== lastResetDate ||
+    JSON.stringify(previousWeeklyData) !== JSON.stringify(weeklyData);
+  const user = getCurrentUser();
+  if (graphChanged && user?.uid) {
+    void mergeUserState(user.uid, {
+      weeklyQuestData: weeklyData,
+      weeklyGraphResetDate: lastResetDate,
+    }).catch((error) => {
+      console.warn("Weekly graph sync failed:", error);
+    });
+  }
 
   const history = readTaskHistoryMap();
   const weeklyTasks = [];
@@ -601,7 +668,7 @@ function updateGraph() {
   });
 }
 
-window.completeQuest = function (checkEl) {
+window.completeQuest = async function (checkEl) {
   ensureDailyQuestReset();
   const row = checkEl.closest(".quest-row");
   if (!row) return;
@@ -616,11 +683,16 @@ window.completeQuest = function (checkEl) {
 
   const questRows = document.querySelectorAll(".quest-row");
   const index = Array.from(questRows).indexOf(row);
+  let state = {};
+  let completedQuests = JSON.parse(
+    localStorage.getItem(getAccountStorageKey("completedQuests")),
+  ) || [false, false, false];
+
   if (index !== -1) {
     const qid = row.getAttribute("data-qid");
     if (qid) {
       try {
-        let state =
+        state =
           JSON.parse(
             localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
           ) || {};
@@ -635,9 +707,6 @@ window.completeQuest = function (checkEl) {
       updateTaskHistoryForToday(qid, qname, nowComplete);
     }
 
-    let completedQuests = JSON.parse(
-      localStorage.getItem(getAccountStorageKey("completedQuests")),
-    ) || [false, false, false];
     completedQuests[index] = nowComplete;
     localStorage.setItem(
       getAccountStorageKey("completedQuests"),
@@ -662,6 +731,17 @@ window.completeQuest = function (checkEl) {
   totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
+  const user = getCurrentUser();
+  if (user?.uid) {
+    await mergeUserState(user.uid, {
+      quests: state,
+      totalXP,
+      completedQuests,
+      dailyTaskHistory: readTaskHistoryMap(),
+    }).catch((error) => {
+      console.warn("Quest sync failed:", error);
+    });
+  }
   updateGraph();
   updateXP();
 };
@@ -679,9 +759,10 @@ function ensureDailyQuestReset() {
   const lastReset = localStorage.getItem(resetKey);
   if (lastReset === today) return false;
 
+  let state = {};
   try {
     const raw = localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY));
-    const state = raw ? JSON.parse(raw) : {};
+    state = raw ? JSON.parse(raw) : {};
     if (lastReset) snapshotCompletedTasksForDate(lastReset, state);
     state.completed = {};
     localStorage.setItem(
@@ -695,6 +776,19 @@ function ensureDailyQuestReset() {
     JSON.stringify([]),
   );
   localStorage.setItem(resetKey, today);
+
+  const user = getCurrentUser();
+  if (user?.uid) {
+    void mergeUserState(user.uid, {
+      quests: state,
+      completedQuests: [],
+      dailyQuestResetDate: today,
+      dailyTaskHistory: readTaskHistoryMap(),
+    }).catch((error) => {
+      console.warn("Daily quest reset sync failed:", error);
+    });
+  }
+
   return true;
 }
 
@@ -773,6 +867,10 @@ function renderDailyCheckin() {
   const baseVal = document.getElementById("dashBaseVal");
   const snippet = document.getElementById("dashReflectionSnippet");
 
+  if (!datePill || !moodFill || !moodVal || !baseFill || !baseVal || !snippet) {
+    return;
+  }
+
   datePill.textContent = today;
 
   if (!normalized) {
@@ -799,8 +897,9 @@ function renderDailyCheckin() {
     (normalized.reflection.length > 120 ? "…" : "");
 }
 
-document
-  .getElementById("dashCheckinRefresh")
-  .addEventListener("click", renderDailyCheckin);
+const dashCheckinRefresh = document.getElementById("dashCheckinRefresh");
+if (dashCheckinRefresh) {
+  dashCheckinRefresh.addEventListener("click", renderDailyCheckin);
+}
 
 document.addEventListener("DOMContentLoaded", renderDailyCheckin);

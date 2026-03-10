@@ -1,6 +1,12 @@
 (() => {
   "use strict";
 
+  const storeApiPromise = import("./userStore.js").catch(() => null);
+
+  async function getStoreApi() {
+    return storeApiPromise;
+  }
+
   const STORAGE_KEY = "aurak_quests_v4";
   const XP_STORAGE_KEY = "totalXP";
   const DAILY_RESET_KEY = "dailyQuestResetDate";
@@ -55,6 +61,21 @@
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
+    }
+  }
+
+  async function syncCloudState(patch = null) {
+    const api = await getStoreApi();
+    const user = api?.getCurrentUser?.() || readCurrentUser();
+    if (!api || !user?.uid) return;
+
+    if (patch && typeof api.mergeUserState === "function") {
+      await api.mergeUserState(user.uid, patch);
+      return;
+    }
+
+    if (typeof api.syncUserState === "function") {
+      await api.syncUserState(user.uid);
     }
   }
 
@@ -200,6 +221,9 @@
     try {
       localStorage.setItem(getAccountKey(STORAGE_KEY), JSON.stringify(state));
     } catch {}
+    void syncCloudState({ quests: state }).catch((error) => {
+      console.warn("Quest state sync failed:", error);
+    });
   }
 
   function readTaskHistoryMap() {
@@ -216,6 +240,9 @@
     try {
       localStorage.setItem(getAccountKey(TASK_HISTORY_KEY), JSON.stringify(map));
     } catch {}
+    void syncCloudState({ dailyTaskHistory: map }).catch((error) => {
+      console.warn("Task history sync failed:", error);
+    });
   }
 
   function updateTaskHistoryForToday(qid, qname, isDone) {
@@ -282,6 +309,14 @@
       );
     } catch {}
     localStorage.setItem(resetKey, today);
+    void syncCloudState({
+      quests: state,
+      completedQuests: [],
+      dailyQuestResetDate: today,
+      dailyTaskHistory: readTaskHistoryMap(),
+    }).catch((error) => {
+      console.warn("Daily quest reset sync failed:", error);
+    });
     return true;
   }
 
@@ -414,6 +449,9 @@
     try {
       localStorage.setItem(getAccountKey(XP_STORAGE_KEY), String(total));
     } catch {}
+    void syncCloudState({ totalXP: total }).catch((error) => {
+      console.warn("XP sync failed:", error);
+    });
   }
 
   function loadXpTotal() {
@@ -592,6 +630,18 @@
   questList.addEventListener("click", handleQuestClick);
 
   async function initializeChallenges() {
+    try {
+      await syncCloudState();
+      Object.assign(state, loadState());
+      state.completed = state.completed || {};
+      state.activeFilter = state.activeFilter || "all";
+      state.showCompleted =
+        typeof state.showCompleted === "boolean" ? state.showCompleted : true;
+      displayUsername();
+    } catch (error) {
+      console.warn("Initial quest sync failed:", error);
+    }
+
     if (
       typeof HabiticaAPI === "undefined" ||
       typeof HABITICA_CONFIG === "undefined"

@@ -1,5 +1,6 @@
 import { auth } from "./firebase.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { writeCurrentUser } from "./userStore.js";
 
 const form = document.getElementById("signin-form");
 const emailInput = document.getElementById("email");
@@ -12,21 +13,6 @@ const formError = document.getElementById("form-error");
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
-function safeParse(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function readUserProfile(uid) {
-  if (!uid) return null;
-  const key = `aurak_user_profile_${uid}`;
-  return safeParse(key);
 }
 
 function clearErrors() {
@@ -69,36 +55,20 @@ if (form) {
     if (!valid) return;
 
     try {
-      const cred = await signInWithEmailAndPassword(
-        auth,
-        emailValue,
-        passValue,
-      );
-
+      const cred = await signInWithEmailAndPassword(auth, emailValue, passValue);
       const fbUser = cred.user;
+      const displayName =
+        fbUser.displayName || (fbUser.email ? fbUser.email.split("@")[0] : "Player");
 
-      await fbUser.reload();
-
-      const displayName = fbUser.displayName || "Player";
-      const profile = readUserProfile(fbUser.uid);
-
-      const currentUser = {
+      writeCurrentUser({
         uid: fbUser.uid,
         email: fbUser.email,
         name: displayName,
-        displayName: displayName,
+        displayName,
         lastLoginAt: new Date().toISOString(),
-        ...(profile?.stats ? { stats: profile.stats } : {}),
-        ...(profile?.survey ? { survey: profile.survey } : {}),
-      };
+      });
 
-      localStorage.setItem("aurakCurrentUser", JSON.stringify(currentUser));
-
-      if (currentUser.stats) {
-        window.location.href = "loading.html";
-      } else {
-        window.location.href = "sequence.html";
-      }
+      window.location.href = "loading.html";
     } catch (err) {
       const code = err?.code || "";
 
@@ -117,8 +87,7 @@ if (form) {
       }
 
       if (code === "auth/network-request-failed") {
-        formError.textContent =
-          "Network error. Check your connection and try again.";
+        formError.textContent = "Network error. Check your connection and try again.";
         return;
       }
 

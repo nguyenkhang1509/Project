@@ -1,4 +1,12 @@
-import { getStorageKey, getCurrentUser } from "./userStore.js";
+import {
+  getCurrentUser,
+  getStorageKey,
+  logout,
+  mergeUserState,
+  readCachedUserProfile,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
@@ -10,14 +18,7 @@ function getAccountStorageKey(baseKey) {
 }
 
 function readUserProfile(uid) {
-  if (!uid) return null;
-  const key = getStorageKey("aurak_user_profile", uid);
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return uid ? readCachedUserProfile(uid) : null;
 }
 
 function saveUserProfile(uid, patch) {
@@ -247,15 +248,22 @@ function setupJumps() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const user = getCurrentUser();
+document.addEventListener("DOMContentLoaded", async () => {
+  let user = getCurrentUser();
   if (!user) return;
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Profile cloud sync failed:", error);
+  }
 
   let profile = readUserProfile(user.uid);
 
   if (!user.stats && profile?.stats) {
     user.stats = profile.stats;
-    localStorage.setItem("aurakCurrentUser", JSON.stringify(user));
+    writeCurrentUser(user);
   }
 
   const stats = (user && user.stats) || (profile && profile.stats) || null;
@@ -434,6 +442,13 @@ document.addEventListener("DOMContentLoaded", () => {
         "aurakCurrentUser",
         JSON.stringify({ ...user, displayName: nameNow }),
       );
+      writeCurrentUser({ ...user, displayName: nameNow });
+      void mergeUserState(user.uid, {
+        profile,
+        displayName: nameNow,
+      }).catch((error) => {
+        console.warn("Profile save sync failed:", error);
+      });
 
       setPreview();
       setDirty(false);
@@ -444,10 +459,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-      try {
-        localStorage.removeItem("aurakCurrentUser");
-      } catch {}
-      window.location.href = "signin.html";
+      logout();
     });
   }
 

@@ -1,18 +1,29 @@
-function getCurrentUser() {
-  try {
-    const raw = localStorage.getItem("aurakCurrentUser");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+import {
+  getCurrentUser,
+  readCachedUserProfile,
+  syncUserState,
+  writeCurrentUser,
+} from "./userStore.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const user = getCurrentUser();
+document.addEventListener("DOMContentLoaded", async () => {
+  let user = getCurrentUser();
 
   if (!user?.uid) {
     window.location.href = "login.html";
     return;
+  }
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Sequence cloud sync failed:", error);
+  }
+
+  const profile = readCachedUserProfile(user.uid);
+  if (!user.stats && profile?.stats) {
+    user = { ...user, stats: profile.stats, ...(profile.survey ? { survey: profile.survey } : {}) };
+    writeCurrentUser(user);
   }
 
   const textWrap = document.getElementById("sequence-text");
@@ -33,13 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let index = 0;
 
-  const TRANSITION_TIME = 260;
-
-  const BASE_SPEED = 58;
-  const JITTER = 16;
-  const END_PAUSE = 1100;
-  const PUNCT_PAUSE = 420;
-  const START_DELAY = 260;
+  const transitionTime = 260;
+  const baseSpeed = 58;
+  const jitter = 16;
+  const endPause = 1100;
+  const punctPause = 420;
+  const startDelay = 260;
 
   let typingJob = 0;
 
@@ -50,15 +60,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getDelayForChar(ch) {
-    const jitter = Math.floor(Math.random() * JITTER);
+    const randomJitter = Math.floor(Math.random() * jitter);
     const isPunct =
       ch === "." || ch === "," || ch === "!" || ch === "?" || ch === ":";
-
     const isSpace = ch === " ";
 
-    return (
-      BASE_SPEED + jitter + (isSpace ? 25 : 0) + (isPunct ? PUNCT_PAUSE : 0)
-    );
+    return baseSpeed + randomJitter + (isSpace ? 25 : 0) + (isPunct ? punctPause : 0);
   }
 
   function typeSentence(sentence, jobId) {
@@ -71,24 +78,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (i <= sentence.length) {
         typedEl.textContent = sentence.slice(0, i);
         const ch = sentence[i - 1] || "";
-        i++;
+        i += 1;
         setTimeout(step, getDelayForChar(ch));
       } else {
         setTimeout(() => {
           if (jobId !== typingJob) return;
           renderNav(index);
-        }, END_PAUSE);
+        }, endPause);
       }
     };
 
     setTimeout(() => {
       if (jobId !== typingJob) return;
       step();
-    }, START_DELAY);
+    }, startDelay);
   }
 
   function showSlide(i, animate) {
-    typingJob++;
+    typingJob += 1;
     const jobId = typingJob;
     const sentence = slides[i];
 
@@ -111,20 +118,19 @@ document.addEventListener("DOMContentLoaded", () => {
       textWrap.classList.remove("is-exiting");
       void textWrap.offsetWidth;
       textWrap.classList.add("is-visible");
-
       typeSentence(sentence, jobId);
-    }, TRANSITION_TIME);
+    }, transitionTime);
   }
 
-  const hasBaseline = !!user.stats;
+  const hasBaseline = !!(user.stats || profile?.stats);
   startLink.href = hasBaseline ? "stats.html" : "survey.html";
-  startLink.textContent = hasBaseline ? "Continue →" : "Start →";
+  startLink.textContent = hasBaseline ? "Continue ->" : "Start ->";
 
   showSlide(index, false);
 
   function goNext() {
     if (index < slides.length - 1) {
-      index++;
+      index += 1;
       showSlide(index, true);
     }
   }

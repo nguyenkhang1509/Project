@@ -1,18 +1,53 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import {
+  browserLocalPersistence,
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDSm17e2FrsydH7hPiHUKNWLwXr6UNVPQQ",
-  authDomain: "aurak-levelling.firebaseapp.com",
-  projectId: "aurak-levelling",
-  storageBucket: "aurak-levelling.appspot.com",
-  messagingSenderId: "895550834916",
-  appId: "1:895550834916:web:1cfd42e1719c9b6e56c4f1",
+  apiKey: "AIzaSyDMEcjWkDhGa_eHiWgAeMlzgmPy5-7FpEw",
+  authDomain: "aurak-leveling.firebaseapp.com",
+  projectId: "aurak-leveling",
+  storageBucket: "aurak-leveling.firebasestorage.app",
+  messagingSenderId: "146240319472",
+  appId: "1:146240319472:web:41b29978c6f79bd0ebf735",
+  measurementId: "G-3Q1Z4M1EB5",
 };
 
 const app = initializeApp(firebaseConfig);
+
 export const auth = getAuth(app);
-
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
 export const db = getFirestore(app);
+
+let authReady = false;
+let authReadyPromise = null;
+
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.warn("Firebase auth persistence setup failed:", error);
+});
+
+export function waitForAuthReady() {
+  if (authReady) return Promise.resolve(auth.currentUser);
+  if (authReadyPromise) return authReadyPromise;
+
+  authReadyPromise = new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      () => {
+        authReady = true;
+        unsubscribe();
+        resolve(auth.currentUser);
+      },
+      () => {
+        authReady = true;
+        unsubscribe();
+        resolve(auth.currentUser);
+      },
+    );
+  });
+
+  return authReadyPromise;
+}
