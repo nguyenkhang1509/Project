@@ -16,8 +16,6 @@ const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 
-const now = new Date();
-
 function getAccountStorageKey(baseKey) {
   return getStorageKey(baseKey);
 }
@@ -109,6 +107,7 @@ function prettifyQuestId(qid) {
 
 function snapshotCompletedTasksForDate(dateStr, state) {
   if (!dateStr || !state || typeof state !== "object") return;
+
   const completed =
     state.completed && typeof state.completed === "object"
       ? state.completed
@@ -118,6 +117,7 @@ function snapshotCompletedTasksForDate(dateStr, state) {
 
   const rows = Array.from(document.querySelectorAll(".quest-row"));
   const nameById = new Map();
+
   rows.forEach((row) => {
     const qid = row.getAttribute("data-qid");
     if (!qid) return;
@@ -128,9 +128,11 @@ function snapshotCompletedTasksForDate(dateStr, state) {
   const map = readTaskHistoryMap();
   const day =
     map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+
   completedIds.forEach((qid) => {
     if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
   });
+
   map[dateStr] = day;
   writeTaskHistoryMap(map);
 }
@@ -145,9 +147,122 @@ function rankFromAverage(avg) {
   return "E";
 }
 
+function getTodayCompletedTaskCount() {
+  const today = getISODate();
+  const history = readTaskHistoryMap();
+  const historyCount = Object.keys(history[today] || {}).length;
+
+  let questCount = 0;
+  try {
+    const state =
+      JSON.parse(
+        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+      ) || {};
+    const completed =
+      state.completed && typeof state.completed === "object"
+        ? state.completed
+        : {};
+    questCount = Object.values(completed).filter(Boolean).length;
+  } catch {}
+
+  return Math.max(historyCount, questCount);
+}
+
+function getHunterMoodData(taskCount, level) {
+  if (taskCount <= 0) {
+    return {
+      key: "exhausted",
+      label: "Exhausted",
+      pill: "LOW POWER",
+      mode: level >= 10 ? "Recovery Arc" : "Survival",
+      hint: "Low output detected",
+      subline: "No tasks completed today. The hunter is fading.",
+      desc: "Your hunter mirrors the day’s output. Clear one task to wake the system and restore momentum.",
+    };
+  }
+
+  if (taskCount <= 2) {
+    return {
+      key: "warming-up",
+      label: "Warming Up",
+      pill: "BOOTING UP",
+      mode: level >= 10 ? "Momentum Build" : "Starter Flow",
+      hint: "Engine is starting to wake up",
+      subline: "Early progress is building momentum.",
+      desc: "The system is online and moving. A few more completions will push the hunter into a stronger state.",
+    };
+  }
+
+  if (taskCount <= 4) {
+    return {
+      key: "focused",
+      label: "Focused",
+      pill: "ON TRACK",
+      mode: level >= 15 ? "Precision Mode" : "Flow State",
+      hint: "Stable output and clean execution",
+      subline: "Strong consistency across today’s quests.",
+      desc: "The hunter is stable and engaged. Your current pace shows clean progress and strong control for the day.",
+    };
+  }
+
+  return {
+    key: "locked-in",
+    label: "Locked In",
+    pill: "MAX FOCUS",
+    mode: level >= 20 ? "Ascendant Mode" : "Beast Mode",
+    hint: "Peak output detected today",
+    subline: "High task completion with dominant pace.",
+    desc: "The hunter is operating at peak condition today. Maintain the pressure while your momentum is still high.",
+  };
+}
+
+function renderHunterStatus(level, totalXP, xpProgress) {
+  const tile = document.getElementById("hunterTile");
+  const moodEl = document.getElementById("hunterMood");
+  const pillEl = document.getElementById("hunterMoodPill");
+  const tasksEl = document.getElementById("hunterTasksDone");
+  const modeEl = document.getElementById("hunterMode");
+  const hintEl = document.getElementById("hunterLevelHint");
+  const sublineEl = document.getElementById("hunterSubline");
+  const descEl = document.getElementById("hunterDesc");
+  const xpValueEl = document.getElementById("hunterXpValue");
+  const xpMiniTextEl = document.getElementById("hunterXpMiniText");
+  const xpMiniFillEl = document.getElementById("hunterXpMiniFill");
+
+  if (
+    !tile ||
+    !moodEl ||
+    !pillEl ||
+    !tasksEl ||
+    !modeEl ||
+    !hintEl ||
+    !sublineEl ||
+    !descEl ||
+    !xpValueEl ||
+    !xpMiniTextEl ||
+    !xpMiniFillEl
+  ) {
+    return;
+  }
+
+  const taskCount = getTodayCompletedTaskCount();
+  const mood = getHunterMoodData(taskCount, level);
+
+  tile.dataset.mood = mood.key;
+  moodEl.textContent = mood.label;
+  pillEl.textContent = mood.pill;
+  tasksEl.textContent = String(taskCount);
+  modeEl.textContent = mood.mode;
+  hintEl.textContent = mood.hint;
+  sublineEl.textContent = mood.subline;
+  descEl.textContent = mood.desc;
+  xpValueEl.textContent = String(totalXP);
+  xpMiniTextEl.textContent = `${totalXP} XP`;
+  xpMiniFillEl.style.width = `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   let user = getCurrentUser();
-
   if (!user) return;
 
   try {
@@ -180,6 +295,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let completedQuests = JSON.parse(
     localStorage.getItem(getAccountStorageKey("completedQuests")),
   ) || [false, false, false];
+
   const legacyQuestRows = document.querySelectorAll(".quest-row:not(.qcard)");
   legacyQuestRows.forEach((row, i) => {
     row.setAttribute("data-qid", `legacy-${i}`);
@@ -238,10 +354,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       radar.setAttribute("points", points);
     }
-
-    const dashLevel = document.getElementById("dashLevel");
-    const dashXpText = document.getElementById("dashXpText");
-    const dashXpFill = document.getElementById("dashXpFill");
   }
 
   updateGraph();
@@ -384,6 +496,7 @@ async function completePreviewQuest(checkEl) {
       JSON.stringify(state),
     );
   } catch {}
+
   const qname = row.querySelector("h4")?.textContent?.trim() || qid;
   updateTaskHistoryForToday(qid, qname, nowComplete);
 
@@ -404,14 +517,7 @@ async function completePreviewQuest(checkEl) {
   totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
-  if (!state.completed) {
-    try {
-      state =
-        JSON.parse(
-          localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
-        ) || {};
-    } catch {}
-  }
+
   const user = getCurrentUser();
   if (user?.uid) {
     await mergeUserState(user.uid, {
@@ -422,6 +528,7 @@ async function completePreviewQuest(checkEl) {
       console.warn("Preview quest sync failed:", error);
     });
   }
+
   updateGraph();
   updateXP();
 }
@@ -441,22 +548,24 @@ function updateXP() {
   const stats = (user && user.stats) || (profile && profile.stats) || null;
   const avg = averageStat(stats);
   const rank = rankFromAverage(avg);
+
   const dashLevel = document.getElementById("dashLevel");
   const dashXpText = document.getElementById("dashXpText");
   const dashXpFill = document.getElementById("dashXpFill");
-  const tileXpGained = document.getElementById("tileXpGained");
   const sideSub = document.getElementById("sideSub");
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
   if (dashXpFill)
     dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
-  if (tileXpGained) tileXpGained.textContent = totalXP;
   if (sideSub) sideSub.textContent = `Rank ${rank}`;
+
+  renderHunterStatus(info.level, totalXP, info.progress);
 }
 
 function updateGraph() {
   ensureDailyQuestReset();
+
   const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const dayOfWeek = new Date().getDay();
   const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -467,14 +576,17 @@ function updateGraph() {
   let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
     0, 0, 0, 0, 0, 0, 0,
   ];
+
   const previousResetDate = lastResetDate;
   const previousWeeklyData = Array.isArray(weeklyData)
     ? weeklyData.slice(0, 7)
     : [0, 0, 0, 0, 0, 0, 0];
+
   const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
   const legacyWeeklyData = JSON.parse(
     localStorage.getItem("weeklyQuestData"),
   ) || [0, 0, 0, 0, 0, 0, 0];
+
   const hasCurrentData =
     Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
   const hasLegacyData =
@@ -493,13 +605,16 @@ function updateGraph() {
 
   const hasPersistedData =
     Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
+
   if (!lastResetDate) {
     localStorage.setItem(resetKey, currentMondayStr);
     localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
+    lastResetDate = currentMondayStr;
   } else if (lastResetDate !== currentMondayStr) {
     weeklyData = [0, 0, 0, 0, 0, 0, 0];
     localStorage.setItem(resetKey, currentMondayStr);
     localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
+    lastResetDate = currentMondayStr;
   } else if (!hasPersistedData && lastResetDate === currentMondayStr) {
     localStorage.setItem(resetKey, currentMondayStr);
     localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
@@ -514,6 +629,7 @@ function updateGraph() {
     state.completed = state.completed || {};
     completedCount = Object.values(state.completed).filter(Boolean).length;
   } catch {}
+
   weeklyData[dayIndex] = completedCount;
 
   localStorage.setItem(dataKey, JSON.stringify(weeklyData));
@@ -522,6 +638,7 @@ function updateGraph() {
   const graphChanged =
     previousResetDate !== lastResetDate ||
     JSON.stringify(previousWeeklyData) !== JSON.stringify(weeklyData);
+
   const user = getCurrentUser();
   if (graphChanged && user?.uid) {
     void mergeUserState(user.uid, {
@@ -541,8 +658,69 @@ function updateGraph() {
     weeklyTasks.push(Object.values(history[iso] || {}).filter(Boolean));
   }
 
+  const maxValue = Math.max(8, ...weeklyData.map((v) => Number(v) || 0));
+  const roundedMax = Math.ceil(maxValue / 4) * 4;
+  const yMax = Math.max(8, roundedMax);
+  const yStep = yMax / 4;
+
+  const mapY = (val) => {
+    const safeVal = Math.max(0, Math.min(Number(val) || 0, yMax));
+    return 220 - (safeVal / yMax) * 200;
+  };
+
   const svgs = document.querySelectorAll(".line-graph-svg");
   svgs.forEach((svg) => {
+    let gridGroup = svg.querySelector(".graph-grid-lines");
+    if (!gridGroup) {
+      gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      gridGroup.classList.add("graph-grid-lines");
+      svg.insertBefore(gridGroup, svg.firstChild);
+    }
+    gridGroup.innerHTML = "";
+
+    const gridLines = [
+      { y: 220, value: 0 },
+      { y: 170, value: yStep },
+      { y: 120, value: yStep * 2 },
+      { y: 70, value: yStep * 3 },
+      { y: 20, value: yMax },
+    ];
+
+    gridLines.forEach((item) => {
+      const line = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
+      line.setAttribute("x1", "60");
+      line.setAttribute("y1", String(item.y));
+      line.setAttribute("x2", "660");
+      line.setAttribute("y2", String(item.y));
+      line.setAttribute("stroke", "currentColor");
+      line.setAttribute("opacity", item.y === 220 ? "0.18" : "0.08");
+      gridGroup.appendChild(line);
+    });
+
+    let yLabels = svg.querySelector(".graph-y-labels");
+    if (!yLabels) {
+      yLabels = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      yLabels.classList.add("graph-y-labels");
+      svg.appendChild(yLabels);
+    }
+    yLabels.innerHTML = "";
+
+    gridLines.forEach((item) => {
+      const text = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text",
+      );
+      text.setAttribute("x", "46");
+      text.setAttribute("y", String(item.y + 4));
+      text.setAttribute("text-anchor", "end");
+      text.setAttribute("font-size", "12");
+      text.textContent = String(Math.round(item.value));
+      yLabels.appendChild(text);
+    });
+
     let path = svg.querySelector(".data-line");
     if (!path) {
       path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -550,12 +728,14 @@ function updateGraph() {
       path.setAttribute("fill", "none");
       path.setAttribute("stroke", "var(--aqua)");
       path.setAttribute("stroke-width", "3");
+      path.setAttribute("stroke-linecap", "round");
+      path.setAttribute("stroke-linejoin", "round");
       svg.appendChild(path);
     }
 
     const points = weeklyData.map((val, i) => {
       const x = 60 + i * 100;
-      const y = 220 - (Math.min(val, 20) / 20) * 200;
+      const y = mapY(val);
       return `${x},${y}`;
     });
 
@@ -584,7 +764,8 @@ function updateGraph() {
 
     weeklyData.forEach((val, i) => {
       const x = 60 + i * 100;
-      const y = 220 - (Math.min(val, 20) / 20) * 200;
+      const y = mapY(val);
+
       const circle = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "circle",
@@ -594,7 +775,6 @@ function updateGraph() {
       circle.setAttribute("r", "5");
       circle.setAttribute("fill", "var(--aqua)");
       circle.setAttribute("opacity", "0.95");
-
       group.appendChild(circle);
     });
 
@@ -612,16 +792,18 @@ function updateGraph() {
       const count = Number(weeklyData[i] || 0);
       const lines =
         tasks.length > 0 ? tasks : count > 0 ? [] : ["No tasks completed"];
+
       tooltip.innerHTML = `
         <div class="gtt-day">${dayLabels[i]} - ${count} done</div>
         ${lines.map((t) => `<div class="gtt-item">${t}</div>`).join("")}
       `;
+
       tooltip.hidden = false;
       tooltip.style.visibility = "hidden";
 
-      const rect = svg.getBoundingClientRect();
       const container = svg.closest(".line-graph");
-      const containerRect = container?.getBoundingClientRect() || rect;
+      const containerRect =
+        container?.getBoundingClientRect() || svg.getBoundingClientRect();
       const tooltipW = tooltip.offsetWidth || 220;
       const tooltipH = tooltip.offsetHeight || 120;
       const pad = 8;
@@ -634,6 +816,7 @@ function updateGraph() {
 
       const maxLeft = Math.max(pad, containerRect.width - tooltipW - pad);
       const maxTop = Math.max(pad, containerRect.height - tooltipH - pad);
+
       left = Math.min(Math.max(pad, left), maxLeft);
       top = Math.min(Math.max(pad, top), maxTop);
 
@@ -672,6 +855,7 @@ window.completeQuest = async function (checkEl) {
   ensureDailyQuestReset();
   const row = checkEl.closest(".quest-row");
   if (!row) return;
+
   const nowComplete = row.classList.toggle("is-complete");
   if (nowComplete) {
     checkEl.setAttribute("aria-pressed", "true");
@@ -683,6 +867,7 @@ window.completeQuest = async function (checkEl) {
 
   const questRows = document.querySelectorAll(".quest-row");
   const index = Array.from(questRows).indexOf(row);
+
   let state = {};
   let completedQuests = JSON.parse(
     localStorage.getItem(getAccountStorageKey("completedQuests")),
@@ -731,6 +916,7 @@ window.completeQuest = async function (checkEl) {
   totalXP = Math.max(0, totalXP + (nowComplete ? xpDelta : -xpDelta));
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
+
   const user = getCurrentUser();
   if (user?.uid) {
     await mergeUserState(user.uid, {
@@ -742,6 +928,7 @@ window.completeQuest = async function (checkEl) {
       console.warn("Quest sync failed:", error);
     });
   }
+
   updateGraph();
   updateXP();
 };
@@ -828,17 +1015,22 @@ function getDashboardReflectionEntry() {
 
 function normalizeCheckinEntry(entry) {
   if (!entry || typeof entry !== "object") return null;
+
   const rawMood = Number(entry.mood);
   const rawBaseline = Number(
     Number.isFinite(Number(entry.baseline)) ? entry.baseline : entry.rest,
   );
+
   const mood10Source = Number.isFinite(rawMood) ? rawMood : 0;
   const baselineSource = Number.isFinite(rawBaseline) ? rawBaseline : 0;
+
   const mood10 =
     mood10Source <= 5
       ? Math.max(0, Math.min(10, mood10Source * 2))
       : Math.max(0, Math.min(10, mood10Source));
+
   const baseline10 = Math.max(0, Math.min(10, baselineSource / 10));
+
   return {
     mood10,
     baseline10,
@@ -854,10 +1046,12 @@ function renderDailyCheckin() {
   const today = getISODate();
   const journal = getJournalStore();
   let entry = journal[today];
+
   if (!entry) {
     const refl = getDashboardReflectionEntry();
     if (refl?.date === today) entry = refl;
   }
+
   const normalized = normalizeCheckinEntry(entry);
 
   const datePill = document.getElementById("dashCheckinDatePill");

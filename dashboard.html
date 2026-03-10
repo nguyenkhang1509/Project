@@ -9,12 +9,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
-
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
     <link rel="stylesheet" href="dashboard.css" />
 
     <script>
@@ -147,17 +145,89 @@
           </div>
         </header>
 
-        <section class="wide-stats" aria-label="Active Stats Row">
-          <article class="wide-tile" aria-label="Streak">
-            <div class="tile-k">Streak</div>
-            <div class="tile-v" id="tileStreak">—</div>
-            <div class="tile-s">days</div>
-          </article>
+        <section class="wide-stats" aria-label="Hero Status Row">
+          <article
+            class="wide-tile hunter-tile"
+            aria-label="Hero Status Panel"
+            id="hunterTile"
+          >
+            <div class="hunter-bg hunter-bg-aqua" aria-hidden="true"></div>
+            <div class="hunter-bg hunter-bg-violet" aria-hidden="true"></div>
 
-          <article class="wide-tile" aria-label="XP gained">
-            <div class="tile-k">XP Gained</div>
-            <div class="tile-v" id="tileXpGained">—</div>
-            <div class="tile-s">7 days</div>
+            <div class="hunter-head">
+              <div class="hunter-title-wrap">
+                <div class="tile-k">Hero Status</div>
+                <div class="hunter-subline" id="hunterSubline">
+                  Mood adapts from today’s progress.
+                </div>
+              </div>
+
+              <span class="hunter-pill" id="hunterMoodPill">—</span>
+            </div>
+
+            <div class="hunter-body">
+              <div class="hunter-visual">
+                <div class="hunter-figure-shell" aria-hidden="true">
+                  <div class="hunter-figure-glow"></div>
+                  <div class="hunter-figure-floor"></div>
+
+                  <div class="hunter-xp-chip">
+                    <span class="hunter-xp-chip-k">XP</span>
+                    <span class="hunter-xp-chip-v" id="hunterXpValue">0</span>
+                  </div>
+
+                  <img
+                    class="hunter-figure"
+                    id="hunterFigure"
+                    src="Unknown.png"
+                    alt=""
+                  />
+
+                  <div class="hunter-xp-inline">
+                    <div class="hunter-xp-inline-top">
+                      <span class="hunter-xp-inline-label">Growth</span>
+                      <span class="hunter-xp-inline-value" id="hunterXpMiniText"
+                        >0 XP</span
+                      >
+                    </div>
+                    <div class="hunter-xp-inline-bar">
+                      <span
+                        class="hunter-xp-inline-fill"
+                        id="hunterXpMiniFill"
+                      ></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hunter-meta">
+                <div class="hunter-mood" id="hunterMood">Focused</div>
+                <div class="hunter-desc" id="hunterDesc">
+                  Your hunter reflects your current daily output.
+                </div>
+
+                <div class="hunter-scoreline">
+                  <div class="hunter-score">
+                    <span class="hunter-score-k">Today</span>
+                    <span class="hunter-score-v" id="hunterTasksDone">0</span>
+                    <span class="hunter-score-s">tasks completed</span>
+                  </div>
+
+                  <div class="hunter-score">
+                    <span class="hunter-score-k">Mode</span>
+                    <span
+                      class="hunter-score-v hunter-score-v-small"
+                      id="hunterMode"
+                    >
+                      Survival
+                    </span>
+                    <span class="hunter-score-s" id="hunterLevelHint">
+                      Low output detected
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </article>
         </section>
 
@@ -211,7 +281,6 @@
                     >
                       Physical
                     </text>
-
                     <text
                       x="170"
                       y="50"
@@ -223,7 +292,6 @@
                       <tspan x="170" dy="0">Intel-</tspan>
                       <tspan x="170" dy="8">lectual</tspan>
                     </text>
-
                     <text
                       x="155"
                       y="185"
@@ -234,7 +302,6 @@
                     >
                       Mental
                     </text>
-
                     <text
                       x="45"
                       y="185"
@@ -245,7 +312,6 @@
                     >
                       Confidence
                     </text>
-
                     <text
                       x="25"
                       y="50"
@@ -260,13 +326,13 @@
                   </svg>
                 </div>
 
-                <div class="pillars" aria-label="Pillar Breakdown Preview">
+                <div class="pillars">
                   <div class="pillar-row">
                     <div class="pillar-name">Physical</div>
                     <div class="pillar-bar">
                       <span class="bar-fill" style="width: 0%"></span>
                     </div>
-                    <div class="pillar-val" id="physical-val">—</div>
+                    <div class="pillar-val">0 / 100</div>
                   </div>
 
                   <div class="pillar-row">
@@ -274,7 +340,7 @@
                     <div class="pillar-bar">
                       <span class="bar-fill" style="width: 0%"></span>
                     </div>
-                    <div class="pillar-val" id="intellectual-val">—</div>
+                    <div class="pillar-val">0 / 100</div>
                   </div>
 
                   <div class="pillar-row">
@@ -282,7 +348,7 @@
                     <div class="pillar-bar">
                       <span class="bar-fill" style="width: 0%"></span>
                     </div>
-                    <div class="pillar-val" id="mental-val">—</div>
+                    <div class="pillar-val">0 / 100</div>
                   </div>
 
                   <div class="pillar-row">
@@ -290,7 +356,7 @@
                     <div class="pillar-bar">
                       <span class="bar-fill" style="width: 0%"></span>
                     </div>
-                    <div class="pillar-val" id="confidence-val">—</div>
+                    <div class="pillar-val">0 / 100</div>
                   </div>
 
                   <div class="pillar-row">
@@ -298,167 +364,190 @@
                     <div class="pillar-bar">
                       <span class="bar-fill" style="width: 0%"></span>
                     </div>
-                    <div class="pillar-val" id="discipline-val">—</div>
+                    <div class="pillar-val">0 / 100</div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <div class="line-graph">
+            <section class="line-graph" aria-label="Weekly Quest Graph">
               <div class="line-graph1">
-                <h2 class="panel-title">Task Completion</h2>
-                <span class="line-graph2">Tasks completed per day</span>
+                <h2 class="panel-title">Quest Activity</h2>
+                <div class="line-graph2">Completed tasks this week</div>
               </div>
 
               <svg
                 class="line-graph-svg"
                 viewBox="0 0 720 260"
-                preserveAspectRatio="none"
-                aria-label="Task completion line graph"
+                role="img"
+                aria-label="Line graph of weekly quest completion"
               >
-                <line class="line-axis" x1="60" y1="20" x2="60" y2="220" />
-                <line class="line-axis" x1="60" y1="220" x2="700" y2="220" />
+                <text
+                  x="20"
+                  y="120"
+                  text-anchor="middle"
+                  font-size="11"
+                  transform="rotate(-90 20 120)"
+                  class="graph-y-title"
+                ></text>
 
-                <g class="line-y">
-                  <text x="36" y="224">0</text>
-                  <text x="30" y="174">5</text>
-                  <text x="26" y="124">10</text>
-                  <text x="26" y="74">15</text>
-                  <text x="26" y="24">20</text>
-                </g>
-
-                <g class="line-x">
-                  <text x="60" y="246" text-anchor="middle">Mon</text>
-                  <text x="160" y="246" text-anchor="middle">Tue</text>
-                  <text x="260" y="246" text-anchor="middle">Wed</text>
-                  <text x="360" y="246" text-anchor="middle">Thu</text>
-                  <text x="460" y="246" text-anchor="middle">Fri</text>
-                  <text x="560" y="246" text-anchor="middle">Sat</text>
-                  <text x="660" y="246" text-anchor="middle">Sun</text>
-                </g>
-
-                <g class="line-grid">
-                  <line x1="60" y1="170" x2="700" y2="170" />
-                  <line x1="60" y1="120" x2="700" y2="120" />
-                  <line x1="60" y1="70" x2="700" y2="70" />
-                </g>
+                <text x="60" y="244" text-anchor="middle" font-size="12">
+                  Mon
+                </text>
+                <text x="160" y="244" text-anchor="middle" font-size="12">
+                  Tue
+                </text>
+                <text x="260" y="244" text-anchor="middle" font-size="12">
+                  Wed
+                </text>
+                <text x="360" y="244" text-anchor="middle" font-size="12">
+                  Thu
+                </text>
+                <text x="460" y="244" text-anchor="middle" font-size="12">
+                  Fri
+                </text>
+                <text x="560" y="244" text-anchor="middle" font-size="12">
+                  Sat
+                </text>
+                <text x="660" y="244" text-anchor="middle" font-size="12">
+                  Sun
+                </text>
               </svg>
-              <div class="graph-tooltip" id="taskGraphTooltip" hidden></div>
-            </div>
+            </section>
           </div>
 
-          <section class="stack" aria-label="Side Features">
+          <div class="stack" aria-label="Right Stack">
             <section class="panel" aria-label="Focus Preview">
               <div class="panel-head">
-                <h2 class="panel-title">Quests</h2>
-
-                <button
-                  class="panel-note quest-btn"
-                  type="button"
-                  onclick="window.location.href = 'quests.html'"
-                  aria-label="Open quests"
-                >
-                  Preview →
-                </button>
+                <h2 class="panel-title">Today’s Quests</h2>
+                <a class="quest-btn" href="quests.html">Open Quests</a>
               </div>
 
               <div class="focus-card quests-preview">
-                <!-- Dynamically loaded from API -->
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    onclick="completeQuest(this)"
+                    aria-label="Mark quest as complete"
+                    aria-pressed="false"
+                  ></span>
+                  <div class="quest-text">
+                    <h4>Daily challenge</h4>
+                    <p>Preview quest from AuraK system.</p>
+                  </div>
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    onclick="completeQuest(this)"
+                    aria-label="Mark quest as complete"
+                    aria-pressed="false"
+                  ></span>
+                  <div class="quest-text">
+                    <h4>Deep work block</h4>
+                    <p>Focus session preview from daily tasks.</p>
+                  </div>
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                  </span>
+                </div>
+
+                <div class="quest-row">
+                  <span
+                    class="quest-check"
+                    role="button"
+                    tabindex="0"
+                    onclick="completeQuest(this)"
+                    aria-label="Mark quest as complete"
+                    aria-pressed="false"
+                  ></span>
+                  <div class="quest-text">
+                    <h4>Discipline ritual</h4>
+                    <p>Consistency-based habit preview.</p>
+                  </div>
+                  <span class="quest-icon" aria-hidden="true">
+                    <i class="fa-solid fa-check"></i>
+                  </span>
+                </div>
               </div>
             </section>
 
             <section class="panel" aria-label="Daily Check-in Panel">
               <div class="panel-head">
-                <h2 class="panel-title">Daily Check-In</h2>
+                <h2 class="panel-title">Daily Check-in</h2>
+                <button
+                  class="btn"
+                  type="button"
+                  id="dashCheckinRefresh"
+                  aria-label="Refresh daily check-in preview"
+                >
+                  Refresh
+                </button>
               </div>
 
-              <div class="checkin-card" aria-label="Daily check-in summary">
-                <div class="checkin-top checkin-top--compact">
-                  <div class="checkin-right">
-                    <div
-                      class="checkin-date"
-                      id="dashCheckinDatePill"
-                      aria-label="Today date"
-                    >
-                      —
+              <div class="checkin-card">
+                <div class="checkin-topline">
+                  <span class="checkin-pill" id="dashCheckinDatePill">—</span>
+                </div>
+
+                <div class="checkin-metrics">
+                  <div class="metric-box">
+                    <div class="metric-head">
+                      <span class="metric-k">Mood</span>
+                      <span class="metric-v" id="dashMoodVal">—</span>
+                    </div>
+                    <div class="metric-bar">
+                      <span class="metric-fill" id="dashMoodFill"></span>
+                    </div>
+                  </div>
+
+                  <div class="metric-box">
+                    <div class="metric-head">
+                      <span class="metric-k">Baseline</span>
+                      <span class="metric-v" id="dashBaseVal">—</span>
+                    </div>
+                    <div class="metric-bar">
+                      <span class="metric-fill" id="dashBaseFill"></span>
                     </div>
                   </div>
                 </div>
 
-                <div class="checkin-bars" aria-label="Mood + baseline meters">
-                  <div class="cbar">
-                    <div class="cbar-k">Mood</div>
-                    <div class="cbar-track" aria-hidden="true">
-                      <span
-                        class="cbar-fill"
-                        id="dashMoodFill"
-                        style="width: 0%"
-                      ></span>
-                    </div>
-                    <div class="cbar-v" id="dashMoodVal">—</div>
-                  </div>
-
-                  <div class="cbar">
-                    <div class="cbar-k">Baseline</div>
-                    <div class="cbar-track" aria-hidden="true">
-                      <span
-                        class="cbar-fill"
-                        id="dashBaseFill"
-                        style="width: 0%"
-                      ></span>
-                    </div>
-                    <div class="cbar-v" id="dashBaseVal">—</div>
-                  </div>
-                </div>
-
-                <div class="checkin-snippet" id="dashReflectionSnippet">
+                <div class="reflection-snippet" id="dashReflectionSnippet">
                   No journal data yet.
                 </div>
-
-                <div class="checkin-actions">
-                  <a
-                    class="btn primary"
-                    href="journal.html"
-                    id="dashOpenJournal"
-                    >Open Journal</a
-                  >
-                  <button
-                    class="btn ghost"
-                    type="button"
-                    id="dashCheckinRefresh"
-                  >
-                    Refresh
-                  </button>
-                </div>
               </div>
             </section>
 
-            <section class="panel" aria-label="Appearance Quick Toggle">
+            <section class="panel" aria-label="Appearance Panel">
               <div class="panel-head">
-                <h2 class="panel-appaea">Appearance</h2>
+                <h2 class="panel-title">Appearance</h2>
               </div>
 
-              <label class="mode">
-                <input type="checkbox" id="themeToggle" />
-                <span class="mode-ui"></span>
-                <span class="mode-text">
-                  <span class="mode-LM">Light Mode</span>
-                  <span class="mode-text1">Better daylight viewing</span>
-                </span>
+              <label class="mode" for="themeToggle">
+                <input type="checkbox" id="themeToggle" hidden />
+                <div class="mode-knob" aria-hidden="true"></div>
+                <div>
+                  <div class="mode-title">Light mode</div>
+                  <div class="mode-hint">Switch dashboard appearance</div>
+                </div>
               </label>
-
-              <div class="mode-hint">
-                Tip: Toggle switches the full dashboard palette.
-              </div>
             </section>
-          </section>
+          </div>
         </section>
       </section>
     </main>
 
     <script src="habiticaConfig.js"></script>
     <script src="habiticaAPI.js"></script>
-    <script src="theme.js"></script>
     <script type="module" src="dashboard.js"></script>
+    <script src="theme.js"></script>
   </body>
 </html>
