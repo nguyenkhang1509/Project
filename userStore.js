@@ -141,12 +141,16 @@ function normalizeWeeklyData(value) {
 function normalizeJournal(value) {
   if (Array.isArray(value?.entries)) {
     return {
-      entries: value.entries.filter((entry) => entry && typeof entry === "object"),
+      entries: value.entries.filter(
+        (entry) => entry && typeof entry === "object",
+      ),
     };
   }
   if (value && typeof value === "object") {
     return {
-      entries: Object.values(value).filter((entry) => entry && typeof entry === "object"),
+      entries: Object.values(value).filter(
+        (entry) => entry && typeof entry === "object",
+      ),
     };
   }
   return { entries: [] };
@@ -165,14 +169,21 @@ function buildLocalState(uid, seed = {}) {
   const journalStore =
     readScopedValue(JOURNAL_KEY_BASE, uid, null) ||
     readLocalJSON("aurakJournal", null);
-  const dashboardReflection = readScopedValue(DASH_REFLECTION_KEY_BASE, uid, null);
+  const dashboardReflection = readScopedValue(
+    DASH_REFLECTION_KEY_BASE,
+    uid,
+    null,
+  );
   const membership =
     readScopedValue("aurak_membership", uid, null) ||
     cached.membership ||
     legacyProfile.membership ||
     null;
   const completedQuests = readScopedValue("completedQuests", uid, []);
-  const totalXP = Math.max(0, Number(readScopedString(XP_STORAGE_KEY, uid, "0")) || 0);
+  const totalXP = Math.max(
+    0,
+    Number(readScopedString(XP_STORAGE_KEY, uid, "0")) || 0,
+  );
   const weeklyQuestData =
     readScopedValue("weeklyQuestData", uid, null) ||
     readLocalJSON("weeklyQuestData", null);
@@ -182,7 +193,8 @@ function buildLocalState(uid, seed = {}) {
     "";
   const dailyQuestResetDate = readScopedString("dailyQuestResetDate", uid, "");
   const dashboard =
-    readScopedValue("aurakDashboard", uid, null) || readLocalJSON("aurakDashboard", null);
+    readScopedValue("aurakDashboard", uid, null) ||
+    readLocalJSON("aurakDashboard", null);
 
   const profile = {
     displayName:
@@ -236,12 +248,11 @@ function buildLocalState(uid, seed = {}) {
       new Date().toISOString(),
   };
 
-  const totalXPValue =
-    Number.isFinite(Number(seed.totalXP))
-      ? Number(seed.totalXP)
-      : Number.isFinite(Number(cached.totalXP))
-        ? Number(cached.totalXP)
-        : totalXP;
+  const totalXPValue = Number.isFinite(Number(seed.totalXP))
+    ? Number(seed.totalXP)
+    : Number.isFinite(Number(cached.totalXP))
+      ? Number(cached.totalXP)
+      : totalXP;
   const levelInfo = getLevelInfo(totalXPValue);
   const rank = rankFromAverage(averageStat(profile.stats));
   const todayIso = getISODate();
@@ -296,7 +307,10 @@ function buildLocalState(uid, seed = {}) {
       cached.dashboardReflection ??
       dashboardReflection ??
       null,
-    dashboard: sanitizeObject(seed.dashboard ?? cached.dashboard ?? dashboard, {}),
+    dashboard: sanitizeObject(
+      seed.dashboard ?? cached.dashboard ?? dashboard,
+      {},
+    ),
     baseline: sanitizeObject(seed.baseline ?? cached.baseline, {}),
   };
 }
@@ -316,24 +330,48 @@ function syncCompatibilityCache(uid, state) {
   };
 
   writeLocalJSON(getStorageKey(PROFILE_KEY_BASE, uid), profile);
-  writeScopedString(XP_STORAGE_KEY, uid, Math.max(0, Number(state.totalXP) || 0));
-  writeLocalJSON(getStorageKey(QUEST_STORAGE_KEY, uid), sanitizeObject(state.quests, {}));
+  writeScopedString(
+    XP_STORAGE_KEY,
+    uid,
+    Math.max(0, Number(state.totalXP) || 0),
+  );
+  writeLocalJSON(
+    getStorageKey(QUEST_STORAGE_KEY, uid),
+    sanitizeObject(state.quests, {}),
+  );
   writeLocalJSON(
     getStorageKey(TASK_HISTORY_KEY, uid),
     sanitizeObject(state.dailyTaskHistory, {}),
   );
-  writeLocalJSON(getStorageKey(JOURNAL_KEY_BASE, uid), normalizeJournal(state.journal));
+  writeLocalJSON(
+    getStorageKey(JOURNAL_KEY_BASE, uid),
+    normalizeJournal(state.journal),
+  );
   writeLocalJSON("aurakJournal", normalizeJournal(state.journal));
   if (state.dashboardReflection) {
-    writeLocalJSON(getStorageKey(DASH_REFLECTION_KEY_BASE, uid), state.dashboardReflection);
+    writeLocalJSON(
+      getStorageKey(DASH_REFLECTION_KEY_BASE, uid),
+      state.dashboardReflection,
+    );
   }
   writeLocalJSON(
     getStorageKey("weeklyQuestData", uid),
     normalizeWeeklyData(state.weeklyQuestData),
   );
-  writeLocalJSON(getStorageKey("completedQuests", uid), state.completedQuests || []);
-  writeScopedString("weeklyGraphResetDate", uid, state.weeklyGraphResetDate || "");
-  writeScopedString("dailyQuestResetDate", uid, state.dailyQuestResetDate || "");
+  writeLocalJSON(
+    getStorageKey("completedQuests", uid),
+    state.completedQuests || [],
+  );
+  writeScopedString(
+    "weeklyGraphResetDate",
+    uid,
+    state.weeklyGraphResetDate || "",
+  );
+  writeScopedString(
+    "dailyQuestResetDate",
+    uid,
+    state.dailyQuestResetDate || "",
+  );
 
   if (state.membership) {
     writeLocalJSON(getStorageKey("aurak_membership", uid), state.membership);
@@ -376,7 +414,9 @@ export async function mergeUserDoc(uid, payload) {
   if (!uid) return null;
   await waitForAuthReady();
   if (!auth.currentUser) {
-    throw new Error("Cannot write Firestore user document without an authenticated session.");
+    throw new Error(
+      "Cannot write Firestore user document without an authenticated session.",
+    );
   }
   if (auth.currentUser.uid !== uid) {
     throw new Error(
@@ -397,7 +437,9 @@ export async function patchUserDoc(uid, payload) {
   if (!uid) return null;
   await waitForAuthReady();
   if (!auth.currentUser) {
-    throw new Error("Cannot patch Firestore user document without an authenticated session.");
+    throw new Error(
+      "Cannot patch Firestore user document without an authenticated session.",
+    );
   }
   if (auth.currentUser.uid !== uid) {
     throw new Error(

@@ -22,7 +22,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const profile = readCachedUserProfile(user.uid);
   if (!user.stats && profile?.stats) {
-    user = { ...user, stats: profile.stats, ...(profile.survey ? { survey: profile.survey } : {}) };
+    user = {
+      ...user,
+      stats: profile.stats,
+      ...(profile.survey ? { survey: profile.survey } : {}),
+    };
     writeCurrentUser(user);
   }
 
@@ -65,7 +69,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       ch === "." || ch === "," || ch === "!" || ch === "?" || ch === ":";
     const isSpace = ch === " ";
 
-    return baseSpeed + randomJitter + (isSpace ? 25 : 0) + (isPunct ? punctPause : 0);
+    return (
+      baseSpeed + randomJitter + (isSpace ? 25 : 0) + (isPunct ? punctPause : 0)
+    );
   }
 
   function typeSentence(sentence, jobId) {

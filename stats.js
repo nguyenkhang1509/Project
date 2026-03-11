@@ -46,7 +46,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const profile = readCachedUserProfile(user.uid);
   if (user && !user.stats && profile?.stats) {
-    user = { ...user, stats: profile.stats, ...(profile.survey ? { survey: profile.survey } : {}) };
+    user = {
+      ...user,
+      stats: profile.stats,
+      ...(profile.survey ? { survey: profile.survey } : {}),
+    };
     writeCurrentUser(user);
   }
 
@@ -127,10 +131,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       statsWrap.appendChild(row);
 
-      setTimeout(() => {
-        const fill = row.querySelector(".bar-fill");
-        if (fill) fill.style.width = pct + "%";
-      }, 120 + idx * 120);
+      setTimeout(
+        () => {
+          const fill = row.querySelector(".bar-fill");
+          if (fill) fill.style.width = pct + "%";
+        },
+        120 + idx * 120,
+      );
     });
   }
 

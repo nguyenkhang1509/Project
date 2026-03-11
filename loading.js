@@ -71,13 +71,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const hasStats = !!(user?.stats || profile?.stats);
-  const target = !user ? "login.html" : hasStats ? "stats.html" : "sequence.html";
+  const target = !user
+    ? "login.html"
+    : hasStats
+      ? "stats.html"
+      : "sequence.html";
 
   if (statusText) statusText.textContent = user ? "ONLINE" : "OFFLINE";
   if (statusPill) statusPill.classList.toggle("offline", !user);
 
   if (!user) {
-    if (subtitle) subtitle.textContent = "No active session found. Returning...";
+    if (subtitle)
+      subtitle.textContent = "No active session found. Returning...";
   } else if (!hasStats) {
     if (subtitle) subtitle.textContent = "No baseline found. Opening setup...";
   } else if (subtitle) {

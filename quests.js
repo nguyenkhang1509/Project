@@ -15,7 +15,11 @@
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
   const QUEST_CATEGORIES = [
-    { key: "physical", title: "Physical", hint: "Train your body and stamina." },
+    {
+      key: "physical",
+      title: "Physical",
+      hint: "Train your body and stamina.",
+    },
     {
       key: "intellectual",
       title: "Intellectual",
@@ -238,7 +242,10 @@
 
   function writeTaskHistoryMap(map) {
     try {
-      localStorage.setItem(getAccountKey(TASK_HISTORY_KEY), JSON.stringify(map));
+      localStorage.setItem(
+        getAccountKey(TASK_HISTORY_KEY),
+        JSON.stringify(map),
+      );
     } catch {}
     void syncCloudState({ dailyTaskHistory: map }).catch((error) => {
       console.warn("Task history sync failed:", error);
@@ -273,8 +280,13 @@
 
   function snapshotCompletedTasksForDate(state, dateStr) {
     if (!state || typeof state !== "object" || !dateStr) return;
-    const completed = state.completed && typeof state.completed === "object" ? state.completed : {};
-    const completedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
+    const completed =
+      state.completed && typeof state.completed === "object"
+        ? state.completed
+        : {};
+    const completedIds = Object.keys(completed).filter(
+      (qid) => !!completed[qid],
+    );
     if (!completedIds.length) return;
 
     const nameById = new Map();
@@ -285,7 +297,10 @@
     });
 
     const map = readTaskHistoryMap();
-    const day = map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+    const day =
+      map[dateStr] && typeof map[dateStr] === "object"
+        ? { ...map[dateStr] }
+        : {};
     completedIds.forEach((qid) => {
       if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
     });

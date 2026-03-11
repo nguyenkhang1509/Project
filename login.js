@@ -55,10 +55,15 @@ if (form) {
     if (!valid) return;
 
     try {
-      const cred = await signInWithEmailAndPassword(auth, emailValue, passValue);
+      const cred = await signInWithEmailAndPassword(
+        auth,
+        emailValue,
+        passValue,
+      );
       const fbUser = cred.user;
       const displayName =
-        fbUser.displayName || (fbUser.email ? fbUser.email.split("@")[0] : "Player");
+        fbUser.displayName ||
+        (fbUser.email ? fbUser.email.split("@")[0] : "Player");
 
       writeCurrentUser({
         uid: fbUser.uid,
@@ -87,7 +92,8 @@ if (form) {
       }
 
       if (code === "auth/network-request-failed") {
-        formError.textContent = "Network error. Check your connection and try again.";
+        formError.textContent =
+          "Network error. Check your connection and try again.";
         return;
       }
 
