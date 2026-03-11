@@ -26,8 +26,6 @@ const HABITICA_CONFIG = {
     "mental-4": "mental",
   },
 
-  apiBase: "https://habitica.com/api/v3",
-
   defaultXpPerCategory: {
     physical: 60,
     intellectual: 80,

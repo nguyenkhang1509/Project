@@ -99,29 +99,6 @@ class HabiticaAPI {
       return this.cache.get(challengeId);
     }
 
-    try {
-      const url = `${this.config.apiBase}/challenges/${challengeId}`;
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      if (this.config.userId && this.config.apiToken) {
-        headers["x-api-user"] = this.config.userId;
-        headers["x-api-key"] = this.config.apiToken;
-      }
-
-      const response = await fetch(url, { headers });
-
-      if (response.ok) {
-        const json = await response.json();
-        const challengeData = json.data || json;
-        this.cache.set(challengeId, challengeData);
-        return challengeData;
-      }
-    } catch (error) {
-      console.log(`Challenge ${challengeId} not found in API, using demo data`);
-    }
-
     if (this.demoData[challengeId]) {
       const demoChallenge = {
         _id: challengeId,

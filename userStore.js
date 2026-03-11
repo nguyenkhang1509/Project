@@ -18,6 +18,13 @@ const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 
+function getISODate(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function getLevelInfo(totalXp) {
   let level = 1;
   let req = BASE_XP_PER_LEVEL;
@@ -58,6 +65,14 @@ function rankFromAverage(avg) {
   if (avg >= 40) return "C";
   if (avg >= 20) return "D";
   return "E";
+}
+
+function heroMoodKeyFromTaskCount(taskCount) {
+  const count = Math.max(0, Number(taskCount) || 0);
+  if (count <= 0) return "exhausted";
+  if (count <= 2) return "warming-up";
+  if (count <= 4) return "focused";
+  return "locked-in";
 }
 
 function safeParseJSON(raw, fallback) {
@@ -229,6 +244,15 @@ function buildLocalState(uid, seed = {}) {
         : totalXP;
   const levelInfo = getLevelInfo(totalXPValue);
   const rank = rankFromAverage(averageStat(profile.stats));
+  const todayIso = getISODate();
+  const quests = sanitizeObject(seed.quests ?? cached.quests ?? questState, {});
+  const completed = sanitizeObject(quests.completed, {});
+  const tasksDone = Object.values(completed).filter(Boolean).length;
+  const heroStatus = {
+    date: todayIso,
+    tasksDone,
+    moodKey: heroMoodKeyFromTaskCount(tasksDone),
+  };
 
   return {
     profile,
@@ -242,7 +266,8 @@ function buildLocalState(uid, seed = {}) {
     xpToNextLevel: levelInfo.req,
     levelProgress: levelInfo.progress,
     rank,
-    quests: sanitizeObject(seed.quests ?? cached.quests ?? questState, {}),
+    heroStatus,
+    quests,
     weeklyQuestData: normalizeWeeklyData(
       seed.weeklyQuestData ?? cached.weeklyQuestData ?? weeklyQuestData,
     ),

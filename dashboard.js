@@ -2,6 +2,7 @@ import {
   getCurrentUser,
   getStorageKey,
   mergeUserState,
+  readCachedAccountState,
   readCachedUserProfile,
   subscribeToUserState,
   syncUserState,
@@ -148,9 +149,15 @@ function rankFromAverage(avg) {
 }
 
 function getTodayCompletedTaskCount() {
-  const today = getISODate();
-  const history = readTaskHistoryMap();
-  const historyCount = Object.keys(history[today] || {}).length;
+  const user = getCurrentUser();
+  if (user?.uid) {
+    const state = readCachedAccountState(user.uid);
+    const hero = state?.heroStatus;
+    const today = getISODate();
+    if (hero && hero.date === today) {
+      return Math.max(0, Number(hero.tasksDone) || 0);
+    }
+  }
 
   let questCount = 0;
   try {
@@ -165,7 +172,7 @@ function getTodayCompletedTaskCount() {
     questCount = Object.values(completed).filter(Boolean).length;
   } catch {}
 
-  return Math.max(historyCount, questCount);
+  return questCount;
 }
 
 function getHunterMoodData(taskCount, level) {
