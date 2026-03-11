@@ -23,19 +23,14 @@
 
           r.setProperty("--bg", "#f7f9ff");
           r.setProperty("--bg2", "#eef2ff");
-
           r.setProperty("--card", "rgba(255, 255, 255, 0.92)");
           r.setProperty("--card2", "rgba(255, 255, 255, 0.82)");
-
           r.setProperty("--stroke", "rgba(2, 6, 23, 0.10)");
           r.setProperty("--stroke2", "rgba(2, 6, 23, 0.16)");
-
           r.setProperty("--text", "#0a1022");
           r.setProperty("--muted", "rgba(10, 16, 34, 0.64)");
-
           r.setProperty("--aquaSoft", "rgba(34, 211, 238, 0.26)");
           r.setProperty("--violetSoft", "rgba(168, 85, 247, 0.24)");
-
           r.setProperty("--shadow", "0 14px 40px rgba(2, 6, 23, 0.12)");
           r.setProperty("--shadow2", "0 22px 60px rgba(2, 6, 23, 0.16)");
         } catch (e) {}
@@ -158,208 +153,308 @@
           </div>
         </header>
 
-       <div class="pr-wrap" aria-label="Profile Content">
-  <div class="pr-head">
-    <div class="pr-kicker">PROFILE</div>
-    <div class="pr-title">Your Identity</div>
-  </div>
-
-  <section class="pr-card pr-identity" aria-label="Your Identity">
-    <div class="pr-identityRow">
-      <div class="pr-avatar" aria-hidden="true">
-        <span class="pr-letter" id="prAvatarLetter">S</span>
-      </div>
-
-      <div class="pr-id">
-        <div class="pr-name" id="pfName">—</div>
-        <div class="pr-tag" id="pfTagline">—</div>
-        <div class="pr-subRow">
-          <span class="pr-handle" id="pfHandle">—</span>
-          <span class="pr-join" id="prJoined">Joined —</span>
-        </div>
-      </div>
-
-      <button class="pr-edit" id="prEditBtn" type="button">
-        Edit Profile
-      </button>
-    </div>
-  </section>
-
-  <div class="pr-stack" aria-label="Profile Panels">
-    <section class="pr-card pr-info" aria-label="Hunter Info">
-      <div class="pr-cardHead">HUNTER INFO</div>
-
-      <div class="pr-rows">
-        <div class="pr-row">
-          <span class="k">Level</span>
-          <span class="v" id="pfLevel">—</span>
-        </div>
-        <div class="pr-row">
-          <span class="k">Rank</span>
-          <span class="v" id="pfRank">—</span>
-        </div>
-        <div class="pr-row">
-          <span class="k">Streak</span>
-          <span class="v" id="prStreak">—</span>
-        </div>
-        <div class="pr-row">
-          <span class="k">Title</span>
-          <span class="v" id="prTitle">—</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="pr-card pr-sub" aria-label="Subscription">
-      <div class="pr-subTop">
-        <div class="pr-cardHead">SUBSCRIPTION</div>
-        <span class="pr-pill" id="pfPlanBadge">—</span>
-      </div>
-
-      <div class="pr-subName" id="pfPlanName">—</div>
-      <div class="pr-subDesc" id="pfPlanDesc">—</div>
-
-      <button class="pr-upgrade" id="pfUpgradeBtn" type="button">
-        Upgrade to Premium
-      </button>
-
-      <script>
-        document.getElementById("pfUpgradeBtn").onclick = () => {
-          window.location.href = "subscription.html";
-        };
-      </script>
-    </section>
-  </div>
-
-  <!-- Edit modal -->
-  <div class="pr-modal" id="prModal" aria-hidden="true">
-    <div class="pr-modalCard" role="dialog" aria-modal="true">
-      <div class="pr-modalHead">
-        <div class="pr-modalTitle">Edit Profile</div>
-        <button
-          class="pr-x"
-          id="prModalClose"
-          type="button"
-          aria-label="Close"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="pr-modalBody">
-        <label class="pr-field">
-          <span>Display name</span>
-          <input
-            id="pfInputName"
-            type="text"
-            placeholder="Your name"
-            maxlength="28"
-            autocomplete="nickname"
-          />
-          <div class="pr-miniRow">
-            <span class="pr-mini" id="pfNameCount">0/28</span>
+        <div class="pr-wrap" aria-label="Profile Content">
+          <div class="pr-head">
+            <div class="pr-kicker">PROFILE</div>
+            <div class="pr-title">Your Identity</div>
           </div>
-        </label>
 
-        <label class="pr-field">
-          <span>Tagline</span>
-          <input
-            id="pfInputTagline"
-            type="text"
-            placeholder="Student • Builder • Athlete"
-            maxlength="44"
-            autocomplete="off"
-          />
-          <div class="pr-miniRow">
-            <span class="pr-mini" id="pfTagCount">0/44</span>
-          </div>
-        </label>
+          <section class="pr-card pr-identity" aria-label="Your Identity">
+            <div class="pr-identityRow">
+              <div class="pr-id">
+                <div class="pr-name" id="pfName">—</div>
+                <div class="pr-tag" id="pfTagline">—</div>
+                <div class="pr-subRow">
+                  <span class="pr-handle" id="pfHandle">—</span>
+                </div>
+                <button
+                  class="pr-titleChip"
+                  id="prTitleTriggerHero"
+                  type="button"
+                >
+                  <span class="pr-titleChipLabel">Title</span>
+                  <span class="pr-titleChipValue" id="prTitleHero">—</span>
+                  <span class="pr-titleChipMeta" id="prTitleHeroMeta"
+                    >Tap to determine</span
+                  >
+                </button>
+              </div>
 
-        <label class="pr-field">
-          <span>Bio</span>
-          <textarea
-            id="pfInputBio"
-            rows="4"
-            placeholder="Write your AuraK story (short + sharp)."
-            maxlength="240"
-          ></textarea>
-          <div class="pr-miniRow">
-            <span class="pr-mini" id="pfBioCount">0/240</span>
-          </div>
-        </label>
+              <button class="pr-edit" id="prEditBtn" type="button">
+                Edit Profile
+              </button>
+            </div>
+          </section>
 
-        <div class="pr-socials" aria-label="Social links">
-          <div class="pr-social">
-            <i class="fa-brands fa-instagram"></i>
-            <input
-              id="pfIg"
-              type="text"
-              placeholder="instagram handle"
-              autocomplete="off"
-              inputmode="text"
-            />
+          <section class="pr-statRail" aria-label="Profile Stats">
+            <div class="pr-statCard">
+              <div class="pr-statLabel">Level</div>
+              <div class="pr-statValue" id="pfLevel">—</div>
+              <div class="pr-statMeta" id="pfXpText">—</div>
+            </div>
+
+            <div class="pr-statCard">
+              <div class="pr-statLabel">Rank</div>
+              <div class="pr-statValue" id="pfRank">—</div>
+              <div class="pr-statMeta" id="pfAvgText">Avg —</div>
+            </div>
+
+            <div class="pr-statCard">
+              <div class="pr-statLabel">Streak</div>
+              <div class="pr-statValue" id="prStreak">—</div>
+              <div class="pr-statMeta" id="prLastJournal">Last journal —</div>
+            </div>
+
             <button
-              class="pr-miniBtn"
-              id="pfIgClear"
+              class="pr-statCard pr-statCardButton"
+              id="prTitleTriggerCard"
               type="button"
-              aria-label="Clear Instagram"
             >
-              <i class="fa-solid fa-xmark"></i>
+              <div class="pr-statLabel">Title</div>
+              <div class="pr-statValue" id="prTitle">—</div>
+              <div class="pr-statMeta" id="prTitleMeta">Tap to determine</div>
             </button>
-          </div>
+          </section>
 
-          <div class="pr-social">
-            <i class="fa-brands fa-github"></i>
-            <input
-              id="pfGh"
-              type="text"
-              placeholder="github username"
-              autocomplete="off"
-              inputmode="text"
-            />
-            <button
-              class="pr-miniBtn"
-              id="pfGhClear"
-              type="button"
-              aria-label="Clear GitHub"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
+          <div class="pr-mainGrid">
+            <section class="pr-card pr-about" aria-label="Profile Details">
+              <div class="pr-cardHead">HUNTER INFO</div>
 
-          <div class="pr-social">
-            <i class="fa-solid fa-link"></i>
-            <input
-              id="pfLink"
-              type="text"
-              placeholder="portfolio link"
-              autocomplete="url"
-              inputmode="url"
-            />
-            <button
-              class="pr-miniBtn"
-              id="pfLinkClear"
-              type="button"
-              aria-label="Clear Link"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+              <div class="pr-aboutBody">
+                <div class="pr-bioBlock">
+                  <div class="pr-sectionLabel">Bio</div>
+                  <p class="pr-bio" id="pfBio">
+                    Add a short bio to sharpen your profile.
+                  </p>
+                </div>
+
+                <div class="pr-detailGrid">
+                  <div class="pr-detailItem">
+                    <span class="k">Display Name</span>
+                    <span class="v" id="pfDetailName">—</span>
+                  </div>
+                  <div class="pr-detailItem">
+                    <span class="k">Handle</span>
+                    <span class="v" id="pfDetailHandle">—</span>
+                  </div>
+                  <div class="pr-detailItem">
+                    <span class="k">Current Title</span>
+                    <span class="v" id="pfDetailTitle">—</span>
+                  </div>
+                  <div class="pr-detailItem">
+                    <span class="k">Current Rank</span>
+                    <span class="v" id="pfDetailRank">—</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="pr-card pr-sub" aria-label="Subscription">
+              <div class="pr-subTop">
+                <div class="pr-cardHead">SUBSCRIPTION</div>
+                <span class="pr-pill" id="pfPlanBadge">—</span>
+              </div>
+
+              <div class="pr-subName" id="pfPlanName">—</div>
+              <div class="pr-subDesc" id="pfPlanDesc">—</div>
+
+              <div class="pr-renewRow">
+                <span>Renewal</span>
+                <strong id="pfRenewDate">—</strong>
+              </div>
+
+              <div class="pr-perks" id="pfPerks"></div>
+
+              <button class="pr-upgrade" id="pfUpgradeBtn" type="button">
+                Upgrade to Premium
+              </button>
+            </section>
           </div>
         </div>
-
-        <div class="pr-saveRow">
-          <div class="pr-saveMeta">
-            <div class="pr-saved" id="pfLastSaved">—</div>
-            <span class="pr-dirty" id="pfDirty" aria-hidden="true">Unsaved</span>
-          </div>
-
-          <button class="pr-save" id="pfSaveBtn" type="button">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
       </section>
     </main>
+
+    <div class="pr-modal" id="prModal" aria-hidden="true">
+      <div
+        class="pr-modalCard"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit Profile"
+      >
+        <div class="pr-modalHead">
+          <div class="pr-modalTitle">Edit Profile</div>
+          <button
+            class="pr-x"
+            id="prModalClose"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="pr-modalBody">
+          <label class="pr-field">
+            <span>Display name</span>
+            <input
+              id="pfInputName"
+              type="text"
+              placeholder="Your name"
+              maxlength="28"
+              autocomplete="nickname"
+            />
+            <div class="pr-miniRow">
+              <span class="pr-mini" id="pfNameCount">0/28</span>
+            </div>
+          </label>
+
+          <label class="pr-field">
+            <span>Tagline</span>
+            <input
+              id="pfInputTagline"
+              type="text"
+              placeholder="Student • Builder • Athlete"
+              maxlength="44"
+              autocomplete="off"
+            />
+            <div class="pr-miniRow">
+              <span class="pr-mini" id="pfTagCount">0/44</span>
+            </div>
+          </label>
+
+          <label class="pr-field">
+            <span>Bio</span>
+            <textarea
+              id="pfInputBio"
+              rows="4"
+              placeholder="Write your AuraK story."
+              maxlength="240"
+            ></textarea>
+            <div class="pr-miniRow">
+              <span class="pr-mini" id="pfBioCount">0/240</span>
+            </div>
+          </label>
+
+          <div class="pr-saveRow">
+            <div class="pr-saveMeta">
+              <span class="pr-dirty" id="pfDirty" aria-hidden="true"
+                >Unsaved</span
+              >
+            </div>
+            <button class="pr-save" id="pfSaveBtn" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="jc-overlay" id="titleSurveyOverlay" aria-hidden="true">
+      <div
+        class="jc-sheet"
+        id="titleSurveySheet"
+        data-step="0"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Title Assessment"
+      >
+        <div class="jc-sheetTop">
+          <div class="jc-sheetTitle">Title Assessment</div>
+          <button
+            class="jc-close"
+            id="titleSurveyClose"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="jc-progress" aria-label="Progress">
+          <div class="jc-dots" id="titleSurveyDots"></div>
+        </div>
+
+        <div class="jc-stage">
+          <section class="jc-step is-active" id="titleSurveyQuestionStep">
+            <div class="jc-stepBody jc-stepQuestion">
+              <div class="jc-qEyebrow" id="tsStepLabel">Question 1 of 6</div>
+              <div class="jc-qTitle" id="tsQuestionTitle">—</div>
+              <div class="jc-qSub" id="tsQuestionSub">—</div>
+              <div
+                class="jc-chipGrid title-chipGrid"
+                id="tsQuestionOptions"
+              ></div>
+            </div>
+          </section>
+
+          <section class="jc-step" id="titleSurveyReviewStep">
+            <div class="jc-stepBody jc-stepReview jc-stepWide">
+              <div class="jc-qEyebrow">Assessment Complete</div>
+              <div class="jc-qTitle">Your title is ready</div>
+              <div class="jc-qSub">
+                This result will save to your profile and stay locked for 7
+                days.
+              </div>
+
+              <div class="ts-resultCard">
+                <div class="ts-resultKicker">AURAK TITLE</div>
+                <div class="ts-resultTitle" id="tsResultTitle">—</div>
+                <div class="ts-resultDesc" id="tsResultDesc">—</div>
+              </div>
+
+              <div class="ts-answerSummary" id="tsAnswerSummary"></div>
+
+              <button
+                class="btn primary jc-wideBtn"
+                id="titleSurveySave"
+                type="button"
+              >
+                Save Title
+              </button>
+            </div>
+          </section>
+
+          <section class="jc-step" id="titleSurveySavedStep">
+            <div class="jc-stepBody jc-stepSaved">
+              <div class="jc-qEyebrow">Saved</div>
+              <div class="jc-qTitle">Title saved</div>
+              <div class="jc-qSub" id="tsLockedText">
+                You can take it again in 7 days.
+              </div>
+              <button
+                class="btn primary jc-wideBtn"
+                id="titleSurveyDone"
+                type="button"
+              >
+                Continue
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <div class="jc-nav" id="titleSurveyNav" aria-label="Navigation">
+          <button
+            class="jc-back"
+            id="titleSurveyBack"
+            type="button"
+            aria-label="Back"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div aria-hidden="true"></div>
+
+          <button
+            class="jc-next"
+            id="titleSurveyNext"
+            type="button"
+            aria-label="Next"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pr-toast" id="pfToast" aria-live="polite"></div>
 
     <script type="module" src="profile.js"></script>
     <script src="theme.js"></script>

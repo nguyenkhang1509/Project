@@ -10,28 +10,272 @@ import {
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
+const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
+const TITLE_SURVEY_LOCK_MS = 7 * 24 * 60 * 60 * 1000;
+const TITLE_SURVEY_VERSION = "aurak-title-profile-v2";
 
-function getAccountStorageKey(baseKey) {
-  return getStorageKey(baseKey);
+const TITLE_SURVEY_TEMPLATE = {
+  version: TITLE_SURVEY_VERSION,
+  questions: [
+    {
+      id: "drive",
+      title: "What pulls you forward the hardest right now?",
+      subtitle:
+        "Placeholder copy. Your co-founder can replace the question, option text, and weighting later.",
+      options: [
+        {
+          key: "build",
+          label: "Build something real",
+          sublabel: "Execution, output, and visible progress matter most.",
+          icon: "fa-solid fa-hammer",
+          weights: { Vanguard: 3, Architect: 2, Ascendant: 1 },
+        },
+        {
+          key: "mastery",
+          label: "Become elite",
+          sublabel: "You care about skill, sharpness, and level-ups.",
+          icon: "fa-solid fa-crosshairs",
+          weights: { Ascendant: 3, Strategist: 2, Sentinel: 1 },
+        },
+        {
+          key: "influence",
+          label: "Lead and move people",
+          sublabel: "Direction, presence, and responsibility drive you.",
+          icon: "fa-solid fa-crown",
+          weights: { Vanguard: 2, Catalyst: 3, Strategist: 1 },
+        },
+        {
+          key: "meaning",
+          label: "Create something meaningful",
+          sublabel: "Purpose and impact are bigger than speed.",
+          icon: "fa-solid fa-star",
+          weights: { Architect: 2, Sentinel: 2, Catalyst: 2 },
+        },
+      ],
+    },
+    {
+      id: "mode",
+      title: "Which operating mode feels the most natural to you?",
+      subtitle:
+        "Pick the one that feels like your default state under normal pressure.",
+      options: [
+        {
+          key: "calm",
+          label: "Calm and deliberate",
+          sublabel: "You think first, then move with control.",
+          icon: "fa-solid fa-mountain",
+          weights: { Strategist: 3, Architect: 2, Sentinel: 1 },
+        },
+        {
+          key: "aggressive",
+          label: "Fast and relentless",
+          sublabel: "Momentum solves more than hesitation.",
+          icon: "fa-solid fa-bolt",
+          weights: { Vanguard: 3, Ascendant: 2, Catalyst: 1 },
+        },
+        {
+          key: "adaptive",
+          label: "Adaptive and flexible",
+          sublabel: "You shift gears quickly based on what the moment needs.",
+          icon: "fa-solid fa-compass",
+          weights: { Architect: 2, Catalyst: 2, Strategist: 1 },
+        },
+        {
+          key: "steady",
+          label: "Steady and durable",
+          sublabel: "You outlast people more than you outpace them.",
+          icon: "fa-solid fa-shield-halved",
+          weights: { Sentinel: 3, Ascendant: 1, Strategist: 1 },
+        },
+      ],
+    },
+    {
+      id: "edge",
+      title: "Where do you want your edge to show the most?",
+      subtitle: "This helps the title lean toward your strongest lane.",
+      options: [
+        {
+          key: "systems",
+          label: "Systems and structure",
+          sublabel: "Frameworks, planning, optimization, and clean thinking.",
+          icon: "fa-solid fa-diagram-project",
+          weights: { Architect: 3, Strategist: 2 },
+        },
+        {
+          key: "presence",
+          label: "Presence and confidence",
+          sublabel: "You want people to feel your energy and force.",
+          icon: "fa-solid fa-fire",
+          weights: { Vanguard: 2, Catalyst: 3, Ascendant: 1 },
+        },
+        {
+          key: "consistency",
+          label: "Consistency and discipline",
+          sublabel: "Daily reps matter more than hype.",
+          icon: "fa-solid fa-repeat",
+          weights: { Ascendant: 3, Sentinel: 2 },
+        },
+        {
+          key: "judgment",
+          label: "Judgment and decision-making",
+          sublabel: "You want to choose well under uncertainty.",
+          icon: "fa-solid fa-chess-knight",
+          weights: { Strategist: 3, Architect: 1, Sentinel: 1 },
+        },
+      ],
+    },
+    {
+      id: "pressure",
+      title: "When pressure rises, what usually happens to you?",
+      subtitle:
+        "Choose the answer that feels true most often, not the one that sounds coolest.",
+      options: [
+        {
+          key: "attack",
+          label: "I attack it directly",
+          sublabel: "I would rather engage than circle around it.",
+          icon: "fa-solid fa-sword",
+          weights: { Vanguard: 3, Catalyst: 1, Ascendant: 1 },
+        },
+        {
+          key: "analyze",
+          label: "I slow down and analyze",
+          sublabel: "I need the pattern before I move hard.",
+          icon: "fa-solid fa-brain",
+          weights: { Strategist: 3, Architect: 1, Sentinel: 1 },
+        },
+        {
+          key: "endure",
+          label: "I absorb it and keep going",
+          sublabel: "I can carry load for a long time.",
+          icon: "fa-solid fa-anchor",
+          weights: { Sentinel: 3, Ascendant: 2 },
+        },
+        {
+          key: "adapt",
+          label: "I pivot until something works",
+          sublabel: "I stay mobile instead of rigid.",
+          icon: "fa-solid fa-shuffle",
+          weights: { Architect: 2, Catalyst: 2, Vanguard: 1 },
+        },
+      ],
+    },
+    {
+      id: "standard",
+      title: "What standard do you quietly hold yourself to?",
+      subtitle: "This is the rule you return to even when nobody is watching.",
+      options: [
+        {
+          key: "greatness",
+          label: "I should be exceptional",
+          sublabel: "Average feels like leaving potential on the table.",
+          icon: "fa-solid fa-arrow-trend-up",
+          weights: { Ascendant: 3, Vanguard: 1, Catalyst: 1 },
+        },
+        {
+          key: "precision",
+          label: "I should be precise",
+          sublabel: "Sloppy work bothers me more than slow work.",
+          icon: "fa-solid fa-ruler-combined",
+          weights: { Architect: 3, Strategist: 2 },
+        },
+        {
+          key: "reliable",
+          label: "I should be dependable",
+          sublabel: "My word and consistency need to be strong.",
+          icon: "fa-solid fa-lock",
+          weights: { Sentinel: 3, Ascendant: 1, Strategist: 1 },
+        },
+        {
+          key: "impactful",
+          label: "I should matter",
+          sublabel: "What I do should move something bigger than myself.",
+          icon: "fa-solid fa-wave-square",
+          weights: { Catalyst: 3, Vanguard: 1, Architect: 1 },
+        },
+      ],
+    },
+    {
+      id: "legacy",
+      title: "What do you want people to feel from your name?",
+      subtitle: "Final placeholder question for the title result logic.",
+      options: [
+        {
+          key: "respect",
+          label: "Respect",
+          sublabel: "Steady authority, trust, and capability.",
+          icon: "fa-solid fa-medal",
+          weights: { Sentinel: 2, Strategist: 2, Vanguard: 1 },
+        },
+        {
+          key: "energy",
+          label: "Energy",
+          sublabel: "Momentum, intensity, and charge.",
+          icon: "fa-solid fa-burst",
+          weights: { Vanguard: 3, Catalyst: 2, Ascendant: 1 },
+        },
+        {
+          key: "vision",
+          label: "Vision",
+          sublabel: "Original thinking and intelligent design.",
+          icon: "fa-solid fa-eye",
+          weights: { Architect: 3, Strategist: 1, Catalyst: 1 },
+        },
+        {
+          key: "rise",
+          label: "Growth",
+          sublabel: "Relentless evolution and upward pressure.",
+          icon: "fa-solid fa-mountain-sun",
+          weights: { Ascendant: 3, Vanguard: 1, Sentinel: 1 },
+        },
+      ],
+    },
+  ],
+  results: {
+    Vanguard:
+      "Direct, forceful, and momentum-driven. You move first, take responsibility, and pull action out of pressure.",
+    Architect:
+      "Structured, inventive, and precise. You turn raw ambition into systems that actually hold shape.",
+    Strategist:
+      "Measured, sharp, and composed. You win by reading patterns early and choosing the cleanest line.",
+    Ascendant:
+      "Disciplined, hungry, and growth-obsessed. You keep climbing because you refuse to stay the same.",
+    Sentinel:
+      "Reliable, grounded, and resilient. You project steadiness and earn respect through consistency under weight.",
+    Catalyst:
+      "Magnetic, activating, and high-impact. You energize rooms, spark motion, and make things happen around you.",
+  },
+};
+
+const surveyState = {
+  step: 0,
+  answers: Array(TITLE_SURVEY_TEMPLATE.questions.length).fill(null),
+};
+
+function safeParseJSON(raw, fallback = null) {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
 }
 
 function readUserProfile(uid) {
-  return uid ? readCachedUserProfile(uid) : null;
+  return uid ? readCachedUserProfile(uid) || {} : {};
 }
 
 function saveUserProfile(uid, patch) {
-  if (!uid) return null;
+  if (!uid) return {};
   const key = getStorageKey("aurak_user_profile", uid);
-  let profile = {};
-  try {
-    const raw = localStorage.getItem(key);
-    profile = raw ? JSON.parse(raw) : {};
-  } catch {
-    profile = {};
-  }
-  profile = { ...profile, ...patch, updatedAt: Date.now() };
+  const current = safeParseJSON(localStorage.getItem(key), {});
+  const profile = {
+    ...current,
+    ...patch,
+    updatedAt: Date.now(),
+  };
   localStorage.setItem(key, JSON.stringify(profile));
   return profile;
 }
@@ -41,7 +285,7 @@ function getLevelInfo(totalXp) {
   let req = BASE_XP_PER_LEVEL;
   let remaining = Number.isFinite(totalXp) ? totalXp : 0;
 
-  for (let guard = 0; guard < 200; guard++) {
+  for (let guard = 0; guard < 200; guard += 1) {
     if (remaining < req) break;
     remaining -= req;
     level += 1;
@@ -61,11 +305,11 @@ function averageStat(stats) {
     "Confidence",
     "Discipline",
   ];
-  const vals = keys
-    .map((k) => Number(stats[k]))
-    .filter((v) => Number.isFinite(v));
-  if (!vals.length) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+  const values = keys
+    .map((key) => Number(stats[key]))
+    .filter((value) => Number.isFinite(value));
+  if (!values.length) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function rankFromAverage(avg) {
@@ -78,64 +322,121 @@ function rankFromAverage(avg) {
   return "E";
 }
 
-function readTotalXP() {
+function readTotalXP(uid) {
   try {
-    const stored = localStorage.getItem(getAccountStorageKey(XP_STORAGE_KEY));
+    const stored = localStorage.getItem(getStorageKey(XP_STORAGE_KEY, uid));
     return stored ? Math.max(0, Number(stored) || 0) : 0;
   } catch {
     return 0;
   }
 }
 
-function formatDate(ts) {
-  if (!ts) return "—";
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return "—";
-  }
-}
-
-function formatISODate(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString();
-  } catch {
-    return "—";
-  }
+function formatDate(value, options = {}) {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    ...options,
+  });
 }
 
 function readMembership(uid) {
   if (!uid) return null;
-
   const key = getStorageKey("aurak_membership", uid);
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-
+  const direct = safeParseJSON(localStorage.getItem(key), null);
+  if (direct) return direct;
   const profile = readUserProfile(uid);
   return profile?.membership || null;
 }
 
-function esc(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+function readJournalEntries(uid) {
+  const key = getStorageKey(JOURNAL_KEY_BASE, uid);
+  const store = safeParseJSON(localStorage.getItem(key), { entries: [] });
+  const entries = Array.isArray(store?.entries) ? store.entries : [];
+  entries.sort((a, b) =>
+    String(b?.date || "").localeCompare(String(a?.date || "")),
+  );
+  return entries;
 }
 
-function renderMembership(m) {
-  const badge = document.getElementById("pfPlanBadge");
-  const plan = document.getElementById("pfPlanName");
-  const desc = document.getElementById("pfPlanDesc");
-  const renew = document.getElementById("pfRenewDate");
-  const perksWrap = document.getElementById("pfPerks");
-  const pillTop = document.getElementById("pfPlanPill");
+function getISODate(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
-  const safe = m || {
+function computeStreak(entries) {
+  const dates = new Set(entries.map((entry) => entry?.date).filter(Boolean));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 366; i += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    if (dates.has(getISODate(date))) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+function normalizeHandle(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
+}
+
+function buildHandle(profile, displayName, user) {
+  const existing = normalizeHandle(profile?.handle);
+  if (existing) return existing;
+  const fromName = normalizeHandle(
+    displayName || user?.displayName || user?.name || "player",
+  );
+  return fromName || "player";
+}
+
+function sanitizeText(value, fallback = "") {
+  const text = String(value || "").trim();
+  return text || fallback;
+}
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+}
+
+function toast(message) {
+  const element = document.getElementById("pfToast");
+  if (!element) return;
+  element.textContent = message || "";
+  element.classList.toggle("is-visible", Boolean(message));
+  clearTimeout(toast.timer);
+  if (!message) return;
+  toast.timer = setTimeout(() => {
+    element.classList.remove("is-visible");
+  }, 2200);
+}
+
+function setDirty(on) {
+  const badge = document.getElementById("pfDirty");
+  if (!badge) return;
+  badge.classList.toggle("is-on", Boolean(on));
+}
+
+function setCount(input, counterId, max) {
+  const counter = document.getElementById(counterId);
+  if (!counter) return;
+  const length = String(input?.value || "").length;
+  counter.textContent = `${length}/${max}`;
+}
+
+function renderMembership(membership) {
+  const safe = membership || {
     plan: "Free",
     status: "ACTIVE",
     renewDate: null,
@@ -143,114 +444,515 @@ function renderMembership(m) {
     perks: ["Daily quests", "XP tracking", "Pillar stats"],
   };
 
-  if (badge) badge.textContent = `${safe.plan} • ${safe.status || "—"}`;
-  if (plan) plan.textContent = safe.plan || "—";
-  if (desc) desc.textContent = safe.desc || "—";
-  if (renew) renew.textContent = formatISODate(safe.renewDate);
-  if (pillTop) pillTop.textContent = String(safe.plan || "FREE").toUpperCase();
+  setText("pfPlanBadge", `${safe.plan} • ${safe.status || "—"}`);
+  setText("pfPlanName", safe.plan || "—");
+  setText("pfPlanDesc", safe.desc || "—");
+  setText("pfRenewDate", safe.renewDate ? formatDate(safe.renewDate) : "—");
 
-  if (perksWrap) {
-    const perks = Array.isArray(safe.perks) ? safe.perks : [];
-    perksWrap.innerHTML = perks
-      .slice(0, 3)
-      .map(
-        (p) => `
-          <div class="pf-perk">
-            <i class="fa-solid fa-check"></i>
-            <span>${esc(p)}</span>
-          </div>
-        `,
-      )
-      .join("");
+  const perksWrap = document.getElementById("pfPerks");
+  if (!perksWrap) return;
+  const perks = Array.isArray(safe.perks) ? safe.perks.slice(0, 4) : [];
+  perksWrap.innerHTML = perks
+    .map(
+      (perk) => `
+        <div class="pr-perk">
+          <i class="fa-solid fa-check"></i>
+          <span>${escapeHtml(perk)}</span>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function readTitleState(profile) {
+  return profile?.titleSurvey && typeof profile.titleSurvey === "object"
+    ? profile.titleSurvey
+    : null;
+}
+
+function isTitleLocked(titleState) {
+  return Number(titleState?.lockedUntil || 0) > Date.now();
+}
+
+function getTitleMeta(titleState) {
+  if (!titleState?.title) return "Tap to determine";
+  if (isTitleLocked(titleState)) {
+    return `Locked until ${formatDate(titleState.lockedUntil)}`;
+  }
+  return "Tap to retake";
+}
+
+function renderTitleState(titleState) {
+  const title = titleState?.title || "Unassigned";
+  const meta = getTitleMeta(titleState);
+  setText("prTitle", title);
+  setText("prTitleHero", title);
+  setText("prTitleMeta", meta);
+  setText("prTitleHeroMeta", meta);
+  setText("pfDetailTitle", title);
+
+  ["prTitleTriggerHero", "prTitleTriggerCard"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.classList.toggle("is-locked", isTitleLocked(titleState));
+  });
+}
+
+function computeTitleResult(answers) {
+  const scoreMap = new Map();
+  TITLE_SURVEY_TEMPLATE.questions.forEach((question, index) => {
+    const selectedKey = answers[index];
+    const option = question.options.find((item) => item.key === selectedKey);
+    if (!option) return;
+    Object.entries(option.weights || {}).forEach(([resultKey, points]) => {
+      scoreMap.set(
+        resultKey,
+        (scoreMap.get(resultKey) || 0) + Number(points || 0),
+      );
+    });
+  });
+
+  let bestKey = Object.keys(TITLE_SURVEY_TEMPLATE.results)[0] || "Vanguard";
+  let bestScore = -Infinity;
+  Object.keys(TITLE_SURVEY_TEMPLATE.results).forEach((key) => {
+    const score = scoreMap.get(key) || 0;
+    if (score > bestScore) {
+      bestKey = key;
+      bestScore = score;
+    }
+  });
+
+  return {
+    key: bestKey,
+    title: bestKey,
+    description: TITLE_SURVEY_TEMPLATE.results[bestKey] || "",
+  };
+}
+
+function buildSurveyDots() {
+  const dotsWrap = document.getElementById("titleSurveyDots");
+  if (!dotsWrap) return;
+  dotsWrap.innerHTML = "";
+  const count = TITLE_SURVEY_TEMPLATE.questions.length + 1;
+  for (let i = 0; i < count; i += 1) {
+    const dot = document.createElement("span");
+    dot.className = "jc-dot";
+    if (i === 0) dot.classList.add("is-active");
+    dotsWrap.appendChild(dot);
   }
 }
 
-function renderTopBarXP() {
-  const totalXP = readTotalXP();
-  const info = getLevelInfo(totalXP);
-
-  const dashLevel = document.getElementById("dashLevel");
-  const dashXpText = document.getElementById("dashXpText");
-  const dashXpFill = document.getElementById("dashXpFill");
-
-  if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
-  if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
-  if (dashXpFill)
-    dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
-
-  const pfTotalXP = document.getElementById("pfTotalXP");
-  const pfLevel = document.getElementById("pfLevel");
-  if (pfTotalXP) pfTotalXP.textContent = totalXP;
-  if (pfLevel) pfLevel.textContent = info.level;
-
-  return totalXP;
+function setActiveSurveyDot(step) {
+  const dots = Array.from(
+    document.querySelectorAll("#titleSurveyDots .jc-dot"),
+  );
+  const activeIndex = Math.min(step, dots.length - 1);
+  dots.forEach((dot, index) => {
+    dot.classList.toggle("is-active", index === activeIndex);
+  });
 }
 
-function setCount(el, outId, max) {
-  const out = document.getElementById(outId);
-  if (!el || !out) return;
-  const v = (el.value || "").length;
-  out.textContent = `${v}/${max}`;
-}
+function renderSurveyQuestion() {
+  const question = TITLE_SURVEY_TEMPLATE.questions[surveyState.step];
+  if (!question) return;
 
-function toast(msg) {
-  const t = document.getElementById("pfToast");
-  if (!t) return;
-  t.textContent = msg || "";
-  if (!msg) return;
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => (t.textContent = ""), 1800);
-}
+  setText(
+    "tsStepLabel",
+    `Question ${surveyState.step + 1} of ${TITLE_SURVEY_TEMPLATE.questions.length}`,
+  );
+  setText("tsQuestionTitle", question.title);
+  setText("tsQuestionSub", question.subtitle);
 
-function setDirty(on) {
-  const d = document.getElementById("pfDirty");
-  if (!d) return;
-  d.classList.toggle("is-on", !!on);
-}
+  const wrap = document.getElementById("tsQuestionOptions");
+  if (!wrap) return;
 
-function setupJumps() {
-  const jumps = Array.from(document.querySelectorAll(".pf-jump"));
-  if (!jumps.length) return;
+  wrap.innerHTML = question.options
+    .map(
+      (option) => `
+        <button
+          class="jc-chip title-chip ${surveyState.answers[surveyState.step] === option.key ? "is-selected" : ""}"
+          type="button"
+          data-option-key="${escapeHtml(option.key)}"
+        >
+          <span class="ts-chipIcon"><i class="${escapeHtml(option.icon)}"></i></span>
+          <span class="ts-chipText">
+            <span class="ts-chipLabel">${escapeHtml(option.label)}</span>
+            <span class="ts-chipSub">${escapeHtml(option.sublabel)}</span>
+          </span>
+        </button>
+      `,
+    )
+    .join("");
 
-  const sections = jumps
-    .map((a) => document.getElementById(a.getAttribute("data-jump")))
-    .filter(Boolean);
-
-  function onScroll() {
-    let best = sections[0];
-    let bestTop = Infinity;
-
-    sections.forEach((sec) => {
-      const r = sec.getBoundingClientRect();
-      const dist = Math.abs(r.top - 120);
-      if (dist < bestTop) {
-        bestTop = dist;
-        best = sec;
-      }
-    });
-
-    jumps.forEach((a) => {
-      a.classList.toggle("is-active", a.getAttribute("data-jump") === best.id);
-    });
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
-
-  jumps.forEach((a) => {
-    a.addEventListener("click", (e) => {
-      const id = a.getAttribute("data-jump");
-      const sec = document.getElementById(id);
-      if (!sec) return;
-      e.preventDefault();
-      sec.scrollIntoView({ behavior: "smooth", block: "start" });
+  wrap.querySelectorAll(".title-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      const optionKey = button.getAttribute("data-option-key");
+      surveyState.answers[surveyState.step] = optionKey;
+      renderSurveyQuestion();
+      window.setTimeout(() => {
+        if (surveyState.step < TITLE_SURVEY_TEMPLATE.questions.length - 1) {
+          goToSurveyStep(surveyState.step + 1);
+        } else {
+          goToSurveyStep(TITLE_SURVEY_TEMPLATE.questions.length);
+        }
+      }, 120);
     });
   });
 }
 
+function refreshSurveyReview() {
+  const result = computeTitleResult(surveyState.answers);
+  setText("tsResultTitle", result.title);
+  setText("tsResultDesc", result.description);
+
+  const answerSummary = document.getElementById("tsAnswerSummary");
+  if (answerSummary) {
+    answerSummary.innerHTML = TITLE_SURVEY_TEMPLATE.questions
+      .map((question, index) => {
+        const answerKey = surveyState.answers[index];
+        const option = question.options.find((item) => item.key === answerKey);
+        return `
+          <div class="ts-answerLine">
+            <span>${escapeHtml(question.title)}</span>
+            <span>${escapeHtml(option?.label || "—")}</span>
+          </div>
+        `;
+      })
+      .join("");
+  }
+}
+
+function syncSurveyNav() {
+  const back = document.getElementById("titleSurveyBack");
+  const next = document.getElementById("titleSurveyNext");
+  const nav = document.getElementById("titleSurveyNav");
+  const questionCount = TITLE_SURVEY_TEMPLATE.questions.length;
+  const isSavedStep = surveyState.step === questionCount + 1;
+  const isReviewStep = surveyState.step === questionCount;
+
+  if (back)
+    back.classList.toggle("is-hidden", surveyState.step === 0 || isSavedStep);
+  if (next) next.classList.toggle("is-hidden", isReviewStep || isSavedStep);
+  if (nav) nav.classList.toggle("is-hidden", isSavedStep);
+}
+
+function goToSurveyStep(step) {
+  const questionCount = TITLE_SURVEY_TEMPLATE.questions.length;
+  const maxStep = questionCount + 1;
+  surveyState.step = Math.max(0, Math.min(step, maxStep));
+
+  const questionStep = document.getElementById("titleSurveyQuestionStep");
+  const reviewStep = document.getElementById("titleSurveyReviewStep");
+  const savedStep = document.getElementById("titleSurveySavedStep");
+
+  if (questionStep)
+    questionStep.classList.toggle(
+      "is-active",
+      surveyState.step < questionCount,
+    );
+  if (reviewStep)
+    reviewStep.classList.toggle(
+      "is-active",
+      surveyState.step === questionCount,
+    );
+  if (savedStep)
+    savedStep.classList.toggle(
+      "is-active",
+      surveyState.step === questionCount + 1,
+    );
+
+  const sheet = document.getElementById("titleSurveySheet");
+  if (sheet) sheet.dataset.step = String(surveyState.step);
+
+  if (surveyState.step < questionCount) renderSurveyQuestion();
+  if (surveyState.step === questionCount) refreshSurveyReview();
+
+  setActiveSurveyDot(surveyState.step);
+  syncSurveyNav();
+}
+
+function openTitleSurvey() {
+  const overlay = document.getElementById("titleSurveyOverlay");
+  if (!overlay) return;
+  overlay.classList.add("is-open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  goToSurveyStep(0);
+}
+
+function closeTitleSurvey() {
+  const overlay = document.getElementById("titleSurveyOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("is-open");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function resetSurveyAnswers() {
+  surveyState.answers = Array(TITLE_SURVEY_TEMPLATE.questions.length).fill(
+    null,
+  );
+  surveyState.step = 0;
+}
+
+function setModalOpen(isOpen) {
+  const modal = document.getElementById("prModal");
+  if (!modal) return;
+  modal.classList.toggle("is-open", isOpen);
+  modal.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  document.body.style.overflow = isOpen ? "hidden" : "";
+}
+
+function bindEditModal(profileState, currentUser, onSaved) {
+  const nameInput = document.getElementById("pfInputName");
+  const taglineInput = document.getElementById("pfInputTagline");
+  const bioInput = document.getElementById("pfInputBio");
+
+  const editButton = document.getElementById("prEditBtn");
+  const closeButton = document.getElementById("prModalClose");
+  const modal = document.getElementById("prModal");
+  const saveButton = document.getElementById("pfSaveBtn");
+
+  const fillForm = () => {
+    const profile = profileState.current;
+    const displayName = sanitizeText(
+      profile.displayName || currentUser.displayName || currentUser.name,
+      "User",
+    );
+    if (nameInput) nameInput.value = displayName;
+    if (taglineInput) taglineInput.value = sanitizeText(profile.tagline, "");
+    if (bioInput) bioInput.value = sanitizeText(profile.bio, "");
+    setCount(nameInput, "pfNameCount", 28);
+    setCount(taglineInput, "pfTagCount", 44);
+    setCount(bioInput, "pfBioCount", 240);
+    setDirty(false);
+  };
+
+  editButton?.addEventListener("click", () => {
+    fillForm();
+    setModalOpen(true);
+  });
+
+  closeButton?.addEventListener("click", () => setModalOpen(false));
+  modal?.addEventListener("click", (event) => {
+    if (event.target === modal) setModalOpen(false);
+  });
+
+  [nameInput, taglineInput, bioInput].forEach((input) => {
+    input?.addEventListener("input", () => {
+      setCount(nameInput, "pfNameCount", 28);
+      setCount(taglineInput, "pfTagCount", 44);
+      setCount(bioInput, "pfBioCount", 240);
+      setDirty(true);
+    });
+  });
+
+  saveButton?.addEventListener("click", async () => {
+    const displayName = sanitizeText(
+      nameInput?.value,
+      sanitizeText(currentUser.displayName || currentUser.name, "User"),
+    );
+
+    const nextProfilePatch = {
+      ...profileState.current,
+      displayName,
+      handle: buildHandle(profileState.current, displayName, currentUser),
+      tagline: sanitizeText(taglineInput?.value, "Student • Builder • Athlete"),
+      bio: sanitizeText(bioInput?.value, ""),
+    };
+
+    profileState.current = saveUserProfile(currentUser.uid, nextProfilePatch);
+    const updatedUser = { ...currentUser, displayName };
+    writeCurrentUser(updatedUser);
+
+    try {
+      await mergeUserState(currentUser.uid, {
+        profile: profileState.current,
+        displayName,
+      });
+    } catch (error) {
+      console.warn("Profile save sync failed:", error);
+    }
+
+    onSaved(updatedUser);
+    setModalOpen(false);
+    setDirty(false);
+    toast("Profile saved");
+  });
+
+  return { fillForm };
+}
+
+function renderProfileUI({
+  user,
+  profile,
+  levelInfo,
+  avg,
+  rank,
+  streak,
+  lastJournal,
+}) {
+  const displayName = sanitizeText(
+    user.displayName || profile.displayName || user.name,
+    "User",
+  );
+  const tagline = sanitizeText(profile.tagline, "Student • Builder • Athlete");
+  const bio = sanitizeText(
+    profile.bio,
+    "Add a short bio to sharpen your profile.",
+  );
+  const handle = buildHandle(profile, displayName, user);
+  const titleState = readTitleState(profile);
+
+  setText("dashName", displayName);
+  setText("sideUser", displayName);
+  setText("sideSub", titleState?.title ? titleState.title : `Rank ${rank}`);
+
+  setText("pfName", displayName);
+  setText("pfTagline", tagline);
+  setText("pfHandle", `@${handle}`);
+
+  setText("pfDetailName", displayName);
+  setText("pfDetailHandle", `@${handle}`);
+  setText("pfDetailRank", rank);
+  setText("pfBio", bio);
+
+  setText("pfLevel", String(levelInfo.level));
+  setText("pfXpText", `${levelInfo.remaining} / ${levelInfo.req} XP`);
+  setText("pfRank", rank);
+  setText("pfAvgText", `Avg ${Number.isFinite(avg) ? Math.round(avg) : "—"}`);
+  setText("prStreak", `${streak} day${streak === 1 ? "" : "s"}`);
+  setText(
+    "prLastJournal",
+    lastJournal ? `Last journal ${formatDate(lastJournal)}` : "Last journal —",
+  );
+
+  setText("dashLevel", `LVL ${levelInfo.level}`);
+  setText("dashXpText", `${levelInfo.remaining} / ${levelInfo.req} XP`);
+  const fill = document.getElementById("dashXpFill");
+  if (fill) fill.style.width = `${Math.min(levelInfo.progress * 100, 100)}%`;
+
+  renderTitleState(titleState);
+  renderMembership(readMembership(user.uid));
+}
+
+function bindTitleSurvey(profileState, getUser) {
+  buildSurveyDots();
+  goToSurveyStep(0);
+
+  const launch = () => {
+    const titleState = readTitleState(profileState.current);
+    if (isTitleLocked(titleState)) {
+      toast(`Title locked until ${formatDate(titleState.lockedUntil)}`);
+      return;
+    }
+    resetSurveyAnswers();
+    openTitleSurvey();
+  };
+
+  document
+    .getElementById("prTitleTriggerHero")
+    ?.addEventListener("click", launch);
+  document
+    .getElementById("prTitleTriggerCard")
+    ?.addEventListener("click", launch);
+  document
+    .getElementById("titleSurveyClose")
+    ?.addEventListener("click", closeTitleSurvey);
+  document
+    .getElementById("titleSurveyDone")
+    ?.addEventListener("click", closeTitleSurvey);
+
+  document
+    .getElementById("titleSurveyOverlay")
+    ?.addEventListener("click", (event) => {
+      if (event.target?.id === "titleSurveyOverlay") closeTitleSurvey();
+    });
+
+  document.getElementById("titleSurveyBack")?.addEventListener("click", () => {
+    goToSurveyStep(surveyState.step - 1);
+  });
+
+  document.getElementById("titleSurveyNext")?.addEventListener("click", () => {
+    if (surveyState.step < TITLE_SURVEY_TEMPLATE.questions.length) {
+      const currentAnswer = surveyState.answers[surveyState.step];
+      if (!currentAnswer) {
+        toast("Choose one option to continue");
+        return;
+      }
+    }
+    goToSurveyStep(surveyState.step + 1);
+  });
+
+  document
+    .getElementById("titleSurveySave")
+    ?.addEventListener("click", async () => {
+      if (surveyState.answers.some((answer) => !answer)) {
+        toast("Complete every step first");
+        return;
+      }
+
+      const result = computeTitleResult(surveyState.answers);
+      const now = Date.now();
+      const payload = {
+        version: TITLE_SURVEY_TEMPLATE.version,
+        title: result.title,
+        titleKey: result.key,
+        description: result.description,
+        answers: surveyState.answers.map((answerKey, index) => {
+          const question = TITLE_SURVEY_TEMPLATE.questions[index];
+          const option = question.options.find(
+            (item) => item.key === answerKey,
+          );
+          return {
+            questionId: question.id,
+            answerKey,
+            answerLabel: option?.label || "",
+          };
+        }),
+        completedAt: now,
+        lockedUntil: now + TITLE_SURVEY_LOCK_MS,
+      };
+
+      const user = getUser();
+      profileState.current = saveUserProfile(user.uid, {
+        ...profileState.current,
+        titleSurvey: payload,
+      });
+
+      try {
+        await mergeUserState(user.uid, {
+          profile: profileState.current,
+        });
+      } catch (error) {
+        console.warn("Title survey sync failed:", error);
+      }
+
+      renderTitleState(payload);
+      setText(
+        "tsLockedText",
+        `You can take it again on ${formatDate(payload.lockedUntil)}.`,
+      );
+      goToSurveyStep(TITLE_SURVEY_TEMPLATE.questions.length + 1);
+      toast("Title saved");
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   let user = getCurrentUser();
-  if (!user) return;
+  if (!user?.uid) {
+    window.location.href = "login.html";
+    return;
+  }
 
   try {
     await syncUserState(user.uid);
@@ -259,221 +961,94 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("Profile cloud sync failed:", error);
   }
 
-  let profile = readUserProfile(user.uid);
+  const profileState = {
+    current: readUserProfile(user.uid),
+  };
 
-  if (!user.stats && profile?.stats) {
-    user.stats = profile.stats;
-    writeCurrentUser(user);
-  }
-
-  const stats = (user && user.stats) || (profile && profile.stats) || null;
-  const avg = averageStat(stats);
-  const rank = rankFromAverage(avg);
-
-  const displayName =
-    user.displayName ||
-    profile?.displayName ||
-    user.name ||
-    user.username ||
-    "User";
-
-  const tagline =
-    profile?.tagline ||
-    profile?.subtitle ||
-    user.subtitle ||
-    "Student • Builder • Athlete";
-
-  const dashName = document.getElementById("dashName");
-  const sideUser = document.getElementById("sideUser");
-  const sideSub = document.getElementById("sideSub");
-  if (dashName) dashName.textContent = displayName;
-  if (sideUser) sideUser.textContent = displayName;
-  if (sideSub) sideSub.textContent = `Rank ${rank}`;
-
-  const pfName = document.getElementById("pfName");
-  const pfTagline = document.getElementById("pfTagline");
-  if (pfName) pfName.textContent = displayName;
-  if (pfTagline) pfTagline.textContent = tagline;
-
-  const totalXP = renderTopBarXP();
-
-  const pfRank = document.getElementById("pfRank");
-  const pfAvg = document.getElementById("pfAvg");
-  if (pfRank) pfRank.textContent = rank;
-  if (pfAvg) pfAvg.textContent = Number.isFinite(avg) ? Math.round(avg) : "—";
-
-  const pfRankBadge = document.getElementById("pfRankBadge");
-  const pfAvgBadge = document.getElementById("pfAvgBadge");
-  const pfXpBadge = document.getElementById("pfXpBadge");
-  if (pfRankBadge) pfRankBadge.textContent = `Rank ${rank}`;
-  if (pfAvgBadge)
-    pfAvgBadge.textContent = `Avg ${Number.isFinite(avg) ? Math.round(avg) : "—"}`;
-  if (pfXpBadge) pfXpBadge.textContent = `XP ${totalXP}`;
-
-  const nameIn = document.getElementById("pfInputName");
-  const tagIn = document.getElementById("pfInputTagline");
-  const bioIn = document.getElementById("pfInputBio");
-  const ig = document.getElementById("pfIg");
-  const gh = document.getElementById("pfGh");
-  const lk = document.getElementById("pfLink");
-
-  if (nameIn) nameIn.value = profile?.displayName || displayName;
-  if (tagIn) tagIn.value = profile?.tagline || profile?.subtitle || "";
-  if (bioIn) bioIn.value = profile?.bio || "";
-
-  const socials = profile?.socials || {};
-  if (ig) ig.value = socials.ig || "";
-  if (gh) gh.value = socials.gh || "";
-  if (lk) lk.value = socials.link || "";
-
-  const handle = document.getElementById("pfHandle");
-  if (handle) handle.textContent = profile?.handle ? `@${profile.handle}` : "—";
-
-  const saved = document.getElementById("pfLastSaved");
-  if (saved)
-    saved.textContent = profile?.updatedAt
-      ? `Saved: ${formatDate(profile.updatedAt)}`
-      : "—";
-
-  renderMembership(readMembership(user.uid));
-  setupJumps();
-
-  const pName = document.getElementById("pfNamePreview");
-  const pTag = document.getElementById("pfTaglinePreview");
-  const pBio = document.getElementById("pfBioPreview");
-  const pIg = document.getElementById("pfIgPreview");
-  const pGh = document.getElementById("pfGhPreview");
-  const pLk = document.getElementById("pfLinkPreview");
-
-  function setPreview() {
-    const nm = (nameIn?.value || "").trim();
-    const tg = (tagIn?.value || "").trim();
-    const bi = (bioIn?.value || "").trim();
-
-    const igv = (ig?.value || "").trim();
-    const ghv = (gh?.value || "").trim();
-    const lkv = (lk?.value || "").trim();
-
-    if (pName) pName.textContent = nm || displayName;
-    if (pTag) pTag.textContent = tg || tagline;
-    if (pBio)
-      pBio.textContent = bi || "Add a short bio to define your identity.";
-
-    if (pIg)
-      pIg.querySelector("span").textContent = igv
-        ? `@${igv.replace(/^@+/, "")}`
-        : "—";
-    if (pGh) pGh.querySelector("span").textContent = ghv ? ghv : "—";
-    if (pLk) pLk.querySelector("span").textContent = lkv ? lkv : "—";
-
-    setCount(nameIn, "pfNameCount", 28);
-    setCount(tagIn, "pfTagCount", 44);
-    setCount(bioIn, "pfBioCount", 240);
-  }
-
-  setPreview();
-  setDirty(false);
-
-  function markDirty() {
-    setDirty(true);
-  }
-
-  [nameIn, tagIn, bioIn, ig, gh, lk].forEach((el) => {
-    if (!el) return;
-    el.addEventListener("input", () => {
-      setPreview();
-      markDirty();
+  if (
+    (!profileState.current.displayName && (user.displayName || user.name)) ||
+    !profileState.current.createdAt ||
+    !profileState.current.handle
+  ) {
+    profileState.current = saveUserProfile(user.uid, {
+      ...profileState.current,
+      displayName:
+        profileState.current.displayName || user.displayName || user.name,
+      createdAt: profileState.current.createdAt || user.createdAt || Date.now(),
+      handle:
+        profileState.current.handle ||
+        buildHandle(profileState.current, user.displayName || user.name, user),
     });
+  }
+
+  const renderAll = (nextUser = user) => {
+    user = nextUser || user;
+    const profile = profileState.current;
+    const stats = user.stats || profile.stats || null;
+    const avg = averageStat(stats);
+    const rank = rankFromAverage(avg);
+    const totalXP = readTotalXP(user.uid);
+    const levelInfo = getLevelInfo(totalXP);
+    const journalEntries = readJournalEntries(user.uid);
+    const streak = computeStreak(journalEntries);
+    const lastJournal = journalEntries[0]?.date || null;
+
+    renderProfileUI({
+      user,
+      profile,
+      levelInfo,
+      avg,
+      rank,
+      streak,
+      lastJournal,
+    });
+  };
+
+  bindEditModal(profileState, user, (updatedUser) => {
+    user = updatedUser;
+    renderAll(user);
   });
 
-  const igClear = document.getElementById("pfIgClear");
-  const ghClear = document.getElementById("pfGhClear");
-  const lkClear = document.getElementById("pfLinkClear");
+  bindTitleSurvey(profileState, () => user);
 
-  if (igClear && ig)
-    igClear.addEventListener("click", () => {
-      ig.value = "";
-      setPreview();
-      markDirty();
-      ig.focus();
-    });
+  document.getElementById("pfUpgradeBtn")?.addEventListener("click", () => {
+    window.location.href = "subscription.html";
+  });
 
-  if (ghClear && gh)
-    ghClear.addEventListener("click", () => {
-      gh.value = "";
-      setPreview();
-      markDirty();
-      gh.focus();
-    });
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    logout();
+  });
 
-  if (lkClear && lk)
-    lkClear.addEventListener("click", () => {
-      lk.value = "";
-      setPreview();
-      markDirty();
-      lk.focus();
-    });
+  document.addEventListener("keydown", (event) => {
+    const surveyOpen = document
+      .getElementById("titleSurveyOverlay")
+      ?.classList.contains("is-open");
+    const modalOpen = document
+      .getElementById("prModal")
+      ?.classList.contains("is-open");
 
-  const saveBtn = document.getElementById("pfSaveBtn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      const patch = {
-        displayName: (nameIn?.value || "").trim() || displayName,
-        tagline: (tagIn?.value || "").trim(),
-        bio: (bioIn?.value || "").trim(),
-        socials: {
-          ig: (ig?.value || "").trim(),
-          gh: (gh?.value || "").trim(),
-          link: (lk?.value || "").trim(),
-        },
-      };
-
-      profile = saveUserProfile(user.uid, patch);
-
-      const nameNow = profile.displayName || displayName;
-      if (pfName) pfName.textContent = nameNow;
-      if (dashName) dashName.textContent = nameNow;
-      if (sideUser) sideUser.textContent = nameNow;
-
-      if (pfTagline) pfTagline.textContent = profile.tagline || "—";
-      if (saved) saved.textContent = `Saved: ${formatDate(profile.updatedAt)}`;
-
-      localStorage.setItem(
-        "aurakCurrentUser",
-        JSON.stringify({ ...user, displayName: nameNow }),
-      );
-      writeCurrentUser({ ...user, displayName: nameNow });
-      void mergeUserState(user.uid, {
-        profile,
-        displayName: nameNow,
-      }).catch((error) => {
-        console.warn("Profile save sync failed:", error);
-      });
-
-      setPreview();
-      setDirty(false);
-      toast("Saved");
-    });
-  }
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      logout();
-    });
-  }
-
-  window.addEventListener("storage", (e) => {
-    if (
-      e.key === getAccountStorageKey(XP_STORAGE_KEY) ||
-      e.key === getAccountStorageKey(QUEST_STORAGE_KEY)
-    ) {
-      const xpNow = renderTopBarXP();
-      if (pfXpBadge) pfXpBadge.textContent = `XP ${xpNow}`;
+    if (event.key === "Escape") {
+      if (surveyOpen) closeTitleSurvey();
+      if (modalOpen) setModalOpen(false);
     }
   });
 
-  setCount(nameIn, "pfNameCount", 28);
-  setCount(tagIn, "pfTagCount", 44);
-  setCount(bioIn, "pfBioCount", 240);
+  window.addEventListener("storage", (event) => {
+    const profileKey = getStorageKey("aurak_user_profile", user.uid);
+    const journalKey = getStorageKey(JOURNAL_KEY_BASE, user.uid);
+    const xpKey = getStorageKey(XP_STORAGE_KEY, user.uid);
+    const membershipKey = getStorageKey("aurak_membership", user.uid);
+    const questKey = getStorageKey(QUEST_STORAGE_KEY, user.uid);
+
+    if (
+      [profileKey, journalKey, xpKey, membershipKey, questKey].includes(
+        event.key || "",
+      )
+    ) {
+      profileState.current = readUserProfile(user.uid);
+      renderAll(user);
+    }
+  });
+
+  renderAll(user);
 });
