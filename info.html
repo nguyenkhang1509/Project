@@ -128,16 +128,28 @@
         <header class="topbar" aria-label="Top Bar">
           <div class="top-left" aria-label="Profile">
             <div class="profile-name" id="statsName">—</div>
+
             <div class="profile-xp">
-              <span class="profile-level" id="statsLevel">Lv. 1</span>
+              <span class="profile-level" id="statsLevel">LVL 1</span>
+              <span class="profile-xptext" id="statsXpText">0 / 500 XP</span>
+            </div>
+
+            <div class="xpbar" aria-label="XP Progress">
+              <div class="xpbar-bg">
+                <div
+                  class="xpbar-fill"
+                  id="statsXpFill"
+                  style="width: 0%"
+                ></div>
+              </div>
             </div>
           </div>
 
           <div class="top-actions" aria-label="Streak">
             <div class="streak-pill" aria-label="Current streak">
-              <span class="streak-ico" aria-hidden="true"
-                ><i class="fa-solid fa-fire"></i
-              ></span>
+              <span class="streak-ico" aria-hidden="true">
+                <i class="fa-solid fa-fire"></i>
+              </span>
               <span class="streak-num" id="streakNum">0</span>
               <span class="streak-lbl">day streak</span>
             </div>
@@ -522,10 +534,21 @@
       </section>
     </main>
 
-    <script>
+    <script type="module">
+      import {
+        getCurrentUser,
+        getStorageKey,
+        getUserDocCacheKey,
+        readCachedAccountState,
+        readCachedUserProfile,
+        syncUserState,
+      } from "./userStore.js";
+
       const DAILY_DONE_KEY = "aurak_daily_done_v1";
       const DPL_TRACK_KEY = "aurak_dpl_tracking_v1";
       const DPL_MIN_REQUIRED = 3;
+      const XP_STORAGE_KEY = "totalXP";
+
       const DPL_TASKS = [
         {
           id: "dpl-1",
@@ -595,37 +618,48 @@
         },
       ];
 
-      function getCurrentUser() {
-        try {
-          const raw = localStorage.getItem("aurakCurrentUser");
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
+      function getLevelInfo(totalXp) {
+        const BASE_XP_PER_LEVEL = 500;
+        const LEVEL_GROWTH = 1.2;
+
+        let level = 1;
+        let req = BASE_XP_PER_LEVEL;
+        let remaining = Number.isFinite(totalXp) ? totalXp : 0;
+
+        for (let guard = 0; guard < 200; guard++) {
+          if (remaining < req) break;
+          remaining -= req;
+          level += 1;
+          req = Math.max(1, Math.round(req * LEVEL_GROWTH));
         }
+
+        const progress = req > 0 ? remaining / req : 0;
+        return { level, req, progress, remaining };
       }
+
       function getAccountKey(baseKey) {
-        const user = getCurrentUser();
-        if (user?.uid) return `${baseKey}_${user.uid}`;
-        return baseKey;
+        return getStorageKey(baseKey);
       }
+
       function readUserProfile(uid) {
-        if (!uid) return null;
-        try {
-          const raw = localStorage.getItem(`aurak_user_profile_${uid}`);
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
-        }
+        return uid ? readCachedUserProfile(uid) : null;
       }
+
+      function readAccountState(uid) {
+        return uid ? readCachedAccountState(uid) : null;
+      }
+
       function clamp(n, a, b) {
         return Math.max(a, Math.min(b, n));
       }
+
       function getISODate(d) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
         const day = String(d.getDate()).padStart(2, "0");
         return `${y}-${m}-${day}`;
       }
+
       function averageStat(stats) {
         if (!stats) return null;
         const keys = [
@@ -641,6 +675,7 @@
         if (!vals.length) return null;
         return vals.reduce((a, b) => a + b, 0) / vals.length;
       }
+
       function rankFromAverage(avg) {
         if (!Number.isFinite(avg)) return "—";
         if (avg >= 90) return "S";
@@ -650,26 +685,31 @@
         if (avg >= 20) return "D";
         return "E";
       }
+
       function localNoon(d) {
         const x = new Date(d);
         x.setHours(12, 0, 0, 0);
         return x;
       }
+
       function addDays(d, days) {
         const x = new Date(d);
         x.setDate(x.getDate() + days);
         return x;
       }
+
       function dayIndexMon0(d) {
         const dow = d.getDay();
         return dow === 0 ? 6 : dow - 1;
       }
+
       function weekMonday(d) {
         const idx = dayIndexMon0(d);
         const monday = localNoon(d);
         monday.setDate(monday.getDate() - idx);
         return monday;
       }
+
       function readDailyDoneMap() {
         try {
           const raw = localStorage.getItem(getAccountKey(DAILY_DONE_KEY));
@@ -679,6 +719,7 @@
           return {};
         }
       }
+
       function writeDailyDoneMap(map) {
         try {
           localStorage.setItem(
@@ -687,6 +728,7 @@
           );
         } catch {}
       }
+
       function computeStreak(map, todayNoon, completedToday) {
         let cursor = localNoon(todayNoon);
         if (!(Number(completedToday) > 0)) cursor = addDays(cursor, -1);
@@ -700,6 +742,7 @@
         }
         return streak;
       }
+
       function setText(id, txt) {
         const el = document.getElementById(id);
         if (el) el.textContent = txt;
@@ -707,6 +750,7 @@
 
       let calCursor = localNoon(new Date());
       calCursor.setDate(1);
+
       function monthLabel(d) {
         const m = [
           "January",
@@ -724,6 +768,7 @@
         ];
         return `${m[d.getMonth()]} ${d.getFullYear()}`;
       }
+
       function addMonths(d, n) {
         const x = localNoon(d);
         x.setDate(1);
@@ -735,18 +780,22 @@
         const grid = document.getElementById("calendarGrid");
         const title = document.getElementById("calTitle");
         if (!grid || !title) return;
+
         title.textContent = monthLabel(calCursor);
         grid.innerHTML = "";
+
         const first = localNoon(calCursor);
         first.setDate(1);
         const startOffset = dayIndexMon0(first);
         const start = addDays(first, -startOffset);
         const todayISO = getISODate(localNoon(new Date()));
+
         for (let i = 0; i < 42; i++) {
           const day = addDays(start, i);
           const iso = getISODate(day);
           const inMonth = day.getMonth() === first.getMonth();
           const done = Number(map[iso] || 0) || 0;
+
           const cell = document.createElement("div");
           cell.className = "cal-cell";
           if (!inMonth) cell.classList.add("is-out");
@@ -760,12 +809,14 @@
       function initCalendarNav() {
         const prev = document.getElementById("calPrev");
         const next = document.getElementById("calNext");
+
         if (prev) {
           prev.addEventListener("click", () => {
             calCursor = addMonths(calCursor, -1);
             renderCalendar(readDailyDoneMap());
           });
         }
+
         if (next) {
           next.addEventListener("click", () => {
             calCursor = addMonths(calCursor, 1);
@@ -783,6 +834,7 @@
           return {};
         }
       }
+
       function writeDplMap(map) {
         try {
           localStorage.setItem(
@@ -791,11 +843,13 @@
           );
         } catch {}
       }
+
       function getTodayDplCheckedIds() {
         const map = readDplMap();
         const list = map[getISODate(new Date())];
         return Array.isArray(list) ? list.filter(Boolean) : [];
       }
+
       function setTodayDplCheckedIds(ids) {
         const map = readDplMap();
         map[getISODate(new Date())] = Array.from(new Set(ids));
@@ -805,8 +859,10 @@
       function interpolateAnchors(anchors, xHour) {
         if (!anchors.length) return 50;
         if (xHour <= anchors[0].h) return anchors[0].v;
-        if (xHour >= anchors[anchors.length - 1].h)
+        if (xHour >= anchors[anchors.length - 1].h) {
           return anchors[anchors.length - 1].v;
+        }
+
         for (let i = 1; i < anchors.length; i++) {
           const a = anchors[i - 1];
           const b = anchors[i];
@@ -815,6 +871,7 @@
             return a.v + (b.v - a.v) * t;
           }
         }
+
         return anchors[anchors.length - 1].v;
       }
 
@@ -833,8 +890,9 @@
         Array.from(checkedSet)
           .sort()
           .forEach((id) => {
-            for (let i = 0; i < id.length; i++)
+            for (let i = 0; i < id.length; i++) {
               seed = (seed * 33 + id.charCodeAt(i)) % 9973;
+            }
           });
         return seed / 9973;
       }
@@ -848,6 +906,7 @@
           (Math.sin(hour * 29.0 + time * 0.11 + seed * 41.0) * 0.5 +
             Math.cos(hour * 17.0 + time * 0.07 + seed * 23.0) * 0.5) *
           1.4;
+
         let v = base + w1 + w2 + wobble;
         if (hour <= 10.5 && base <= 24) v = clamp(v, 1, 22);
         return v;
@@ -902,8 +961,10 @@
       function ensureDopaminePath() {
         const svg = document.getElementById("dopamineGraph");
         if (!svg) return null;
+
         const plot = svg.querySelector(".dop-plot") || svg;
         let path = plot.querySelector(".dopamine-line");
+
         if (!path) {
           path = document.createElementNS("http://www.w3.org/2000/svg", "path");
           path.classList.add("dopamine-line");
@@ -912,47 +973,59 @@
           path.setAttribute("stroke-width", "3");
           plot.appendChild(path);
         }
+
         return path;
       }
 
       function renderDopamine() {
         const path = ensureDopaminePath();
         if (!path) return;
+
         const checked = getTodayDplCheckedIds();
         const note = document.getElementById("dopamineNote");
+
         if (checked.length < DPL_MIN_REQUIRED) {
           path.setAttribute("d", "");
-          if (note)
+          if (note) {
             note.textContent = `Select at least ${DPL_MIN_REQUIRED} DPL tasks to generate graph (${checked.length}/${DPL_MIN_REQUIRED}).`;
+          }
           return;
         }
+
         const curve = buildDopamineCurve(checked);
-        const xL = 96,
-          xR = 700,
-          yTop = 20,
-          yBot = 220;
+        const xL = 96;
+        const xR = 700;
+        const yTop = 20;
+        const yBot = 220;
+
         const pts = curve.map((val, i) => {
           const t = i / (curve.length - 1);
           const x = xL + t * (xR - xL);
           const y = yBot - (clamp(val, 0, 100) / 100) * (yBot - yTop);
           return `${x},${y}`;
         });
+
         path.setAttribute("d", pts.length ? "M" + pts.join(" L") : "");
-        if (note)
+
+        if (note) {
           note.textContent = `DPL checklist ${checked.length}/${DPL_TASKS.length}. Lower line = better control.`;
+        }
       }
 
       function renderDplList() {
         const list = document.getElementById("dplList");
         if (!list) return;
+
         const checked = new Set(getTodayDplCheckedIds());
         list.innerHTML = "";
+
         DPL_TASKS.forEach((task) => {
           const row = document.createElement("label");
           row.className = "dpl-item";
           row.innerHTML = `<input type="checkbox" value="${task.id}" ${checked.has(task.id) ? "checked" : ""} /><span>${task.label}</span>`;
           list.appendChild(row);
         });
+
         updateDplCount();
       }
 
@@ -985,6 +1058,7 @@
         const saveBtn = document.getElementById("dplSave");
         const list = document.getElementById("dplList");
         const hint = document.getElementById("dplHint");
+
         if (!graph || !saveBtn || !list) return;
 
         graph.addEventListener("click", openDplModal);
@@ -994,6 +1068,7 @@
             openDplModal();
           }
         });
+
         if (closeBtn) closeBtn.addEventListener("click", closeDplModal);
         if (backdrop) backdrop.addEventListener("click", closeDplModal);
         list.addEventListener("change", updateDplCount);
@@ -1002,11 +1077,14 @@
           const checked = Array.from(
             list.querySelectorAll('input[type="checkbox"]:checked'),
           ).map((el) => el.value);
+
           if (checked.length < DPL_MIN_REQUIRED) {
-            if (hint)
+            if (hint) {
               hint.textContent = `Select at least ${DPL_MIN_REQUIRED} tasks. Current: ${checked.length}.`;
+            }
             return;
           }
+
           setTodayDplCheckedIds(checked);
           closeDplModal();
           renderDopamine();
@@ -1029,12 +1107,33 @@
 
       function render() {
         const user = getCurrentUser();
+        const accountState = readAccountState(user?.uid);
         const profile = readUserProfile(user?.uid);
+
         const displayName =
-          (user && (user.displayName || user.name || user.username)) || "User";
+          accountState?.displayName ||
+          profile?.displayName ||
+          (user && (user.displayName || user.name || user.username)) ||
+          "User";
 
         setText("statsName", displayName);
         setText("sideUser", displayName);
+
+        const totalXP = Math.max(
+          0,
+          Number(accountState?.totalXP) ||
+            Number(localStorage.getItem(getAccountKey(XP_STORAGE_KEY))) ||
+            0,
+        );
+
+        const levelInfo = getLevelInfo(totalXP);
+        setText("statsLevel", `LVL ${levelInfo.level}`);
+        setText("statsXpText", `${levelInfo.remaining} / ${levelInfo.req} XP`);
+
+        const statsXpFill = document.getElementById("statsXpFill");
+        if (statsXpFill) {
+          statsXpFill.style.width = `${Math.min(levelInfo.progress * 100, 100)}%`;
+        }
 
         const statKeys = [
           "Physical",
@@ -1043,16 +1142,16 @@
           "Confidence",
           "Discipline",
         ];
-        const stats =
-          (user && user.stats) || (profile && profile.stats)
-            ? (user && user.stats) || (profile && profile.stats)
-            : {
-                Physical: 0,
-                Intellectual: 0,
-                Mental: 0,
-                Confidence: 0,
-                Discipline: 0,
-              };
+
+        const stats = accountState?.stats ||
+          (user && user.stats) ||
+          (profile && profile.stats) || {
+            Physical: 0,
+            Intellectual: 0,
+            Mental: 0,
+            Confidence: 0,
+            Discipline: 0,
+          };
 
         const avg = averageStat(stats);
         setText("sideSub", `Rank ${rankFromAverage(avg)}`);
@@ -1067,6 +1166,7 @@
           { x: 52, y: 162 },
           { x: 24, y: 72 },
         ];
+
         const radar = document.getElementById("dashRadar");
         if (radar) {
           const points = statKeys
@@ -1099,7 +1199,6 @@
 
         const todayNoon = localNoon(new Date());
         const todayISO = getISODate(todayNoon);
-
         const completedToday = readQuestStateCompletedCountToday();
 
         const dailyMap = readDailyDoneMap();
@@ -1112,6 +1211,7 @@
         const monday = weekMonday(todayNoon);
         let weekTotal = 0;
         let activeDays = 0;
+
         for (let i = 0; i < 7; i++) {
           const day = addDays(monday, i);
           const iso = getISODate(day);
@@ -1128,7 +1228,17 @@
         renderDopamine();
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
+        const user = getCurrentUser();
+
+        if (user?.uid) {
+          try {
+            await syncUserState(user.uid);
+          } catch (error) {
+            console.warn("Info sync failed:", error);
+          }
+        }
+
         initDplModal();
         initCalendarNav();
         render();
@@ -1136,11 +1246,18 @@
       });
 
       window.addEventListener("storage", (e) => {
-        const watch = new Set([
-          getAccountKey("aurak_quests_v4"),
-          getAccountKey(DAILY_DONE_KEY),
-          getAccountKey(DPL_TRACK_KEY),
-        ]);
+        const user = getCurrentUser();
+        const watch = new Set(
+          [
+            getAccountKey("aurak_quests_v4"),
+            getAccountKey(DAILY_DONE_KEY),
+            getAccountKey(DPL_TRACK_KEY),
+            getAccountKey(XP_STORAGE_KEY),
+            user?.uid ? getUserDocCacheKey(user.uid) : null,
+            "aurakCurrentUser",
+          ].filter(Boolean),
+        );
+
         if (watch.has(e.key)) render();
       });
     </script>

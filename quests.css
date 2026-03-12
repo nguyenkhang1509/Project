@@ -629,13 +629,61 @@ input:focus-visible {
 @media (max-width: 860px) {
   .dashboard-screen {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+
   .sidebar {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    height: auto;
+    position: relative;
+    top: auto;
+    left: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--stroke);
   }
+
+  .sidebar-top,
+  .sidebar-bottom {
+    width: 100%;
+  }
+
+  .side-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .side-link {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .main {
     padding: 18px 16px 22px;
   }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .top-left {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .top-actions {
+    width: 100%;
+  }
+
+  .top-actions .btn {
+    flex: 1 1 0;
+  }
+
   .qsection-head {
     flex-direction: column;
     align-items: flex-start;
@@ -680,6 +728,14 @@ input:focus-visible {
     padding: 14px;
   }
 
+  .sidebar {
+    padding: 14px;
+  }
+
+  .side-nav {
+    grid-template-columns: 1fr;
+  }
+
   .qcard {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -717,3 +773,4 @@ input:focus-visible {
     font-size: 0.72rem;
   }
 }
+

@@ -900,3 +900,297 @@
     font-size: 0.95rem;
   }
 }
+
+.topbar,
+.top-left,
+.profile-xp,
+.stats-main,
+.stats-grid,
+.stats-col,
+.balance-grid,
+.pillars,
+.streak-wrap,
+.calendar-wrap,
+.ach-grid,
+.ach-card,
+.metric,
+.dpl-dialog {
+  min-width: 0;
+}
+
+.top-left {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.profile-xp {
+  flex-wrap: wrap;
+}
+
+.pillar-name,
+.ach-title,
+.ach-sub,
+.panel-note,
+.metric-k,
+.metric-v {
+  overflow-wrap: anywhere;
+}
+
+.dopamine-panel .panel-head,
+.calendar-head,
+.dpl-head,
+.dpl-foot {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 920px) {
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .top-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+  }
+
+  .top-left,
+  .top-actions,
+  .streak-pill {
+    width: 100%;
+  }
+
+  .streak-pill {
+    justify-content: flex-start;
+    border-radius: 18px;
+  }
+
+  .ach-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .ach-tag {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-name {
+    font-size: clamp(1.1rem, 6vw, 1.4rem);
+  }
+
+  .profile-xp {
+    gap: 6px 10px;
+  }
+
+  .panel-head,
+  .calendar-head {
+    align-items: flex-start;
+  }
+
+  .calendar-dow > div {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+
+  .pillar-row {
+    grid-template-columns: 78px 1fr 44px;
+    gap: 8px;
+  }
+
+  .dopamine-graph-svg {
+    height: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar,
+  .panel,
+  .calendar-wrap,
+  .dpl-dialog {
+    padding: 12px;
+  }
+
+  .streak-pill,
+  .metric,
+  .ach-card {
+    padding: 12px;
+  }
+
+  .cal-cell {
+    min-height: 30px;
+    font-size: 11px;
+  }
+
+  .calendar-dow,
+  .calendar-grid {
+    gap: 5px;
+  }
+
+  .ach-card {
+    gap: 10px;
+  }
+
+  .dpl-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-main .topbar,
+.stats-main .top-left,
+.stats-main .top-actions,
+.stats-main .profile-xp,
+.stats-main .xpbar {
+  min-width: 0;
+}
+
+.stats-main .topbar {
+  align-items: center;
+}
+
+.stats-main .top-left {
+  flex: 1 1 auto;
+  width: auto;
+  max-width: 760px;
+}
+
+.stats-main .top-actions {
+  width: auto;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.stats-main .profile-xp {
+  gap: 8px 10px;
+  margin-top: 6px;
+}
+
+.stats-main .xpbar {
+  width: min(100%, 640px);
+  max-width: 640px;
+}
+
+.stats-main .streak-pill {
+  width: auto;
+  justify-content: flex-start;
+  border-radius: 999px;
+}
+
+@media (max-width: 920px) {
+  .stats-main .topbar {
+    align-items: center;
+    gap: 14px;
+  }
+
+  .stats-main .top-actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .stats-main .streak-pill {
+    width: auto;
+  }
+}
+
+@media (max-width: 780px) {
+  .stats-main .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .stats-main .top-left,
+  .stats-main .top-actions {
+    width: auto;
+    flex: 0 1 auto;
+  }
+
+  .stats-main .top-actions {
+    justify-content: flex-start;
+  }
+
+  .stats-main .streak-pill {
+    align-self: flex-start;
+    width: auto;
+    max-width: 100%;
+    padding: 10px 14px;
+    border-radius: 999px;
+  }
+
+  .stats-main .profile-xp {
+    gap: 6px 10px;
+  }
+
+  .stats-main .xpbar {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-main .topbar {
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .stats-main .profile-name {
+    font-size: clamp(1.08rem, 5vw, 1.28rem);
+  }
+
+  .stats-main .profile-level {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.9rem;
+  }
+
+  .stats-main .profile-xptext {
+    font-size: 0.88rem;
+  }
+
+  .stats-main .xpbar-bg {
+    height: 11px;
+  }
+
+  .stats-main .streak-pill {
+    padding: 9px 12px;
+    gap: 8px;
+  }
+
+  .stats-main .streak-ico {
+    width: 32px;
+    height: 32px;
+  }
+
+  .stats-main .streak-num {
+    font-size: 1.08rem;
+  }
+
+  .stats-main .streak-lbl {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-main .topbar {
+    padding: 12px;
+  }
+
+  .stats-main .profile-xp {
+    margin-top: 5px;
+  }
+
+  .stats-main .xpbar {
+    margin-top: 10px;
+  }
+
+  .stats-main .streak-pill {
+    padding: 8px 11px;
+  }
+}

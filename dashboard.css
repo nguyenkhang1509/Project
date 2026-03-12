@@ -410,7 +410,9 @@ input:focus-visible {
 }
 
 .top-left {
-  min-width: 320px;
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 760px;
 }
 
 .profile-name {
@@ -421,27 +423,48 @@ input:focus-visible {
 
 .profile-xp {
   display: flex;
+  align-items: center;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--muted);
   font-size: 0.95rem;
+  flex-wrap: wrap;
 }
 
 .profile-level {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke2);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(168, 85, 247, 0.08)),
+    color-mix(in srgb, var(--card) 88%, transparent);
   color: var(--text);
   font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.profile-xptext {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .xpbar {
-  margin-top: 10px;
+  margin-top: 12px;
+  width: max(100%, 900px);
 }
 
 .xpbar-bg {
-  height: 10px;
+  width: 100%;
+  height: 12px;
   border-radius: 999px;
   border: 1px solid var(--stroke);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .xpbar-fill {
@@ -450,10 +473,13 @@ input:focus-visible {
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    rgba(34, 211, 238, 0.92),
-    rgba(168, 85, 247, 0.78)
+    rgba(34, 211, 238, 0.96),
+    rgba(96, 165, 250, 0.92),
+    rgba(168, 85, 247, 0.86)
   );
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.22);
+  box-shadow:
+    0 0 18px rgba(34, 211, 238, 0.22),
+    0 0 28px rgba(168, 85, 247, 0.16);
   transition: width 300ms ease;
 }
 
@@ -1452,6 +1478,15 @@ html[data-theme="light"] .hunter-xp-inline-bar {
     align-items: stretch;
   }
 
+  .profile-xp {
+    flex-wrap: wrap;
+  }
+
+  .xpbar {
+    width: 100%;
+    max-width: none;
+  }
+
   .top-left {
     min-width: 0;
   }
@@ -1477,6 +1512,16 @@ html[data-theme="light"] .hunter-xp-inline-bar {
 
   .hunter-figure-shell {
     min-height: 230px;
+  }
+
+  .profile-level {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.9rem;
+  }
+
+  .profile-xptext {
+    font-size: 0.9rem;
   }
 }
 
