@@ -67,12 +67,37 @@ function rankFromAverage(avg) {
   return "E";
 }
 
+function normalizeRank(rank) {
+  const val = String(rank || "")
+    .trim()
+    .toUpperCase();
+  if (val === "S") return "S";
+  if (val === "A") return "A";
+  if (val === "B") return "B";
+  if (val === "C") return "C";
+  if (val === "D") return "D";
+  if (val === "E") return "E";
+  return "E";
+}
+
 function heroMoodKeyFromTaskCount(taskCount) {
   const count = Math.max(0, Number(taskCount) || 0);
-  if (count <= 0) return "exhausted";
-  if (count <= 2) return "warming-up";
-  if (count <= 4) return "focused";
+  if (count <= 2) return "exhausted";
+  if (count <= 5) return "warming-up";
+  if (count <= 10) return "focused";
   return "locked-in";
+}
+
+function heroFigureSrcFromRankAndMoodKey(rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const files = {
+    exhausted: "Exhausted.png",
+    "warming-up": "Warming up.png",
+    focused: "Focused.png",
+    "locked-in": "Locked in.png",
+  };
+  const file = files[moodKey] || files.exhausted;
+  return `./img/Rank ${safeRank}/${file}`;
 }
 
 function safeParseJSON(raw, fallback) {
@@ -259,10 +284,15 @@ function buildLocalState(uid, seed = {}) {
   const quests = sanitizeObject(seed.quests ?? cached.quests ?? questState, {});
   const completed = sanitizeObject(quests.completed, {});
   const tasksDone = Object.values(completed).filter(Boolean).length;
+  const heroRank = normalizeRank(rank);
+  const moodKey = heroMoodKeyFromTaskCount(tasksDone);
+  const figureSrc = heroFigureSrcFromRankAndMoodKey(heroRank, moodKey);
   const heroStatus = {
     date: todayIso,
     tasksDone,
-    moodKey: heroMoodKeyFromTaskCount(tasksDone),
+    moodKey,
+    rank: heroRank,
+    figureSrc,
   };
 
   return {

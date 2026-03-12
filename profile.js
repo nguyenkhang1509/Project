@@ -15,7 +15,6 @@ const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 const TITLE_SURVEY_LOCK_MS = 7 * 24 * 60 * 60 * 1000;
 const TITLE_SURVEY_VERSION = "aurak-title-profile-v2";
-const TITLE_SURVEY_STORAGE_KEY = "aurak_title_survey_v1";
 
 const TITLE_SURVEY_TEMPLATE = {
   version: TITLE_SURVEY_VERSION,
@@ -281,61 +280,6 @@ function saveUserProfile(uid, patch) {
   return profile;
 }
 
-function getTitleSurveyKey(uid) {
-  return getStorageKey(TITLE_SURVEY_STORAGE_KEY, uid);
-}
-
-function normalizeTitleState(value) {
-  if (!value || typeof value !== "object") return null;
-  if (!value.title) return null;
-
-  return {
-    version: value.version || TITLE_SURVEY_VERSION,
-    title: value.title,
-    titleKey: value.titleKey || value.title,
-    description: value.description || "",
-    answers: Array.isArray(value.answers) ? value.answers : [],
-    completedAt: Number(value.completedAt || 0) || Date.now(),
-    lockedUntil: Number(value.lockedUntil || 0) || 0,
-  };
-}
-
-function writeTitleState(uid, titleState) {
-  const safe = normalizeTitleState(titleState);
-  if (!uid || !safe) return null;
-  localStorage.setItem(getTitleSurveyKey(uid), JSON.stringify(safe));
-  return safe;
-}
-
-function readTitleState(profile, uid) {
-  if (!uid) return normalizeTitleState(profile?.titleSurvey);
-
-  const localState = normalizeTitleState(
-    safeParseJSON(localStorage.getItem(getTitleSurveyKey(uid)), null),
-  );
-  if (localState) return localState;
-
-  const profileState = normalizeTitleState(profile?.titleSurvey);
-  if (profileState) {
-    writeTitleState(uid, profileState);
-    return profileState;
-  }
-
-  return null;
-}
-
-function persistTitleState(uid, profileState, titleState) {
-  const safe = writeTitleState(uid, titleState);
-  if (!uid || !safe) return safe;
-
-  profileState.current = saveUserProfile(uid, {
-    ...profileState.current,
-    titleSurvey: safe,
-  });
-
-  return safe;
-}
-
 function getLevelInfo(totalXp) {
   let level = 1;
   let req = BASE_XP_PER_LEVEL;
@@ -529,6 +473,12 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function readTitleState(profile) {
+  return profile?.titleSurvey && typeof profile.titleSurvey === "object"
+    ? profile.titleSurvey
+    : null;
+}
+
 function isTitleLocked(titleState) {
   return Number(titleState?.lockedUntil || 0) > Date.now();
 }
@@ -629,11 +579,7 @@ function renderSurveyQuestion() {
     .map(
       (option) => `
         <button
-          class="jc-chip title-chip ${
-            surveyState.answers[surveyState.step] === option.key
-              ? "is-selected"
-              : ""
-          }"
+          class="jc-chip title-chip ${surveyState.answers[surveyState.step] === option.key ? "is-selected" : ""}"
           type="button"
           data-option-key="${escapeHtml(option.key)}"
         >
@@ -693,9 +639,8 @@ function syncSurveyNav() {
   const isSavedStep = surveyState.step === questionCount + 1;
   const isReviewStep = surveyState.step === questionCount;
 
-  if (back) {
+  if (back)
     back.classList.toggle("is-hidden", surveyState.step === 0 || isSavedStep);
-  }
   if (next) next.classList.toggle("is-hidden", isReviewStep || isSavedStep);
   if (nav) nav.classList.toggle("is-hidden", isSavedStep);
 }
@@ -709,24 +654,21 @@ function goToSurveyStep(step) {
   const reviewStep = document.getElementById("titleSurveyReviewStep");
   const savedStep = document.getElementById("titleSurveySavedStep");
 
-  if (questionStep) {
+  if (questionStep)
     questionStep.classList.toggle(
       "is-active",
       surveyState.step < questionCount,
     );
-  }
-  if (reviewStep) {
+  if (reviewStep)
     reviewStep.classList.toggle(
       "is-active",
       surveyState.step === questionCount,
     );
-  }
-  if (savedStep) {
+  if (savedStep)
     savedStep.classList.toggle(
       "is-active",
       surveyState.step === questionCount + 1,
     );
-  }
 
   const sheet = document.getElementById("titleSurveySheet");
   if (sheet) sheet.dataset.step = String(surveyState.step);
@@ -869,7 +811,7 @@ function renderProfileUI({
     "Add a short bio to sharpen your profile.",
   );
   const handle = buildHandle(profile, displayName, user);
-  const titleState = readTitleState(profile, user.uid);
+  const titleState = readTitleState(profile);
 
   setText("dashName", displayName);
   setText("sideUser", displayName);
@@ -908,8 +850,7 @@ function bindTitleSurvey(profileState, getUser) {
   goToSurveyStep(0);
 
   const launch = () => {
-    const currentUser = getUser();
-    const titleState = readTitleState(profileState.current, currentUser?.uid);
+    const titleState = readTitleState(profileState.current);
     if (isTitleLocked(titleState)) {
       toast(`Title locked until ${formatDate(titleState.lockedUntil)}`);
       return;
@@ -983,27 +924,23 @@ function bindTitleSurvey(profileState, getUser) {
       };
 
       const user = getUser();
-      const savedTitleState = persistTitleState(
-        user.uid,
-        profileState,
-        payload,
-      );
+      profileState.current = saveUserProfile(user.uid, {
+        ...profileState.current,
+        titleSurvey: payload,
+      });
 
       try {
         await mergeUserState(user.uid, {
-          profile: {
-            ...profileState.current,
-            titleSurvey: savedTitleState,
-          },
+          profile: profileState.current,
         });
       } catch (error) {
         console.warn("Title survey sync failed:", error);
       }
 
-      renderTitleState(savedTitleState);
+      renderTitleState(payload);
       setText(
         "tsLockedText",
-        `You can take it again on ${formatDate(savedTitleState.lockedUntil)}.`,
+        `You can take it again on ${formatDate(payload.lockedUntil)}.`,
       );
       goToSurveyStep(TITLE_SURVEY_TEMPLATE.questions.length + 1);
       toast("Title saved");
@@ -1044,14 +981,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  const bootTitleState = readTitleState(profileState.current, user.uid);
-  if (bootTitleState) {
-    profileState.current = saveUserProfile(user.uid, {
-      ...profileState.current,
-      titleSurvey: bootTitleState,
-    });
-  }
-
   const renderAll = (nextUser = user) => {
     user = nextUser || user;
     const profile = profileState.current;
@@ -1086,24 +1015,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "subscription.html";
   });
 
-  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-    const titleState = readTitleState(profileState.current, user.uid);
-
-    if (titleState) {
-      persistTitleState(user.uid, profileState, titleState);
-
-      try {
-        await mergeUserState(user.uid, {
-          profile: {
-            ...profileState.current,
-            titleSurvey: titleState,
-          },
-        });
-      } catch (error) {
-        console.warn("Title sync before logout failed:", error);
-      }
-    }
-
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
     logout();
   });
 
@@ -1123,30 +1035,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("storage", (event) => {
     const profileKey = getStorageKey("aurak_user_profile", user.uid);
-    const titleKey = getTitleSurveyKey(user.uid);
     const journalKey = getStorageKey(JOURNAL_KEY_BASE, user.uid);
     const xpKey = getStorageKey(XP_STORAGE_KEY, user.uid);
     const membershipKey = getStorageKey("aurak_membership", user.uid);
     const questKey = getStorageKey(QUEST_STORAGE_KEY, user.uid);
 
     if (
-      [
-        profileKey,
-        titleKey,
-        journalKey,
-        xpKey,
-        membershipKey,
-        questKey,
-      ].includes(event.key || "")
+      [profileKey, journalKey, xpKey, membershipKey, questKey].includes(
+        event.key || "",
+      )
     ) {
       profileState.current = readUserProfile(user.uid);
-      const liveTitleState = readTitleState(profileState.current, user.uid);
-      if (liveTitleState) {
-        profileState.current = {
-          ...profileState.current,
-          titleSurvey: liveTitleState,
-        };
-      }
       renderAll(user);
     }
   });

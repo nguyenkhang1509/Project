@@ -253,7 +253,7 @@
   }
 
   function updateTaskHistoryForToday(qid, qname, isDone) {
-    const today = getISODate();
+    const today = localStorage.getItem(getAccountKey(DAILY_RESET_KEY)) || getISODate();
     const map = readTaskHistoryMap();
     const day = map[today] && typeof map[today] === "object" ? map[today] : {};
 
@@ -297,14 +297,14 @@
     });
 
     const map = readTaskHistoryMap();
-    const day =
-      map[dateStr] && typeof map[dateStr] === "object"
-        ? { ...map[dateStr] }
-        : {};
+    const existing =
+      map[dateStr] && typeof map[dateStr] === "object" ? map[dateStr] : {};
+    const day = {};
     completedIds.forEach((qid) => {
-      if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
+      day[qid] = existing[qid] || nameById.get(qid) || prettifyQuestId(qid);
     });
-    map[dateStr] = day;
+    if (Object.keys(day).length > 0) map[dateStr] = day;
+    else delete map[dateStr];
     writeTaskHistoryMap(map);
   }
 

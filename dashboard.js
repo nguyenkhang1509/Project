@@ -84,7 +84,9 @@ function writeTaskHistoryMap(map) {
 }
 
 function updateTaskHistoryForToday(qid, qname, isDone) {
-  const today = getISODate();
+  const today =
+    localStorage.getItem(getAccountStorageKey("dailyQuestResetDate")) ||
+    getISODate();
   const map = readTaskHistoryMap();
   const day = map[today] && typeof map[today] === "object" ? map[today] : {};
 
@@ -127,14 +129,16 @@ function snapshotCompletedTasksForDate(dateStr, state) {
   });
 
   const map = readTaskHistoryMap();
-  const day =
-    map[dateStr] && typeof map[dateStr] === "object" ? { ...map[dateStr] } : {};
+  const existing =
+    map[dateStr] && typeof map[dateStr] === "object" ? map[dateStr] : {};
+  const day = {};
 
   completedIds.forEach((qid) => {
-    if (!day[qid]) day[qid] = nameById.get(qid) || prettifyQuestId(qid);
+    day[qid] = existing[qid] || nameById.get(qid) || prettifyQuestId(qid);
   });
 
-  map[dateStr] = day;
+  if (Object.keys(day).length > 0) map[dateStr] = day;
+  else delete map[dateStr];
   writeTaskHistoryMap(map);
 }
 
@@ -146,6 +150,31 @@ function rankFromAverage(avg) {
   if (avg >= 40) return "C";
   if (avg >= 20) return "D";
   return "E";
+}
+
+function normalizeRank(rank) {
+  const val = String(rank || "")
+    .trim()
+    .toUpperCase();
+  if (val === "S") return "S";
+  if (val === "A") return "A";
+  if (val === "B") return "B";
+  if (val === "C") return "C";
+  if (val === "D") return "D";
+  if (val === "E") return "E";
+  return "E";
+}
+
+function hunterFigureSrc(rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const files = {
+    exhausted: "Exhausted.png",
+    "warming-up": "Warming up.png",
+    focused: "Focused.png",
+    "locked-in": "Locked in.png",
+  };
+  const file = files[moodKey] || files.exhausted;
+  return `./img/Rank ${safeRank}/${file}`;
 }
 
 function getTodayCompletedTaskCount() {
@@ -176,19 +205,19 @@ function getTodayCompletedTaskCount() {
 }
 
 function getHunterMoodData(taskCount, level) {
-  if (taskCount <= 0) {
+  if (taskCount <= 2) {
     return {
       key: "exhausted",
       label: "Exhausted",
       pill: "LOW POWER",
       mode: level >= 10 ? "Recovery Arc" : "Survival",
       hint: "Low output detected",
-      subline: "No tasks completed today. The hunter is fading.",
+      subline: "0-2 tasks completed today. The hunter is fading.",
       desc: "Your hunter mirrors the day’s output. Clear one task to wake the system and restore momentum.",
     };
   }
 
-  if (taskCount <= 2) {
+  if (taskCount <= 5) {
     return {
       key: "warming-up",
       label: "Warming Up",
@@ -200,7 +229,7 @@ function getHunterMoodData(taskCount, level) {
     };
   }
 
-  if (taskCount <= 4) {
+  if (taskCount <= 10) {
     return {
       key: "focused",
       label: "Focused",
@@ -235,6 +264,7 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   const xpValueEl = document.getElementById("hunterXpValue");
   const xpMiniTextEl = document.getElementById("hunterXpMiniText");
   const xpMiniFillEl = document.getElementById("hunterXpMiniFill");
+  const figureEl = document.getElementById("hunterFigure");
 
   if (
     !tile ||
@@ -247,13 +277,22 @@ function renderHunterStatus(level, totalXP, xpProgress) {
     !descEl ||
     !xpValueEl ||
     !xpMiniTextEl ||
-    !xpMiniFillEl
+    !xpMiniFillEl ||
+    !figureEl
   ) {
     return;
   }
 
   const taskCount = getTodayCompletedTaskCount();
   const mood = getHunterMoodData(taskCount, level);
+  const user = getCurrentUser();
+  const cached = user?.uid ? readCachedAccountState(user.uid) : null;
+  const rank = normalizeRank(cached?.rank);
+  const figureSrc =
+    cached?.heroStatus?.date === getISODate() &&
+    typeof cached.heroStatus.figureSrc === "string"
+      ? cached.heroStatus.figureSrc
+      : hunterFigureSrc(rank, mood.key);
 
   tile.dataset.mood = mood.key;
   moodEl.textContent = mood.label;
@@ -266,6 +305,7 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   xpValueEl.textContent = String(totalXP);
   xpMiniTextEl.textContent = `${totalXP} XP`;
   xpMiniFillEl.style.width = `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`;
+  figureEl.src = figureSrc;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -574,79 +614,115 @@ function updateGraph() {
   ensureDailyQuestReset();
 
   const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const dayOfWeek = new Date().getDay();
+
+  const user = getCurrentUser();
+  const cached = user?.uid ? readCachedAccountState(user.uid) : null;
+
+  const questDayIso =
+    cached?.dailyQuestResetDate ||
+    localStorage.getItem(getAccountStorageKey("dailyQuestResetDate")) ||
+    getISODate();
+
+  let questDayDate = new Date();
+  const parts = String(questDayIso).split("-").map((v) => Number(v));
+  if (
+    parts.length === 3 &&
+    parts.every((v) => Number.isFinite(v)) &&
+    parts[1] >= 1 &&
+    parts[1] <= 12 &&
+    parts[2] >= 1 &&
+    parts[2] <= 31
+  ) {
+    questDayDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  questDayDate.setHours(0, 0, 0, 0);
+
+  const dayOfWeek = questDayDate.getDay();
   const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  const currentMonday = new Date(questDayDate);
+  currentMonday.setDate(questDayDate.getDate() - dayIndex);
+  currentMonday.setHours(0, 0, 0, 0);
+  const currentMondayStr = getISODate(currentMonday);
 
   const resetKey = getAccountStorageKey("weeklyGraphResetDate");
   const dataKey = getAccountStorageKey("weeklyQuestData");
-  let lastResetDate = localStorage.getItem(resetKey);
-  let weeklyData = JSON.parse(localStorage.getItem(dataKey)) || [
-    0, 0, 0, 0, 0, 0, 0,
-  ];
+
+  let lastResetDate =
+    (typeof cached?.weeklyGraphResetDate === "string"
+      ? cached.weeklyGraphResetDate
+      : "") ||
+    localStorage.getItem(resetKey) ||
+    "";
+
+  let weeklyData = Array.isArray(cached?.weeklyQuestData)
+    ? cached.weeklyQuestData.slice(0, 7)
+    : JSON.parse(localStorage.getItem(dataKey)) || [0, 0, 0, 0, 0, 0, 0];
+
+  if (!Array.isArray(weeklyData)) weeklyData = [0, 0, 0, 0, 0, 0, 0];
+  weeklyData = weeklyData.slice(0, 7);
+  while (weeklyData.length < 7) weeklyData.push(0);
 
   const previousResetDate = lastResetDate;
-  const previousWeeklyData = Array.isArray(weeklyData)
-    ? weeklyData.slice(0, 7)
-    : [0, 0, 0, 0, 0, 0, 0];
+  const previousWeeklyData = weeklyData.slice(0, 7);
 
-  const legacyResetDate = localStorage.getItem("weeklyGraphResetDate");
-  const legacyWeeklyData = JSON.parse(
-    localStorage.getItem("weeklyQuestData"),
-  ) || [0, 0, 0, 0, 0, 0, 0];
-
-  const hasCurrentData =
-    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
-  const hasLegacyData =
-    Array.isArray(legacyWeeklyData) &&
-    legacyWeeklyData.some((v) => Number(v) > 0);
-
-  if (!hasCurrentData && hasLegacyData) {
-    weeklyData = legacyWeeklyData.slice(0, 7);
-    if (!lastResetDate && legacyResetDate) lastResetDate = legacyResetDate;
+  if (!lastResetDate || lastResetDate !== currentMondayStr) {
+    lastResetDate = currentMondayStr;
   }
 
-  const currentMonday = new Date();
-  currentMonday.setDate(currentMonday.getDate() - dayIndex);
-  currentMonday.setHours(0, 0, 0, 0);
-  const currentMondayStr = currentMonday.toISOString().split("T")[0];
+  const history =
+    cached?.dailyTaskHistory && typeof cached.dailyTaskHistory === "object"
+      ? cached.dailyTaskHistory
+      : readTaskHistoryMap();
 
-  const hasPersistedData =
-    Array.isArray(weeklyData) && weeklyData.some((v) => Number(v) > 0);
-
-  if (!lastResetDate) {
-    localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
-    lastResetDate = currentMondayStr;
-  } else if (lastResetDate !== currentMondayStr) {
-    weeklyData = [0, 0, 0, 0, 0, 0, 0];
-    localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
-    lastResetDate = currentMondayStr;
-  } else if (!hasPersistedData && lastResetDate === currentMondayStr) {
-    localStorage.setItem(resetKey, currentMondayStr);
-    localStorage.setItem("weeklyGraphResetDate", currentMondayStr);
-  }
-
-  let completedCount = 0;
+  let todayCompletedIds = [];
   try {
-    const state =
-      JSON.parse(
-        localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
-      ) || {};
-    state.completed = state.completed || {};
-    completedCount = Object.values(state.completed).filter(Boolean).length;
+    const questState =
+      cached?.quests && typeof cached.quests === "object"
+        ? cached.quests
+        : JSON.parse(
+            localStorage.getItem(getAccountStorageKey(QUEST_STORAGE_KEY)),
+          ) || {};
+    const completed =
+      questState.completed && typeof questState.completed === "object"
+        ? questState.completed
+        : {};
+    todayCompletedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
   } catch {}
 
-  weeklyData[dayIndex] = completedCount;
+  const todayNames =
+    history[questDayIso] && typeof history[questDayIso] === "object"
+      ? history[questDayIso]
+      : {};
+  const todayTasks = todayCompletedIds
+    .map((qid) => todayNames[qid] || prettifyQuestId(qid))
+    .filter(Boolean);
 
-  localStorage.setItem(dataKey, JSON.stringify(weeklyData));
-  localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
+  const weeklyTasks = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(currentMonday);
+    d.setDate(currentMonday.getDate() + i);
+    const iso = getISODate(d);
+    if (i === dayIndex) {
+      weeklyTasks.push(todayTasks);
+    } else {
+      weeklyTasks.push(Object.values(history[iso] || {}).filter(Boolean));
+    }
+  }
+
+  weeklyData = weeklyTasks.map((tasks) => tasks.length);
+
+  try {
+    localStorage.setItem(resetKey, lastResetDate);
+    localStorage.setItem("weeklyGraphResetDate", lastResetDate);
+    localStorage.setItem(dataKey, JSON.stringify(weeklyData));
+    localStorage.setItem("weeklyQuestData", JSON.stringify(weeklyData));
+  } catch {}
 
   const graphChanged =
     previousResetDate !== lastResetDate ||
     JSON.stringify(previousWeeklyData) !== JSON.stringify(weeklyData);
 
-  const user = getCurrentUser();
   if (graphChanged && user?.uid) {
     void mergeUserState(user.uid, {
       weeklyQuestData: weeklyData,
@@ -654,15 +730,6 @@ function updateGraph() {
     }).catch((error) => {
       console.warn("Weekly graph sync failed:", error);
     });
-  }
-
-  const history = readTaskHistoryMap();
-  const weeklyTasks = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(currentMonday);
-    d.setDate(currentMonday.getDate() + i);
-    const iso = getISODate(d);
-    weeklyTasks.push(Object.values(history[iso] || {}).filter(Boolean));
   }
 
   const maxValue = Math.max(8, ...weeklyData.map((v) => Number(v) || 0));
