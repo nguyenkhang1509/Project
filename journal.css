@@ -1403,3 +1403,99 @@ html[data-theme="light"] .jc-next {
     animation: none;
   }
 }
+
+/* ===== responsive patch ===== */
+.jc-shell,
+.jc-hero,
+.jc-side,
+.jc-recent,
+.jc-preview,
+.jc-trend,
+.jc-week,
+.jc-sheet,
+.jc-stepBody,
+.jc-chipGrid,
+.jc-stepReview {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .jc-hero,
+  .jc-side,
+  .jc-recent {
+    padding: 16px;
+  }
+
+  .jc-actionsRow,
+  .jc-metaRow,
+  .jc-sideHead,
+  .jc-recentHead {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .jc-preview,
+  .jc-week,
+  .jc-trend {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .jc-shell {
+    gap: 12px;
+  }
+
+  .jc-title {
+    font-size: clamp(1.6rem, 7vw, 2.15rem);
+    line-height: 1.08;
+  }
+
+  .jc-sub,
+  .jc-snapLine,
+  .jc-previewText {
+    max-width: 100%;
+  }
+
+  .jc-actionsRow,
+  .jc-metaRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jc-weekStrip,
+  .jc-grid,
+  .jc-list {
+    gap: 8px;
+  }
+
+  .jc-line {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .jc-sheet {
+    width: min(100%, calc(100vw - 20px));
+  }
+
+  .jc-chipGrid,
+  .jc-stepReview {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .jc-hero,
+  .jc-side,
+  .jc-recent {
+    padding: 14px;
+  }
+
+  .jc-qTitle {
+    font-size: 24px;
+  }
+
+  .jc-dayBtn {
+    min-height: 40px;
+  }
+}

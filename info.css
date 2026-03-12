@@ -812,3 +812,91 @@
   color: #22d3ee;
   opacity: 0.9;
 }
+
+/* ===== responsive patch ===== */
+.stats-main,
+.stats-grid,
+.stats-col,
+.balance-grid,
+.pillars,
+.streak-wrap,
+.calendar-wrap,
+.ach-grid,
+.dpl-dialog {
+  min-width: 0;
+}
+
+@media (max-width: 920px) {
+  .stats-grid,
+  .balance-grid,
+  .ach-grid,
+  .streak-metrics {
+    grid-template-columns: 1fr !important;
+  }
+
+  .panel-head,
+  .streak-pill {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .panel[aria-label="Achievements"] {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    gap: 12px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .pillar-row {
+    grid-template-columns: 84px 1fr 48px;
+  }
+
+  .calendar-dow,
+  .calendar-grid {
+    gap: 6px;
+  }
+
+  .cal-cell {
+    min-height: 34px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+
+  .dpl-dialog {
+    width: min(100%, calc(100vw - 20px));
+    padding: 16px;
+  }
+
+  .dpl-head,
+  .dpl-foot {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .dopamine-graph-svg {
+    height: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .streak-pill,
+  .metric,
+  .ach-card {
+    padding: 12px;
+  }
+
+  .streak-num {
+    font-size: 1.4rem;
+  }
+
+  .cal-title {
+    font-size: 0.95rem;
+  }
+}

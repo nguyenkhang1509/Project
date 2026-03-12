@@ -1479,3 +1479,147 @@ html[data-theme="light"] .hunter-xp-inline-bar {
     min-height: 230px;
   }
 }
+
+/* ===== responsive patch ===== */
+img,
+svg,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.main,
+.topbar,
+.top-left,
+.top-actions,
+.panel,
+.wide-tile,
+.hunter-body,
+.hunter-visual,
+.hunter-meta,
+.balance-grid,
+.below,
+.left-column,
+.stack,
+.line-graph,
+.quests-preview,
+.checkin-card,
+.focus-card {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .main {
+    padding: 16px;
+  }
+
+  .topbar {
+    gap: 12px;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .top-actions .btn {
+    flex: 1 1 180px;
+  }
+
+  .below,
+  .balance-grid,
+  .hunter-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hunter-visual {
+    order: -1;
+  }
+
+  .hunter-figure-shell {
+    width: 100%;
+    min-height: 240px;
+  }
+
+  .line-graph-svg {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 14px;
+  }
+
+  .sidebar-top,
+  .sidebar-bottom {
+    gap: 12px;
+  }
+
+  .brand {
+    grid-template-columns: 42px 1fr auto;
+  }
+
+  .side-card,
+  .sidebar-tip,
+  .panel,
+  .wide-tile {
+    padding-inline: 14px;
+  }
+
+  .profile-name {
+    font-size: clamp(1.2rem, 6vw, 1.7rem);
+  }
+
+  .profile-xp,
+  .xpbar,
+  .hunter-title-wrap,
+  .hunter-subline,
+  .hunter-desc,
+  .reflection-snippet,
+  .quest-text {
+    min-width: 0;
+  }
+
+  .pillar-row {
+    grid-template-columns: 86px 1fr 50px;
+  }
+
+  .hunter-mood {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+
+  .hunter-scoreline,
+  .top-actions .btn {
+    width: 100%;
+  }
+
+  .quest-row,
+  .checkin-topline {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .wide-tile,
+  .panel,
+  .hunter-head,
+  .checkin-card {
+    padding: 14px;
+  }
+
+  .hunter-xp-chip,
+  .hunter-xp-inline,
+  .hunter-pill,
+  .checkin-pill {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .metric-box {
+    min-width: 0;
+  }
+}

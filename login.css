@@ -354,3 +354,59 @@ body {
 .sequence-start-btn {
   margin-top: 26px;
 }
+
+/* ===== responsive patch ===== */
+.auth-card-wrap,
+.auth-layout,
+.auth-brand,
+.auth-card,
+.auth-input-shell {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .auth-screen {
+    padding: 72px 14px 20px;
+    align-items: flex-start;
+  }
+
+  .auth-card-wrap {
+    padding: 18px 16px;
+    border-radius: 22px;
+  }
+
+  .auth-layout {
+    max-width: 100%;
+  }
+
+  .auth-brand,
+  .auth-input-with-btn,
+  .auth-footer-links {
+    flex-wrap: wrap;
+  }
+
+  .auth-card {
+    padding: 18px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-brand-title,
+  .auth-heading {
+    line-height: 1.08;
+  }
+
+  .auth-input-with-btn {
+    flex-direction: column;
+  }
+
+  .toggle-pass-btn,
+  .auth-primary-btn {
+    width: 100%;
+  }
+
+  .back-btn {
+    top: 14px;
+    left: 14px;
+  }
+}

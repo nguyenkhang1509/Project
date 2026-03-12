@@ -1238,3 +1238,103 @@
     padding-right: 0;
   }
 }
+
+/* ===== responsive patch ===== */
+.pr-wrap,
+.pr-card,
+.pr-mainGrid,
+.pr-about,
+.pr-sub,
+.pr-detailGrid,
+.pr-perks,
+.pr-modalCard,
+.jc-sheet {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .pr-wrap {
+    padding: 16px 14px 28px;
+  }
+
+  .pr-identityRow,
+  .pr-mainGrid,
+  .pr-detailGrid,
+  .pr-statRail,
+  .pr-perks,
+  .pr-saveRow,
+  .jc-chipGrid,
+  .title-chipGrid,
+  .jc-stepReview {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pr-subRow,
+  .pr-cardHead,
+  .pr-renewRow,
+  .pr-miniRow {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pr-titleChip,
+  .pr-edit,
+  .pr-save,
+  .pr-upgrade {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .pr-identity,
+  .pr-about,
+  .pr-sub {
+    padding: 18px;
+  }
+
+  .pr-name,
+  .pr-title {
+    line-height: 1.08;
+  }
+
+  .pr-tag,
+  .pr-handle,
+  .pr-titleChipMeta,
+  .pr-bio,
+  .v {
+    white-space: normal;
+  }
+
+  .pr-modalCard,
+  .jc-sheet {
+    width: min(100%, calc(100vw - 20px));
+  }
+
+  .pr-modalBody {
+    padding-inline: 16px;
+  }
+
+  .pr-statCardButton,
+  .pr-edit,
+  .pr-save,
+  .pr-upgrade {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pr-wrap {
+    padding: 14px 12px 24px;
+  }
+
+  .pr-identity,
+  .pr-about,
+  .pr-sub,
+  .pr-modalBody {
+    padding: 14px;
+  }
+
+  .jc-nav {
+    grid-template-columns: 54px 1fr 54px;
+  }
+}

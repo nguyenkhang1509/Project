@@ -642,3 +642,78 @@ input:focus-visible {
     gap: 4px;
   }
 }
+
+/* ===== responsive patch ===== */
+.qbar,
+.qtabs,
+.qlist,
+.qsection,
+.qsection-list,
+.qcard,
+.qmain {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .qtabs {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .qtab {
+    flex: 1 1 160px;
+    justify-content: center;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .top-actions .btn {
+    flex: 1 1 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 14px;
+  }
+
+  .qcard {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .qcheck {
+    order: -1;
+  }
+
+  .qmeta,
+  .qsection-head,
+  .qrewards {
+    flex-wrap: wrap;
+  }
+
+  .qbtn {
+    grid-column: auto;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .qname {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .qtab,
+  .qcard {
+    padding: 14px;
+  }
+
+  .qchip,
+  .qdue {
+    font-size: 0.72rem;
+  }
+}

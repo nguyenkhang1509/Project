@@ -435,3 +435,53 @@ body {
 .stat:hover .stat-value {
   opacity: 0.95;
 }
+
+/* ===== responsive patch ===== */
+.grid,
+.stats,
+.summary,
+.mini,
+.actions {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding: 14px;
+  }
+
+  .panel {
+    padding: 18px 16px 16px;
+  }
+
+  .grid,
+  .mini {
+    grid-template-columns: 1fr !important;
+  }
+
+  .head,
+  .brand-line {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .summary {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    line-height: 1.06;
+  }
+
+  .stat,
+  .mini-pill {
+    padding: 14px 12px;
+  }
+
+  .primary-btn,
+  .ghost-btn {
+    width: 100%;
+  }
+}
