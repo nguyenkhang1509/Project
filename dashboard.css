@@ -841,6 +841,15 @@ input:focus-visible {
   letter-spacing: 0.01em;
 }
 
+.hunter-title {
+  margin-top: 10px;
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
 .hunter-desc {
   margin-top: 13px;
   color: var(--muted);

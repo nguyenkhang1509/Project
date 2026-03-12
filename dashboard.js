@@ -170,11 +170,11 @@ function hunterFigureSrc(rank, moodKey) {
   const files = {
     exhausted: "Exhausted.png",
     "warming-up": "Warming up.png",
-    focused: "Focused.png",
+    focused: "Focused.jpg",
     "locked-in": "Locked in.png",
   };
   const file = files[moodKey] || files.exhausted;
-  return `./img/Rank ${safeRank}/${file}`;
+  return `./${safeRank}-${file}`;
 }
 
 function getTodayCompletedTaskCount() {
@@ -595,17 +595,26 @@ function updateXP() {
   const stats = (user && user.stats) || (profile && profile.stats) || null;
   const avg = averageStat(stats);
   const rank = rankFromAverage(avg);
+  const title =
+    typeof profile?.title === "string" && profile.title.trim()
+      ? profile.title.trim()
+      : typeof profile?.titleSurvey?.title === "string" &&
+          profile.titleSurvey.title.trim()
+        ? profile.titleSurvey.title.trim()
+        : "";
 
   const dashLevel = document.getElementById("dashLevel");
   const dashXpText = document.getElementById("dashXpText");
   const dashXpFill = document.getElementById("dashXpFill");
   const sideSub = document.getElementById("sideSub");
+  const hunterTitle = document.getElementById("hunterTitle");
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
   if (dashXpFill)
     dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
-  if (sideSub) sideSub.textContent = `Rank ${rank}`;
+  if (sideSub) sideSub.textContent = title || `Rank ${rank}`;
+  if (hunterTitle) hunterTitle.textContent = title || "Unassigned";
 
   renderHunterStatus(info.level, totalXP, info.progress);
 }

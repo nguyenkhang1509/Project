@@ -97,7 +97,7 @@ function heroFigureSrcFromRankAndMoodKey(rank, moodKey) {
     "locked-in": "Locked in.png",
   };
   const file = files[moodKey] || files.exhausted;
-  return `./img/Rank ${safeRank}/${file}`;
+  return `./${safeRank}-${file}`;
 }
 
 function safeParseJSON(raw, fallback) {
@@ -240,6 +240,12 @@ function buildLocalState(uid, seed = {}) {
       legacyProfile.subtitle ??
       "",
     bio: seed.profile?.bio ?? cached.profile?.bio ?? legacyProfile.bio ?? "",
+    title: seed.profile?.title ?? cached.profile?.title ?? legacyProfile.title ?? "",
+    titleSurvey:
+      seed.profile?.titleSurvey ??
+      cached.profile?.titleSurvey ??
+      legacyProfile.titleSurvey ??
+      null,
     socials:
       sanitizeObject(seed.profile?.socials) &&
       Object.keys(sanitizeObject(seed.profile?.socials)).length

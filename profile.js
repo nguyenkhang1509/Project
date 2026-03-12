@@ -14,240 +14,240 @@ const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 const TITLE_SURVEY_LOCK_MS = 7 * 24 * 60 * 60 * 1000;
-const TITLE_SURVEY_VERSION = "aurak-title-profile-v2";
+const TITLE_SURVEY_VERSION = "aurak-title-profile-v3";
 const TITLE_SURVEY_STORAGE_KEY = "aurak_title_survey_v1";
+
+const TITLE_SURVEY_STATS = [
+  "Physical",
+  "Intellectual",
+  "Confidence",
+  "Discipline",
+  "Mental",
+];
+
+const TITLE_SURVEY_TITLE_BY_STAT = {
+  Physical: "Savage Vanguard",
+  Intellectual: "Insight Phantom",
+  Confidence: "Emperor of Fate",
+  Discipline: "Blade Saint",
+  Mental: "Mind Reaper",
+};
 
 const TITLE_SURVEY_TEMPLATE = {
   version: TITLE_SURVEY_VERSION,
   questions: [
     {
-      id: "drive",
-      title: "What pulls you forward the hardest right now?",
-      subtitle:
-        "Placeholder copy. Your co-founder can replace the question, option text, and weighting later.",
+      id: "guild-plan",
+      title:
+        "You have the opportunity to lead a guild entering a dangerous dungeon next week. What is your first plan?",
+      subtitle: "Choose the option that fits you best.",
       options: [
         {
-          key: "build",
-          label: "Build something real",
-          sublabel: "Execution, output, and visible progress matter most.",
-          icon: "fa-solid fa-hammer",
-          weights: { Vanguard: 3, Architect: 2, Ascendant: 1 },
+          key: "a",
+          label: "Charge inside and defeat enemies head on.",
+          sublabel: "Physical",
+          icon: "fa-solid fa-hand-fist",
+          stat: "Physical",
         },
         {
-          key: "mastery",
-          label: "Become elite",
-          sublabel: "You care about skill, sharpness, and level-ups.",
-          icon: "fa-solid fa-crosshairs",
-          weights: { Ascendant: 3, Strategist: 2, Sentinel: 1 },
-        },
-        {
-          key: "influence",
-          label: "Lead and move people",
-          sublabel: "Direction, presence, and responsibility drive you.",
-          icon: "fa-solid fa-crown",
-          weights: { Vanguard: 2, Catalyst: 3, Strategist: 1 },
-        },
-        {
-          key: "meaning",
-          label: "Create something meaningful",
-          sublabel: "Purpose and impact are bigger than speed.",
-          icon: "fa-solid fa-star",
-          weights: { Architect: 2, Sentinel: 2, Catalyst: 2 },
-        },
-      ],
-    },
-    {
-      id: "mode",
-      title: "Which operating mode feels the most natural to you?",
-      subtitle:
-        "Pick the one that feels like your default state under normal pressure.",
-      options: [
-        {
-          key: "calm",
-          label: "Calm and deliberate",
-          sublabel: "You think first, then move with control.",
-          icon: "fa-solid fa-mountain",
-          weights: { Strategist: 3, Architect: 2, Sentinel: 1 },
-        },
-        {
-          key: "aggressive",
-          label: "Fast and relentless",
-          sublabel: "Momentum solves more than hesitation.",
-          icon: "fa-solid fa-bolt",
-          weights: { Vanguard: 3, Ascendant: 2, Catalyst: 1 },
-        },
-        {
-          key: "adaptive",
-          label: "Adaptive and flexible",
-          sublabel: "You shift gears quickly based on what the moment needs.",
-          icon: "fa-solid fa-compass",
-          weights: { Architect: 2, Catalyst: 2, Strategist: 1 },
-        },
-        {
-          key: "steady",
-          label: "Steady and durable",
-          sublabel: "You outlast people more than you outpace them.",
-          icon: "fa-solid fa-shield-halved",
-          weights: { Sentinel: 3, Ascendant: 1, Strategist: 1 },
-        },
-      ],
-    },
-    {
-      id: "edge",
-      title: "Where do you want your edge to show the most?",
-      subtitle: "This helps the title lean toward your strongest lane.",
-      options: [
-        {
-          key: "systems",
-          label: "Systems and structure",
-          sublabel: "Frameworks, planning, optimization, and clean thinking.",
-          icon: "fa-solid fa-diagram-project",
-          weights: { Architect: 3, Strategist: 2 },
-        },
-        {
-          key: "presence",
-          label: "Presence and confidence",
-          sublabel: "You want people to feel your energy and force.",
-          icon: "fa-solid fa-fire",
-          weights: { Vanguard: 2, Catalyst: 3, Ascendant: 1 },
-        },
-        {
-          key: "consistency",
-          label: "Consistency and discipline",
-          sublabel: "Daily reps matter more than hype.",
-          icon: "fa-solid fa-repeat",
-          weights: { Ascendant: 3, Sentinel: 2 },
-        },
-        {
-          key: "judgment",
-          label: "Judgment and decision-making",
-          sublabel: "You want to choose well under uncertainty.",
-          icon: "fa-solid fa-chess-knight",
-          weights: { Strategist: 3, Architect: 1, Sentinel: 1 },
-        },
-      ],
-    },
-    {
-      id: "pressure",
-      title: "When pressure rises, what usually happens to you?",
-      subtitle:
-        "Choose the answer that feels true most often, not the one that sounds coolest.",
-      options: [
-        {
-          key: "attack",
-          label: "I attack it directly",
-          sublabel: "I would rather engage than circle around it.",
-          icon: "fa-solid fa-sword",
-          weights: { Vanguard: 3, Catalyst: 1, Ascendant: 1 },
-        },
-        {
-          key: "analyze",
-          label: "I slow down and analyze",
-          sublabel: "I need the pattern before I move hard.",
+          key: "b",
+          label: "Observe the dungeon entrance and plan your route.",
+          sublabel: "Intellectual",
           icon: "fa-solid fa-brain",
-          weights: { Strategist: 3, Architect: 1, Sentinel: 1 },
+          stat: "Intellectual",
         },
         {
-          key: "endure",
-          label: "I absorb it and keep going",
-          sublabel: "I can carry load for a long time.",
-          icon: "fa-solid fa-anchor",
-          weights: { Sentinel: 3, Ascendant: 2 },
+          key: "c",
+          label: "Always stay in the frontline of the team while in the dungeon.",
+          sublabel: "Confidence",
+          icon: "fa-solid fa-crown",
+          stat: "Confidence",
         },
         {
-          key: "adapt",
-          label: "I pivot until something works",
-          sublabel: "I stay mobile instead of rigid.",
-          icon: "fa-solid fa-shuffle",
-          weights: { Architect: 2, Catalyst: 2, Vanguard: 1 },
-        },
-      ],
-    },
-    {
-      id: "standard",
-      title: "What standard do you quietly hold yourself to?",
-      subtitle: "This is the rule you return to even when nobody is watching.",
-      options: [
-        {
-          key: "greatness",
-          label: "I should be exceptional",
-          sublabel: "Average feels like leaving potential on the table.",
-          icon: "fa-solid fa-arrow-trend-up",
-          weights: { Ascendant: 3, Vanguard: 1, Catalyst: 1 },
+          key: "d",
+          label: "Prepare gear and review the plan carefully.",
+          sublabel: "Discipline",
+          icon: "fa-solid fa-shield-halved",
+          stat: "Discipline",
         },
         {
-          key: "precision",
-          label: "I should be precise",
-          sublabel: "Sloppy work bothers me more than slow work.",
-          icon: "fa-solid fa-ruler-combined",
-          weights: { Architect: 3, Strategist: 2 },
-        },
-        {
-          key: "reliable",
-          label: "I should be dependable",
-          sublabel: "My word and consistency need to be strong.",
-          icon: "fa-solid fa-lock",
-          weights: { Sentinel: 3, Ascendant: 1, Strategist: 1 },
-        },
-        {
-          key: "impactful",
-          label: "I should matter",
-          sublabel: "What I do should move something bigger than myself.",
-          icon: "fa-solid fa-wave-square",
-          weights: { Catalyst: 3, Vanguard: 1, Architect: 1 },
-        },
-      ],
-    },
-    {
-      id: "legacy",
-      title: "What do you want people to feel from your name?",
-      subtitle: "Final placeholder question for the title result logic.",
-      options: [
-        {
-          key: "respect",
-          label: "Respect",
-          sublabel: "Steady authority, trust, and capability.",
-          icon: "fa-solid fa-medal",
-          weights: { Sentinel: 2, Strategist: 2, Vanguard: 1 },
-        },
-        {
-          key: "energy",
-          label: "Energy",
-          sublabel: "Momentum, intensity, and charge.",
-          icon: "fa-solid fa-burst",
-          weights: { Vanguard: 3, Catalyst: 2, Ascendant: 1 },
-        },
-        {
-          key: "vision",
-          label: "Vision",
-          sublabel: "Original thinking and intelligent design.",
+          key: "e",
+          label: "Scan the area carefully to detect hidden threats.",
+          sublabel: "Mental",
           icon: "fa-solid fa-eye",
-          weights: { Architect: 3, Strategist: 1, Catalyst: 1 },
+          stat: "Mental",
+        },
+      ],
+    },
+    {
+      id: "boss-fight",
+      title:
+        "At the end of the dungeon, you and the team face a powerful boss. What is the first thing you do?",
+      subtitle: "Choose the option that fits you best.",
+      options: [
+        {
+          key: "a",
+          label: "Attack nonstop until it falls.",
+          sublabel: "Physical",
+          icon: "fa-solid fa-sword",
+          stat: "Physical",
         },
         {
-          key: "rise",
-          label: "Growth",
-          sublabel: "Relentless evolution and upward pressure.",
-          icon: "fa-solid fa-mountain-sun",
-          weights: { Ascendant: 3, Vanguard: 1, Sentinel: 1 },
+          key: "b",
+          label: "Analyze its attack pattern and weakness.",
+          sublabel: "Intellectual",
+          icon: "fa-solid fa-brain",
+          stat: "Intellectual",
+        },
+        {
+          key: "c",
+          label: "Set up the formation, assign roles, and lead the team.",
+          sublabel: "Confidence",
+          icon: "fa-solid fa-crown",
+          stat: "Confidence",
+        },
+        {
+          key: "d",
+          label: "Hold your position and execute your role until the battle ends.",
+          sublabel: "Discipline",
+          icon: "fa-solid fa-shield-halved",
+          stat: "Discipline",
+        },
+        {
+          key: "e",
+          label: "Stay calm under pressure and read every movement the boss makes.",
+          sublabel: "Mental",
+          icon: "fa-solid fa-eye",
+          stat: "Mental",
+        },
+      ],
+    },
+    {
+      id: "injured-ally",
+      title: "A teammate got injured during the battle. What will you do?",
+      subtitle: "Choose the option that fits you best.",
+      options: [
+        {
+          key: "a",
+          label: "Take control and finish the fight yourself.",
+          sublabel: "Physical",
+          icon: "fa-solid fa-hand-fist",
+          stat: "Physical",
+        },
+        {
+          key: "b",
+          label: "Adjust the plan quickly.",
+          sublabel: "Intellectual",
+          icon: "fa-solid fa-brain",
+          stat: "Intellectual",
+        },
+        {
+          key: "c",
+          label: "Help your teammate recover and continue.",
+          sublabel: "Confidence",
+          icon: "fa-solid fa-hand-holding-heart",
+          stat: "Confidence",
+        },
+        {
+          key: "d",
+          label: "Stay focused and keep the formation stable.",
+          sublabel: "Discipline",
+          icon: "fa-solid fa-shield-halved",
+          stat: "Discipline",
+        },
+        {
+          key: "e",
+          label: "Endure the chaos and push through despite injuries around you.",
+          sublabel: "Mental",
+          icon: "fa-solid fa-anchor",
+          stat: "Mental",
+        },
+      ],
+    },
+    {
+      id: "rare-ability",
+      title:
+        "You receive a rare ability reward after clearing a dungeon. Which one do you choose?",
+      subtitle: "Choose the option that fits you best.",
+      options: [
+        {
+          key: "a",
+          label: "Colossus Surge",
+          sublabel:
+            "Temporarily boosts your speed and strength to superhuman levels for a short time. After use, you lose 1 level of your current stat.",
+          icon: "fa-solid fa-dumbbell",
+          stat: "Physical",
+        },
+        {
+          key: "b",
+          label: "Eidolon Mind",
+          sublabel:
+            "Instantly analyze enemies, uncover hidden secrets, and gain profound tactical knowledge. After use, you faint briefly from mental overload, leaving you vulnerable for a short time.",
+          icon: "fa-solid fa-brain",
+          stat: "Intellectual",
+        },
+        {
+          key: "c",
+          label: "Sovereign's Command",
+          sublabel:
+            "Instantly boost the strength and abilities of your entire team, giving them an edge in battle. After use, your confidence drops by 1 point temporarily from the exertion of controlling everyone.",
+          icon: "fa-solid fa-crown",
+          stat: "Confidence",
+        },
+        {
+          key: "d",
+          label: "Iron Discipline",
+          sublabel:
+            "Execute every move flawlessly, no matter the duration or pressure. Using this skill costs 1 Discipline point temporarily.",
+          icon: "fa-solid fa-shield-halved",
+          stat: "Discipline",
+        },
+        {
+          key: "e",
+          label: "Soul Fortress",
+          sublabel:
+            "Enter a fully locked-in flow state, resisting all distractions while projecting an aura of fear that unnerves the boss. After use, your Mental stat drops by 2 points temporarily, and your next action is delayed slightly due to mental fatigue.",
+          icon: "fa-solid fa-skull",
+          stat: "Mental",
+        },
+      ],
+    },
+    {
+      id: "main-goal",
+      title: "What is your main goal as a hunter?",
+      subtitle: "Choose the option that fits you best.",
+      options: [
+        {
+          key: "a",
+          label: "Become the strongest fighter alive.",
+          sublabel: "Physical",
+          icon: "fa-solid fa-hand-fist",
+          stat: "Physical",
+        },
+        {
+          key: "b",
+          label: "Outsmart all challenges and uncover hidden knowledge.",
+          sublabel: "Intellectual",
+          icon: "fa-solid fa-brain",
+          stat: "Intellectual",
+        },
+        {
+          key: "c",
+          label: "Lead and inspire your team to victory.",
+          sublabel: "Confidence",
+          icon: "fa-solid fa-crown",
+          stat: "Confidence",
+        },
+        {
+          key: "d",
+          label: "Perfect every skill and strategy through constant practice.",
+          sublabel: "Discipline",
+          icon: "fa-solid fa-shield-halved",
+          stat: "Discipline",
         },
       ],
     },
   ],
-  results: {
-    Vanguard:
-      "Direct, forceful, and momentum-driven. You move first, take responsibility, and pull action out of pressure.",
-    Architect:
-      "Structured, inventive, and precise. You turn raw ambition into systems that actually hold shape.",
-    Strategist:
-      "Measured, sharp, and composed. You win by reading patterns early and choosing the cleanest line.",
-    Ascendant:
-      "Disciplined, hungry, and growth-obsessed. You keep climbing because you refuse to stay the same.",
-    Sentinel:
-      "Reliable, grounded, and resilient. You project steadiness and earn respect through consistency under weight.",
-    Catalyst:
-      "Magnetic, activating, and high-impact. You energize rooms, spark motion, and make things happen around you.",
-  },
 };
 
 const surveyState = {
@@ -289,12 +289,18 @@ function normalizeTitleState(value) {
   if (!value || typeof value !== "object") return null;
   if (!value.title) return null;
 
+  const scores = {};
+  TITLE_SURVEY_STATS.forEach((key) => {
+    scores[key] = Math.max(0, Number(value.scores?.[key]) || 0);
+  });
+
   return {
     version: value.version || TITLE_SURVEY_VERSION,
     title: value.title,
     titleKey: value.titleKey || value.title,
     description: value.description || "",
     answers: Array.isArray(value.answers) ? value.answers : [],
+    scores,
     completedAt: Number(value.completedAt || 0) || Date.now(),
     lockedUntil: Number(value.lockedUntil || 0) || 0,
   };
@@ -330,6 +336,7 @@ function persistTitleState(uid, profileState, titleState) {
 
   profileState.current = saveUserProfile(uid, {
     ...profileState.current,
+    title: safe.title,
     titleSurvey: safe,
   });
 
@@ -558,33 +565,39 @@ function renderTitleState(titleState) {
 }
 
 function computeTitleResult(answers) {
-  const scoreMap = new Map();
+  const scores = {};
+  TITLE_SURVEY_STATS.forEach((key) => {
+    scores[key] = 0;
+  });
+
   TITLE_SURVEY_TEMPLATE.questions.forEach((question, index) => {
     const selectedKey = answers[index];
     const option = question.options.find((item) => item.key === selectedKey);
-    if (!option) return;
-    Object.entries(option.weights || {}).forEach(([resultKey, points]) => {
-      scoreMap.set(
-        resultKey,
-        (scoreMap.get(resultKey) || 0) + Number(points || 0),
-      );
-    });
+    const stat = option?.stat;
+    if (!stat) return;
+    scores[stat] = (scores[stat] || 0) + 1;
   });
 
-  let bestKey = Object.keys(TITLE_SURVEY_TEMPLATE.results)[0] || "Vanguard";
+  let bestStat = TITLE_SURVEY_STATS[0] || "Physical";
   let bestScore = -Infinity;
-  Object.keys(TITLE_SURVEY_TEMPLATE.results).forEach((key) => {
-    const score = scoreMap.get(key) || 0;
+  TITLE_SURVEY_STATS.forEach((key) => {
+    const score = Number(scores[key] || 0);
     if (score > bestScore) {
-      bestKey = key;
+      bestStat = key;
       bestScore = score;
     }
   });
 
+  const title = TITLE_SURVEY_TITLE_BY_STAT[bestStat] || "Unassigned";
+  const breakdown = TITLE_SURVEY_STATS.map(
+    (key) => `${key}: ${scores[key] || 0}`,
+  ).join(" • ");
+
   return {
-    key: bestKey,
-    title: bestKey,
-    description: TITLE_SURVEY_TEMPLATE.results[bestKey] || "",
+    key: bestStat,
+    title,
+    scores,
+    description: breakdown,
   };
 }
 
@@ -614,6 +627,7 @@ function setActiveSurveyDot(step) {
 function renderSurveyQuestion() {
   const question = TITLE_SURVEY_TEMPLATE.questions[surveyState.step];
   if (!question) return;
+  const showOptionDetail = question.id === "rare-ability";
 
   setText(
     "tsStepLabel",
@@ -640,7 +654,11 @@ function renderSurveyQuestion() {
           <span class="ts-chipIcon"><i class="${escapeHtml(option.icon)}"></i></span>
           <span class="ts-chipText">
             <span class="ts-chipLabel">${escapeHtml(option.label)}</span>
-            <span class="ts-chipSub">${escapeHtml(option.sublabel)}</span>
+            ${
+              showOptionDetail && option.sublabel
+                ? `<span class="ts-chipSub">${escapeHtml(option.sublabel)}</span>`
+                : ""
+            }
           </span>
         </button>
       `,
@@ -967,6 +985,7 @@ function bindTitleSurvey(profileState, getUser) {
         title: result.title,
         titleKey: result.key,
         description: result.description,
+        scores: result.scores,
         answers: surveyState.answers.map((answerKey, index) => {
           const question = TITLE_SURVEY_TEMPLATE.questions[index];
           const option = question.options.find(
@@ -976,6 +995,7 @@ function bindTitleSurvey(profileState, getUser) {
             questionId: question.id,
             answerKey,
             answerLabel: option?.label || "",
+            stat: option?.stat || "",
           };
         }),
         completedAt: now,
@@ -993,6 +1013,7 @@ function bindTitleSurvey(profileState, getUser) {
         await mergeUserState(user.uid, {
           profile: {
             ...profileState.current,
+            title: savedTitleState?.title || "",
             titleSurvey: savedTitleState,
           },
         });
