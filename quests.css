@@ -1045,3 +1045,20 @@ input:focus-visible {
     text-align: left !important;
   }
 }
+
+@media (max-width: 640px) {
+  .qtabs {
+    width: 100%;
+    overflow: visible;
+    justify-content: center;
+  }
+
+  .qtabs .qtab:not([data-filter="all"]) {
+    display: none !important;
+  }
+
+  .qtabs .qtab[data-filter="all"] {
+    width: 100%;
+    justify-content: center;
+  }
+}
