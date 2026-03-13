@@ -58,7 +58,8 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "c",
-          label: "Always stay in the frontline of the team while in the dungeon.",
+          label:
+            "Always stay in the frontline of the team while in the dungeon.",
           sublabel: "Confidence",
           icon: "fa-solid fa-crown",
           stat: "Confidence",
@@ -89,7 +90,7 @@ const TITLE_SURVEY_TEMPLATE = {
           key: "a",
           label: "Attack nonstop until it falls.",
           sublabel: "Physical",
-          icon: "fa-solid fa-sword",
+          icon: "fa-solid fa-hand-fist",
           stat: "Physical",
         },
         {
@@ -108,14 +109,16 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "d",
-          label: "Hold your position and execute your role until the battle ends.",
+          label:
+            "Hold your position and execute your role until the battle ends.",
           sublabel: "Discipline",
           icon: "fa-solid fa-shield-halved",
           stat: "Discipline",
         },
         {
           key: "e",
-          label: "Stay calm under pressure and read every movement the boss makes.",
+          label:
+            "Stay calm under pressure and read every movement the boss makes.",
           sublabel: "Mental",
           icon: "fa-solid fa-eye",
           stat: "Mental",
@@ -157,7 +160,8 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "e",
-          label: "Endure the chaos and push through despite injuries around you.",
+          label:
+            "Endure the chaos and push through despite injuries around you.",
           sublabel: "Mental",
           icon: "fa-solid fa-anchor",
           stat: "Mental",
@@ -1174,4 +1178,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   renderAll(user);
 });
-  
