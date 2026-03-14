@@ -1,22 +1,31 @@
 .stats-main {
   min-height: auto;
+  min-width: 0;
 }
-
 
 .stats-grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  grid-auto-rows: min-content;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 14px;
   align-items: start;
-  grid-template-areas:
-    "radar streak"
-    "dopamine achievements";
 }
 
-.streak-panel {
-  align-self: start;
+.stats-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stats-col > .panel,
+.panel,
+.streak-panel,
+.dopamine-panel,
+.panel[aria-label="Achievements"],
+.panel[aria-label="Pillars Radar"] {
+  min-width: 0;
+  width: 100%;
 }
 
 .panel {
@@ -25,16 +34,6 @@
     box-shadow 0.22s ease,
     border-color 0.22s ease;
   will-change: transform;
-  min-width: 0;
-}
-
-.panel[aria-label="Pillars Radar"] {
-  height: fit-content !important;
-  align-self: start !important;
-}
-
-.panel[aria-label="Pillars Radar"] .balance-grid {
-  align-content: start;
 }
 
 .panel:hover {
@@ -44,48 +43,49 @@
 }
 
 .panel[aria-label="Pillars Radar"] {
-  grid-area: radar;
+  align-self: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  overflow: hidden;
 }
 
-.streak-panel {
-  grid-area: streak;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+.panel[aria-label="Pillars Radar"] .panel-head {
+  margin-bottom: 12px;
 }
 
-.dopamine-panel {
-  grid-area: dopamine;
-}
-
-.panel[aria-label="Achievements"] {
-  grid-area: achievements;
-  margin-top: 0;
+.panel[aria-label="Pillars Radar"] .balance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: 18px;
+  align-items: center;
+  align-content: start;
+  width: 100%;
+  min-width: 0;
 }
 
 .avg-stat {
-  margin-top: 10px;
+  grid-column: 1 / -1;
+  margin-top: 8px;
   font-weight: 800;
   color: var(--muted);
   opacity: 0.9;
 }
 
-.balance-grid {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 16px;
-  align-items: center;
-}
-
 .pentagon {
   display: grid;
   place-items: center;
-  padding: 10px 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
 }
 
 .pentagon svg {
-  width: min(260px, 100%);
+  display: block;
+  width: min(100%, 320px);
+  max-width: 100%;
   height: auto;
+  margin-inline: auto;
   opacity: 0.88;
   filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.18));
 }
@@ -100,25 +100,89 @@
 }
 
 .pillars {
-  padding-right: 6px;
+  width: 100%;
+  min-width: 0;
+  padding-right: 0;
 }
 
 .pillar-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 130px) minmax(0, 1fr) auto;
+  align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .pillar-name {
+  min-width: 0;
   opacity: 0.92;
   letter-spacing: 0.15px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.pillar-bar {
+  width: 100%;
+  min-width: 0;
 }
 
 .pillar-val {
   opacity: 0.78;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .bar-fill {
   transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
   filter: saturate(0.92);
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.top-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.top-actions {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.profile-name,
+.profile-xp,
+.xpbar {
+  min-width: 0;
+}
+
+.profile-xp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.profile-level,
+.profile-xptext {
+  white-space: nowrap;
+}
+
+.xpbar {
+  width: 100%;
+}
+
+.streak-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .streak-pill {
@@ -130,11 +194,13 @@
   border: 1px solid var(--stroke);
   background: color-mix(in srgb, var(--card) 85%, transparent);
   box-shadow: var(--shadow);
+  max-width: 100%;
 }
 
 .streak-ico {
   width: 34px;
   height: 34px;
+  flex: 0 0 34px;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -158,12 +224,14 @@
   font-weight: 900;
   font-size: 1.2rem;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .streak-lbl {
   color: var(--muted);
   font-weight: 700;
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .streak-panel .panel-head {
@@ -188,6 +256,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  min-width: 0;
   position: relative;
   overflow: hidden;
 }
@@ -217,9 +286,10 @@
 }
 
 .calendar-head {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
   align-items: center;
+  gap: 10px;
 }
 
 .cal-title {
@@ -227,6 +297,11 @@
   font-size: 1.02rem;
   opacity: 0.92;
   letter-spacing: 0.22px;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cal-nav {
@@ -276,6 +351,7 @@
   text-transform: uppercase;
   color: color-mix(in srgb, var(--text) 62%, transparent);
   opacity: 0.9;
+  min-width: 0;
 }
 
 .calendar-grid {
@@ -285,11 +361,13 @@
   grid-auto-rows: 1fr;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   padding-top: 2px;
 }
 
 .cal-cell {
   aspect-ratio: 1 / 1;
+  min-width: 0;
   min-height: 34px;
   border-radius: 10px;
   display: grid;
@@ -308,6 +386,7 @@
     filter 0.14s ease;
   font-size: 0.84rem;
   letter-spacing: 0.12px;
+  position: relative;
 }
 
 .cal-cell:hover {
@@ -317,10 +396,23 @@
 }
 
 .cal-cell.is-on {
-  background: color-mix(in srgb, var(--aquaSoft) 60%, var(--card));
-  border-color: rgba(34, 211, 238, 0.26);
-  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.14);
+  background: rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.4),
+    0 8px 18px rgba(34, 211, 238, 0.25);
   color: color-mix(in srgb, var(--text) 92%, transparent);
+}
+
+.cal-cell.is-on::after {
+  content: "✓";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #22d3ee;
+  opacity: 0.9;
 }
 
 .cal-cell.is-today {
@@ -343,7 +435,7 @@
   border-radius: 16px;
   background: color-mix(in srgb, var(--card) 78%, transparent);
   box-shadow: none;
-  padding: 12px 12px;
+  padding: 12px;
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -374,21 +466,24 @@
 
 .dopamine-panel .panel-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dopamine-panel .panel-note {
   opacity: 0.74;
   font-size: 0.9rem;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
 }
 
 .dopamine-graph-svg {
   width: 100%;
   display: block;
   height: 320px;
+  min-height: 220px;
   cursor: pointer;
   border-radius: 18px;
   border: 1px solid var(--stroke);
@@ -448,11 +543,13 @@
   font-size: 1.02rem;
   font-weight: 900;
   letter-spacing: 0.2px;
+  min-width: 0;
 }
 
 .dpl-close {
   width: 34px;
   height: 34px;
+  flex: 0 0 34px;
   border-radius: 10px;
   border: 1px solid var(--stroke);
   background: color-mix(in srgb, var(--card) 85%, transparent);
@@ -478,13 +575,14 @@
 
 .dpl-item {
   display: grid;
-  grid-template-columns: 20px 1fr;
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   border: 1px solid var(--stroke);
   border-radius: 12px;
   padding: 9px 10px;
   background: color-mix(in srgb, var(--card2) 68%, transparent);
+  min-width: 0;
 }
 
 .dpl-item input {
@@ -494,6 +592,8 @@
 .dpl-item span {
   line-height: 1.35;
   font-weight: 700;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .dpl-foot {
@@ -584,13 +684,14 @@
   border-radius: 16px;
   background: color-mix(in srgb, var(--card) 80%, transparent);
   box-shadow: var(--shadow);
-  padding: 12px 12px;
+  padding: 12px;
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   overflow: hidden;
   position: relative;
+  min-width: 0;
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -639,6 +740,10 @@
   opacity: 0.95;
 }
 
+.ach-meta {
+  min-width: 0;
+}
+
 .ach-title {
   font-weight: 950;
   letter-spacing: 0.2px;
@@ -663,6 +768,7 @@
   border: 1px solid var(--stroke2);
   color: color-mix(in srgb, var(--text) 68%, var(--muted));
   background: color-mix(in srgb, var(--card) 75%, transparent);
+  white-space: nowrap;
 }
 
 .ach-tag.is-on {
@@ -671,15 +777,29 @@
   color: color-mix(in srgb, var(--text) 84%, var(--muted));
 }
 
+@media (max-width: 1280px) {
+  .panel[aria-label="Pillars Radar"] .balance-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .pentagon {
+    padding: 4px 4px 0;
+  }
+
+  .pentagon svg {
+    width: min(100%, 300px);
+  }
+}
+
 @media (max-width: 1100px) {
   .stats-grid {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "radar"
-      "streak"
-      "dopamine"
-      "achievements";
-    align-items: start;
+    gap: 14px;
+  }
+
+  .stats-col {
+    gap: 14px;
   }
 
   .ach-grid {
@@ -690,285 +810,50 @@
   .dopamine-graph-svg {
     height: 300px;
   }
+}
 
-  .balance-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+@media (max-width: 900px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .pentagon {
-    padding: 8px 6px 2px;
+  .top-actions {
+    justify-content: flex-start;
+    width: 100%;
   }
 
-  .calendar-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-  }
-
-  .cal-cell {
-    min-height: 36px;
+  .streak-pill {
+    width: fit-content;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 720px) {
-  .ach-grid {
+  .panel[aria-label="Pillars Radar"] .balance-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dopamine-panel .panel-note {
-    white-space: normal;
-  }
-
-  .dopamine-graph-svg {
-    height: 270px;
-  }
-
-  .calendar-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-  }
-
-  .cal-cell {
-    min-height: 38px;
-  }
-}
-
-@media (max-width: 520px) {
-  .streak-pill {
-    padding: 8px 12px;
-    gap: 8px;
-  }
-
-  .streak-ico {
-    width: 32px;
-    height: 32px;
-  }
-
-  .calendar-grid {
-    gap: 7px;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-  }
-
-  .cal-cell {
-    min-height: 40px;
-    border-radius: 10px;
-  }
-
-  .calendar-dow {
-    gap: 7px;
-  }
-
-  .dopamine-graph-svg {
-    height: 250px;
-  }
-
-  .streak-metrics {
-    grid-template-columns: 1fr;
-  }
-}
-
-.stats-grid {
-  grid-template-columns: 1.15fr 0.85fr;
-  grid-auto-rows: minmax(0, auto);
-}
-
-.stats-col {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-width: 0;
-}
-
-.stats-col > .panel {
-  min-width: 0;
-}
-
-.avg-stat {
-  grid-column: 1 / -1;
-}
-
-.balance-grid {
-  grid-template-columns: 1.05fr 0.95fr;
-  align-items: center;
-}
-
-.panel[aria-label="Pillars Radar"] .balance-grid {
-  align-content: start;
-}
-
-.cal-cell.is-on {
-  background: rgba(34, 211, 238, 0.18);
-  border: 1px solid rgba(34, 211, 238, 0.5);
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.4),
-    0 8px 18px rgba(34, 211, 238, 0.25);
-  position: relative;
-}
-
-.cal-cell.is-on::after {
-  content: "✓";
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #22d3ee;
-  opacity: 0.9;
-}
-
-/* ===== responsive patch ===== */
-.stats-main,
-.stats-grid,
-.stats-col,
-.balance-grid,
-.pillars,
-.streak-wrap,
-.calendar-wrap,
-.ach-grid,
-.dpl-dialog {
-  min-width: 0;
-}
-
-@media (max-width: 920px) {
-  .stats-grid,
-  .balance-grid,
-  .ach-grid,
-  .streak-metrics {
-    grid-template-columns: 1fr !important;
-  }
-
-  .panel-head,
-  .streak-pill {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .panel[aria-label="Achievements"] {
-    margin-top: 0;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid {
     gap: 12px;
   }
 
-  .panel {
-    padding: 14px;
+  .pentagon svg {
+    width: min(100%, 260px);
   }
 
   .pillar-row {
-    grid-template-columns: 84px 1fr 48px;
-  }
-
-  .calendar-dow,
-  .calendar-grid {
-    gap: 6px;
-  }
-
-  .cal-cell {
-    min-height: 34px;
-    font-size: 12px;
-    border-radius: 10px;
-  }
-
-  .dpl-dialog {
-    width: min(100%, calc(100vw - 20px));
-    padding: 16px;
-  }
-
-  .dpl-head,
-  .dpl-foot {
-    flex-wrap: wrap;
+    grid-template-columns: minmax(92px, 110px) minmax(0, 1fr) auto;
     gap: 10px;
   }
 
-  .dopamine-graph-svg {
-    height: 220px;
-  }
-}
-
-@media (max-width: 480px) {
-  .streak-pill,
-  .metric,
-  .ach-card {
-    padding: 12px;
+  .pillar-name {
+    font-size: 0.9rem;
   }
 
-  .streak-num {
-    font-size: 1.4rem;
+  .pillar-val {
+    font-size: 0.84rem;
   }
 
-  .cal-title {
-    font-size: 0.95rem;
-  }
-}
-
-.topbar,
-.top-left,
-.profile-xp,
-.stats-main,
-.stats-grid,
-.stats-col,
-.balance-grid,
-.pillars,
-.streak-wrap,
-.calendar-wrap,
-.ach-grid,
-.ach-card,
-.metric,
-.dpl-dialog {
-  min-width: 0;
-}
-
-.top-left {
-  min-width: 0;
-  flex: 1 1 320px;
-}
-
-.profile-xp {
-  flex-wrap: wrap;
-}
-
-.pillar-name,
-.ach-title,
-.ach-sub,
-.panel-note,
-.metric-k,
-.metric-v {
-  overflow-wrap: anywhere;
-}
-
-.dopamine-panel .panel-head,
-.calendar-head,
-.dpl-head,
-.dpl-foot {
-  flex-wrap: wrap;
-}
-
-@media (max-width: 920px) {
-  .topbar {
-    align-items: flex-start;
-  }
-
-  .top-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 768px) {
-  .topbar {
-    flex-direction: column;
-  }
-
-  .top-left,
-  .top-actions,
-  .streak-pill {
-    width: 100%;
-  }
-
-  .streak-pill {
-    justify-content: flex-start;
-    border-radius: 18px;
+  .ach-grid {
+    grid-template-columns: 1fr;
   }
 
   .ach-card {
@@ -979,221 +864,176 @@
     grid-column: 1 / -1;
     justify-self: start;
   }
-}
 
-@media (max-width: 640px) {
-  .profile-name {
-    font-size: clamp(1.1rem, 6vw, 1.4rem);
+  .calendar-dow {
+    gap: 6px;
   }
 
-  .profile-xp {
-    gap: 6px 10px;
-  }
-
-  .panel-head,
-  .calendar-head {
-    align-items: flex-start;
+  .calendar-grid {
+    gap: 6px;
   }
 
   .calendar-dow > div {
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+  }
+
+  .cal-cell {
+    min-height: 36px;
+    font-size: 0.78rem;
+  }
+
+  .dopamine-graph-svg {
+    height: 270px;
+  }
+
+  .streak-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dpl-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 560px) {
+  .profile-level,
+  .profile-xptext,
+  .streak-num,
+  .streak-lbl {
+    white-space: normal;
+  }
+
+  .panel[aria-label="Pillars Radar"] {
+    overflow: visible;
+  }
+
+  .pentagon {
+    padding: 0;
+  }
+
+  .pentagon svg {
+    width: min(100%, 220px);
+  }
+
+  .pillars {
+    display: grid;
+    gap: 10px;
   }
 
   .pillar-row {
-    grid-template-columns: 78px 1fr 44px;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .pillar-bar {
+    width: 100%;
+  }
+
+  .pillar-val {
+    text-align: left;
+    white-space: normal;
+    font-size: 0.82rem;
+  }
+
+  .streak-pill {
+    padding: 8px 12px;
     gap: 8px;
+    border-radius: 18px;
+  }
+
+  .streak-ico {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .dopamine-graph-svg {
+    height: 248px;
+  }
+
+  .dpl-dialog {
+    width: calc(100vw - 18px);
+    max-height: calc(100vh - 18px);
+    padding: 14px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .pentagon svg {
+    width: min(100%, 190px);
+  }
+
+  .pillar-name {
+    font-size: 0.86rem;
+  }
+
+  .pillar-val {
+    font-size: 0.78rem;
+  }
+
+  .calendar-wrap {
+    padding: 10px;
+  }
+
+  .calendar-head {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+    gap: 8px;
+  }
+
+  .cal-title {
+    font-size: 0.94rem;
+  }
+
+  .calendar-dow {
+    gap: 4px;
+  }
+
+  .calendar-grid {
+    gap: 4px;
+  }
+
+  .calendar-dow > div {
+    font-size: 0.58rem;
+    letter-spacing: 0.04em;
+  }
+
+  .cal-cell {
+    min-height: 32px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+  }
+
+  .cal-cell.is-on::after {
+    top: 4px;
+    right: 5px;
+    font-size: 9px;
   }
 
   .dopamine-graph-svg {
     height: 220px;
   }
-}
 
-@media (max-width: 480px) {
-  .topbar,
-  .panel,
-  .calendar-wrap,
-  .dpl-dialog {
-    padding: 12px;
+  .dopamine-graph-svg .semantic-axis text {
+    font-size: 8px;
+    letter-spacing: 0.12em;
   }
 
-  .streak-pill,
-  .metric,
-  .ach-card {
-    padding: 12px;
-  }
-
-  .cal-cell {
-    min-height: 30px;
-    font-size: 11px;
-  }
-
-  .calendar-dow,
-  .calendar-grid {
-    gap: 5px;
+  .dopamine-graph-svg .line-x text {
+    font-size: 9px;
   }
 
   .ach-card {
+    padding: 10px;
     gap: 10px;
   }
 
-  .dpl-item {
-    grid-template-columns: 1fr;
+  .ach-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
   }
 }
-
-.stats-main .topbar,
-.stats-main .top-left,
-.stats-main .top-actions,
-.stats-main .profile-xp,
-.stats-main .xpbar {
-  min-width: 0;
-}
-
-.stats-main .topbar {
-  align-items: center;
-}
-
-.stats-main .top-left {
-  flex: 1 1 auto;
-  width: auto;
-  max-width: 760px;
-}
-
-.stats-main .top-actions {
-  width: auto;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-}
-
-.stats-main .profile-xp {
-  gap: 8px 10px;
-  margin-top: 6px;
-}
-
-.stats-main .xpbar {
-  width: min(100%, 640px);
-  max-width: 640px;
-}
-
-.stats-main .streak-pill {
-  width: auto;
-  justify-content: flex-start;
-  border-radius: 999px;
-}
-
-@media (max-width: 920px) {
-  .stats-main .topbar {
-    align-items: center;
-    gap: 14px;
-  }
-
-  .stats-main .top-actions {
-    width: auto;
-    justify-content: flex-end;
-  }
-
-  .stats-main .streak-pill {
-    width: auto;
-  }
-}
-
-@media (max-width: 780px) {
-  .stats-main .topbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 14px;
-  }
-
-  .stats-main .top-left,
-  .stats-main .top-actions {
-    width: auto;
-    flex: 0 1 auto;
-  }
-
-  .stats-main .top-actions {
-    justify-content: flex-start;
-  }
-
-  .stats-main .streak-pill {
-    align-self: flex-start;
-    width: auto;
-    max-width: 100%;
-    padding: 10px 14px;
-    border-radius: 999px;
-  }
-
-  .stats-main .profile-xp {
-    gap: 6px 10px;
-  }
-
-  .stats-main .xpbar {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-main .topbar {
-    padding: 13px;
-    gap: 10px;
-  }
-
-  .stats-main .profile-name {
-    font-size: clamp(1.08rem, 5vw, 1.28rem);
-  }
-
-  .stats-main .profile-level {
-    min-height: 32px;
-    padding: 0 10px;
-    font-size: 0.9rem;
-  }
-
-  .stats-main .profile-xptext {
-    font-size: 0.88rem;
-  }
-
-  .stats-main .xpbar-bg {
-    height: 11px;
-  }
-
-  .stats-main .streak-pill {
-    padding: 9px 12px;
-    gap: 8px;
-  }
-
-  .stats-main .streak-ico {
-    width: 32px;
-    height: 32px;
-  }
-
-  .stats-main .streak-num {
-    font-size: 1.08rem;
-  }
-
-  .stats-main .streak-lbl {
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-main .topbar {
-    padding: 12px;
-  }
-
-  .stats-main .profile-xp {
-    margin-top: 5px;
-  }
-
-  .stats-main .xpbar {
-    margin-top: 10px;
-  }
-
-  .stats-main .streak-pill {
-    padding: 8px 11px;
-  }
-}
-
-
