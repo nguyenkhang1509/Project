@@ -312,6 +312,147 @@ function setCheckInButtonState(isDone) {
   btn.textContent = isDone ? "Check-In Completed" : "Start Check-In";
 }
 
+function getRecentOverview(entries, streak, todayEntry) {
+  const slice = entries.slice(0, 7);
+  const moods = slice
+    .map((e) => Number(e?.mood))
+    .filter((v) => Number.isFinite(v) && v >= 1 && v <= 5);
+  const avgMood = moods.length
+    ? moods.reduce((a, b) => a + b, 0) / moods.length
+    : null;
+
+  const focusMap = new Map();
+  slice.forEach((e) => {
+    const focus = Array.isArray(e?.focus) ? e.focus : [];
+    focus.forEach((tag) => {
+      const key = String(tag || "").trim();
+      if (!key) return;
+      focusMap.set(key, (focusMap.get(key) || 0) + 1);
+    });
+  });
+
+  const focusLeader =
+    [...focusMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ||
+    "No pattern yet";
+
+  return {
+    count: slice.length,
+    streak,
+    avgMood,
+    avgMoodWord: Number.isFinite(avgMood) ? moodWord(Math.round(avgMood)) : "—",
+    focusLeader,
+    latest: slice[0]?.date ? formatShortDate(slice[0].date) : "No entries yet",
+    today: todayEntry ? "Logged today" : "Waiting for today",
+  };
+}
+
+function buildRecentPreview(entries, streak, todayEntry) {
+  const info = getRecentOverview(entries, streak, todayEntry);
+  const el = document.createElement("div");
+  el.className = "jc-recentPreview";
+
+  el.innerHTML = `
+    <div class="jc-rpTop">
+      <div class="jc-rpBadge">
+        <i class="fa-regular fa-clock"></i>
+        <span>Progress history</span>
+      </div>
+      <div class="jc-rpState">${escapeHTML(info.today)}</div>
+    </div>
+
+    <div class="jc-rpBody">
+      <div class="jc-rpCopy">
+        <div class="jc-rpTitle">A clean view of your recent check-ins.</div>
+        <div class="jc-rpText">
+          Expand this section to see your last seven entries with mood, energy, focus, and reflection history.
+        </div>
+      </div>
+
+      <div class="jc-rpStats">
+        <div class="jc-rpStat">
+          <span class="jc-rpK">Entries</span>
+          <span class="jc-rpV">${escapeHTML(String(info.count))}/7</span>
+        </div>
+        <div class="jc-rpStat">
+          <span class="jc-rpK">Mood</span>
+          <span class="jc-rpV">${escapeHTML(info.avgMoodWord)}</span>
+        </div>
+        <div class="jc-rpStat">
+          <span class="jc-rpK">Focus</span>
+          <span class="jc-rpV">${escapeHTML(info.focusLeader)}</span>
+        </div>
+        <div class="jc-rpStat">
+          <span class="jc-rpK">Last</span>
+          <span class="jc-rpV">${escapeHTML(info.latest)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="jc-rpFoot">
+      <span class="jc-rpChip">
+        <i class="fa-solid fa-fire"></i>
+        <span>${escapeHTML(`${info.streak} day streak`)}</span>
+      </span>
+      <span class="jc-rpChip">
+        <i class="fa-solid fa-chevron-down"></i>
+        <span>Tap to open details</span>
+      </span>
+    </div>
+  `;
+
+  return el;
+}
+
+function buildRecentCard(entry) {
+  const card = document.createElement("article");
+  const mood = clamp(Number(entry?.mood || 3), 1, 5);
+  const rest = clamp(Number(entry?.rest || 55), 0, 100);
+  const focus = Array.isArray(entry?.focus) ? entry.focus : [];
+  const reflection = String(entry?.reflection || "").trim();
+  const date = entry?.date ? formatShortDate(String(entry.date)) : "—";
+  const weekday = entry?.date ? formatWeekdayShort(String(entry.date)) : "—";
+
+  const tags = focus.length
+    ? focus
+        .slice(0, 4)
+        .map((t) => `<span class="jc-tag">${escapeHTML(t)}</span>`)
+        .join("")
+    : `<span class="jc-tag is-muted">No focus tags</span>`;
+
+  card.className = "jc-item";
+  card.innerHTML = `
+    <div class="jc-itemTop">
+      <div class="jc-itemDateWrap">
+        <div class="jc-itemDate">${escapeHTML(date)}</div>
+        <div class="jc-itemStamp">${escapeHTML(weekday)}</div>
+      </div>
+      <div class="jc-itemMood">
+        <i class="${escapeHTML(moodIconClass(mood))}"></i>
+        <span>${escapeHTML(moodWord(mood))}</span>
+      </div>
+    </div>
+
+    <div class="jc-itemStats">
+      <span class="jc-miniStat">
+        <i class="fa-solid fa-bolt"></i>
+        <span>${escapeHTML(restLabel(rest))}</span>
+      </span>
+      <span class="jc-miniStat">
+        <i class="fa-solid fa-bullseye"></i>
+        <span>${escapeHTML(`${focus.length} focus`)}</span>
+      </span>
+    </div>
+
+    <div class="jc-itemText">
+      ${reflection ? escapeHTML(reflection) : "No reflection logged for this day."}
+    </div>
+
+    <div class="jc-itemTags">${tags}</div>
+  `;
+
+  return card;
+}
+
 function renderRecent() {
   const entries = readEntries();
   const streak = computeStreak(entries);
@@ -329,45 +470,38 @@ function renderRecent() {
     lastEntry.textContent = entries[0]?.date
       ? formatShortDate(entries[0].date)
       : "—";
+
   setCheckInButtonState(!!todayEntry);
   setTodayContext(todayEntry);
   setSnapshot(todayEntry);
 
   const list = document.getElementById("recentList");
   if (!list) return;
+
   list.innerHTML = "";
 
   const slice = entries.slice(0, 7);
+  list.appendChild(buildRecentPreview(slice, streak, todayEntry));
+
+  const detailWrap = document.createElement("div");
+  detailWrap.className = "jc-historyGrid";
+
   if (!slice.length) {
     const empty = document.createElement("div");
-    empty.className = "jc-item";
-    empty.innerHTML =
-      `<div class="jc-itemTop"><div class="jc-itemDate">No entries yet</div></div>` +
-      `<div class="jc-itemText">Start a check-in to begin tracking your patterns.</div>`;
-    list.appendChild(empty);
-    renderWeekStrip(entries);
-    renderTrend(entries);
-    return;
+    empty.className = "jc-item jc-emptyCard";
+    empty.innerHTML = `
+      <div class="jc-emptyIcon"><i class="fa-regular fa-bookmark"></i></div>
+      <div class="jc-emptyTitle">No entries yet</div>
+      <div class="jc-emptyText">Start a check-in to begin building your recent history.</div>
+    `;
+    detailWrap.appendChild(empty);
+  } else {
+    slice.forEach((entry) => {
+      detailWrap.appendChild(buildRecentCard(entry));
+    });
   }
 
-  slice.forEach((e) => {
-    const card = document.createElement("div");
-    card.className = "jc-item";
-    const tags = (Array.isArray(e.focus) ? e.focus : []).slice(0, 5);
-    const tagHtml = tags
-      .map((t) => `<span class="jc-tag">${escapeHTML(t)}</span>`)
-      .join("");
-    const text = String(e.reflection || "").trim();
-    const date = e.date ? formatShortDate(String(e.date)) : "—";
-    card.innerHTML = `
-      <div class="jc-itemTop">
-        <div class="jc-itemDate">${escapeHTML(date)}</div>
-        <div class="jc-itemTags">${tagHtml}</div>
-      </div>
-      <div class="jc-itemText">${text ? escapeHTML(text) : "—"}</div>
-    `;
-    list.appendChild(card);
-  });
+  list.appendChild(detailWrap);
 
   renderWeekStrip(entries);
   renderTrend(entries);
@@ -597,7 +731,7 @@ function initRecentToggle() {
   if (!toggle) return;
 
   const prefKey = getStorageKey(RECENT_COLLAPSE_KEY_BASE);
-  const stored = readJSON(prefKey, false);
+  const stored = readJSON(prefKey, true);
   setRecentCollapsed(!!stored);
 
   toggle.addEventListener("click", () => {
