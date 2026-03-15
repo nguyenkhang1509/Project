@@ -165,16 +165,75 @@ function normalizeRank(rank) {
   return "E";
 }
 
-function hunterFigureSrc(rank, moodKey) {
-  const safeRank = normalizeRank(rank);
-  const files = {
-    exhausted: "Exhausted.png",
-    "warming-up": "Warming up.png",
-    focused: "Focused.jpg",
-    "locked-in": "Locked in.png",
+function safeString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function heroCharacterKeyFromProfile(profile) {
+  const bySurveyKey = {
+    Physical: "vanguard",
+    Intellectual: "insightphantom",
+    Confidence: "emperor",
+    Discipline: "saint",
+    Mental: "reaper",
   };
-  const file = files[moodKey] || files.exhausted;
-  return `./${safeRank}-${file}`;
+
+  const surveyKey = safeString(profile?.titleSurvey?.titleKey);
+  if (surveyKey && bySurveyKey[surveyKey]) return bySurveyKey[surveyKey];
+
+  const title = safeString(profile?.title);
+  const surveyTitle = safeString(profile?.titleSurvey?.title);
+  const legacyKey = safeString(profile?.titleSurvey?.titleKey);
+  const combined = `${title} ${surveyTitle} ${legacyKey}`.toLowerCase();
+
+  if (combined.includes("vanguard")) return "vanguard";
+  if (combined.includes("phantom")) return "insightphantom";
+  if (combined.includes("emperor")) return "emperor";
+  if (combined.includes("saint")) return "saint";
+  if (combined.includes("reaper")) return "reaper";
+
+  return "";
+}
+
+function heroMoodFileKey(moodKey) {
+  const key = String(moodKey || "")
+    .trim()
+    .toLowerCase();
+
+  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
+    return "warmingup";
+  }
+  if (key === "locked-in" || key === "lockedin") return "lockedin";
+  if (key === "focused") return "focused";
+  return "exhausted";
+}
+
+function hunterFigureSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const characterKey = heroCharacterKeyFromProfile(profile);
+  if (!characterKey) return "./Unknown.png";
+  const moodFile = heroMoodFileKey(moodKey);
+  return `./${safeRank}_${characterKey}_${moodFile}.png`;
+}
+
+function setImageWithFallback(imgEl, candidates) {
+  if (!imgEl) return;
+  const list = Array.isArray(candidates)
+    ? candidates.map((s) => safeString(s)).filter(Boolean)
+    : [];
+  if (!list.length) return;
+
+  let index = 0;
+  imgEl.onerror = () => {
+    index += 1;
+    if (index >= list.length) {
+      imgEl.onerror = null;
+      return;
+    }
+    imgEl.src = list[index];
+  };
+
+  imgEl.src = list[0];
 }
 
 function getTodayCompletedTaskCount() {
@@ -287,25 +346,60 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   const mood = getHunterMoodData(taskCount, level);
   const user = getCurrentUser();
   const cached = user?.uid ? readCachedAccountState(user.uid) : null;
+  const profile =
+    (cached?.profile && typeof cached.profile === "object" ? cached.profile : null) ||
+    readUserProfile(user?.uid);
   const rank = normalizeRank(cached?.rank);
-  const figureSrc =
+  const characterKey = heroCharacterKeyFromProfile(profile);
+  const hasTitle =
+    !!safeString(profile?.title) || !!safeString(profile?.titleSurvey?.title);
+
+  const savedFigureSrc =
     cached?.heroStatus?.date === getISODate() &&
     typeof cached.heroStatus.figureSrc === "string"
       ? cached.heroStatus.figureSrc
-      : hunterFigureSrc(rank, mood.key);
+      : "";
+  const computedFigureSrc = hunterFigureSrcFromProfileRankAndMoodKey(
+    profile,
+    rank,
+    mood.key,
+  );
+  const fallbackRankFigureSrc =
+    characterKey && normalizeRank(rank) !== "E"
+      ? hunterFigureSrcFromProfileRankAndMoodKey(profile, "E", mood.key)
+      : "";
+  const genericMoodSrc =
+    mood.key === "focused"
+      ? "./Focused.png"
+      : mood.key === "warming-up"
+        ? "./Warming up.png"
+        : mood.key === "locked-in"
+          ? "./Locked in.png"
+          : "";
+  const candidates = [
+    savedFigureSrc,
+    computedFigureSrc,
+    fallbackRankFigureSrc,
+    genericMoodSrc,
+    "./Unknown.png",
+  ];
 
   tile.dataset.mood = mood.key;
+  tile.dataset.character = characterKey || "unknown";
+  tile.dataset.rank = rank || "E";
   moodEl.textContent = mood.label;
   pillEl.textContent = mood.pill;
   tasksEl.textContent = String(taskCount);
   modeEl.textContent = mood.mode;
   hintEl.textContent = mood.hint;
   sublineEl.textContent = mood.subline;
-  descEl.textContent = mood.desc;
+  descEl.textContent = hasTitle
+    ? mood.desc
+    : "Select your title in the Profile page to unlock your character.";
   xpValueEl.textContent = String(totalXP);
   xpMiniTextEl.textContent = `${totalXP} XP`;
   xpMiniFillEl.style.width = `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`;
-  figureEl.src = figureSrc;
+  setImageWithFallback(figureEl, candidates);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

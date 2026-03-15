@@ -753,11 +753,24 @@ input:focus-visible {
   width: auto;
   height: auto;
   object-fit: contain;
-  transform: translateY(0) scale(1.12);
+  --hunter-figure-scale: 1.12;
+  --hunter-figure-y: 0px;
+  transform: translateY(var(--hunter-figure-y)) scale(var(--hunter-figure-scale));
   transform-origin: center bottom;
   image-rendering: pixelated;
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45))
     drop-shadow(0 0 18px rgba(34, 211, 238, 0.12));
+}
+
+.hunter-tile[data-character="insightphantom"] .hunter-figure {
+  --hunter-figure-scale: 1.25;
+  --hunter-figure-y: clamp(18px, 1vw, 10px);
+  position: absolute;
+  left: 50%;
+  bottom: clamp(88px, 16vw, 96px);
+  height: min(300px, calc(100% - 120px));
+  transform: translateX(-50%) translateY(var(--hunter-figure-y))
+    scale(var(--hunter-figure-scale));
 }
 
 .hunter-xp-inline {

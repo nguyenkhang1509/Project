@@ -88,16 +88,55 @@ function heroMoodKeyFromTaskCount(taskCount) {
   return "locked-in";
 }
 
-function heroFigureSrcFromRankAndMoodKey(rank, moodKey) {
-  const safeRank = normalizeRank(rank);
-  const files = {
-    exhausted: "Exhausted.png",
-    "warming-up": "Warming up.png",
-    focused: "Focused.png",
-    "locked-in": "Locked in.png",
+function safeString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function heroCharacterKeyFromProfile(profile) {
+  const bySurveyKey = {
+    Physical: "vanguard",
+    Intellectual: "insightphantom",
+    Confidence: "emperor",
+    Discipline: "saint",
+    Mental: "reaper",
   };
-  const file = files[moodKey] || files.exhausted;
-  return `./${safeRank}-${file}`;
+
+  const surveyKey = safeString(profile?.titleSurvey?.titleKey);
+  if (surveyKey && bySurveyKey[surveyKey]) return bySurveyKey[surveyKey];
+
+  const title = safeString(profile?.title);
+  const surveyTitle = safeString(profile?.titleSurvey?.title);
+  const legacyKey = safeString(profile?.titleSurvey?.titleKey);
+  const combined = `${title} ${surveyTitle} ${legacyKey}`.toLowerCase();
+
+  if (combined.includes("vanguard")) return "vanguard";
+  if (combined.includes("phantom")) return "insightphantom";
+  if (combined.includes("emperor")) return "emperor";
+  if (combined.includes("saint")) return "saint";
+  if (combined.includes("reaper")) return "reaper";
+
+  return "";
+}
+
+function heroMoodFileKey(moodKey) {
+  const key = String(moodKey || "")
+    .trim()
+    .toLowerCase();
+
+  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
+    return "warmingup";
+  }
+  if (key === "locked-in" || key === "lockedin") return "lockedin";
+  if (key === "focused") return "focused";
+  return "exhausted";
+}
+
+function heroFigureSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const characterKey = heroCharacterKeyFromProfile(profile);
+  if (!characterKey) return "./Unknown.png";
+  const moodFile = heroMoodFileKey(moodKey);
+  return `./${safeRank}_${characterKey}_${moodFile}.png`;
 }
 
 function safeParseJSON(raw, fallback) {
@@ -292,7 +331,11 @@ function buildLocalState(uid, seed = {}) {
   const tasksDone = Object.values(completed).filter(Boolean).length;
   const heroRank = normalizeRank(rank);
   const moodKey = heroMoodKeyFromTaskCount(tasksDone);
-  const figureSrc = heroFigureSrcFromRankAndMoodKey(heroRank, moodKey);
+  const figureSrc = heroFigureSrcFromProfileRankAndMoodKey(
+    profile,
+    heroRank,
+    moodKey,
+  );
   const heroStatus = {
     date: todayIso,
     tasksDone,
