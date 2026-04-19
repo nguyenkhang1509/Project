@@ -1,7 +1,9 @@
 import {
   getCurrentUser,
   getStorageKey,
+  readCachedAccountState,
   readCachedUserProfile,
+  subscribeToUserState,
   syncUserState,
   writeCurrentUser,
 } from "./userStore.js";
@@ -45,31 +47,33 @@ function averageStat(stats) {
 function rankFromAverage(avg) {
   if (!Number.isFinite(avg)) return "-";
   if (avg >= 90) return "S";
-  if (avg >= 80) return "A";
+  if (avg >= 75) return "A";
   if (avg >= 60) return "B";
-  if (avg >= 40) return "C";
-  if (avg >= 20) return "D";
+  if (avg >= 45) return "C";
+  if (avg >= 25) return "D";
   return "E";
 }
 
-async function hydrateIdentity() {
+function renderIdentity() {
   let user = getCurrentUser();
   if (!user?.uid) return;
-
-  try {
-    await syncUserState(user.uid);
-    user = getCurrentUser() || user;
-  } catch (error) {
-    console.warn("Aura cloud sync failed:", error);
-  }
-
-  const profile = readCachedUserProfile(user.uid);
-  if (!user.stats && profile?.stats) {
-    user = { ...user, stats: profile.stats };
+  const accountState = readCachedAccountState(user.uid);
+  const profile =
+    (accountState?.profile && typeof accountState.profile === "object"
+      ? accountState.profile
+      : null) || readCachedUserProfile(user.uid);
+  const resolvedStats = accountState?.stats || profile?.stats || null;
+  if (!user.stats && resolvedStats) {
+    user = { ...user, stats: resolvedStats };
     writeCurrentUser(user);
   }
 
-  const displayName = user.displayName || user.name || user.username || "User";
+  const displayName =
+    accountState?.displayName ||
+    user.displayName ||
+    user.name ||
+    user.username ||
+    "User";
 
   const sideUser = document.getElementById("sideUser");
   const sideSub = document.getElementById("sideSub");
@@ -82,11 +86,16 @@ async function hydrateIdentity() {
   if (dashName) dashName.textContent = displayName;
 
   const xpKey = getStorageKey(XP_KEY_BASE);
-  const totalXp = Number(localStorage.getItem(xpKey) || "0") || 0;
+  const totalXp = Number.isFinite(Number(accountState?.totalXP))
+    ? Math.max(0, Number(accountState.totalXP) || 0)
+    : Number(localStorage.getItem(xpKey) || "0") || 0;
   const info = getLevelInfo(totalXp);
-  const stats = user.stats || profile?.stats || null;
+  const stats = accountState?.stats || user.stats || profile?.stats || null;
   const avg = averageStat(stats);
-  const rank = rankFromAverage(avg);
+  const rank =
+    typeof accountState?.rank === "string" && accountState.rank.trim()
+      ? accountState.rank.trim()
+      : rankFromAverage(avg);
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
@@ -96,6 +105,26 @@ async function hydrateIdentity() {
   if (sideSub) sideSub.textContent = `Rank ${rank}`;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  void hydrateIdentity();
+document.addEventListener("DOMContentLoaded", async () => {
+  let user = getCurrentUser();
+  if (!user?.uid) return;
+
+  try {
+    await syncUserState(user.uid);
+    user = getCurrentUser() || user;
+  } catch (error) {
+    console.warn("Aura cloud sync failed:", error);
+  }
+
+  renderIdentity();
+
+  subscribeToUserState(
+    user.uid,
+    () => {
+      renderIdentity();
+    },
+    (error) => {
+      console.warn("Aura realtime sync failed:", error);
+    },
+  );
 });
