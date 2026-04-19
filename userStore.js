@@ -1,5 +1,21 @@
 import { auth, db, waitForAuthReady } from "./firebase.js";
 import {
+  applyQuestPointChange,
+  applyQuestPointDelta,
+  applyStatUpgrade,
+  createEmptyStatPoints,
+  createEmptyStatUpgrades,
+  getMaxUpgradeLevels,
+  getStatKeyFromCategory,
+  getUpgradeCost,
+  normalizeStatPoints,
+  normalizeStatUpgrades,
+  normalizeStats,
+  spendStatPoints,
+  STAT_KEYS,
+  sumStatPoints,
+} from "./statProgress.js";
+import {
   doc,
   getDoc,
   onSnapshot,
@@ -60,10 +76,10 @@ function averageStat(stats) {
 function rankFromAverage(avg) {
   if (!Number.isFinite(avg)) return "-";
   if (avg >= 90) return "S";
-  if (avg >= 80) return "A";
+  if (avg >= 75) return "A";
   if (avg >= 60) return "B";
-  if (avg >= 40) return "C";
-  if (avg >= 20) return "D";
+  if (avg >= 45) return "C";
+  if (avg >= 25) return "D";
   return "E";
 }
 
@@ -80,6 +96,37 @@ function normalizeRank(rank) {
   return "E";
 }
 
+function hasKnownRank(rank) {
+  const val = String(rank || "")
+    .trim()
+    .toUpperCase();
+  return (
+    val === "S" ||
+    val === "A" ||
+    val === "B" ||
+    val === "C" ||
+    val === "D" ||
+    val === "E"
+  );
+}
+
+function resolveStoredRank(...candidates) {
+  for (const candidate of candidates) {
+    if (hasKnownRank(candidate)) return normalizeRank(candidate);
+  }
+  return "";
+}
+
+const HERO_FULL_RANK_SET = ["E", "D", "C", "B", "A", "S"];
+
+const HERO_RANK_ART_SUPPORT = {
+  executioner: HERO_FULL_RANK_SET,
+  insightphantom: HERO_FULL_RANK_SET,
+  reaper: HERO_FULL_RANK_SET,
+  saint: HERO_FULL_RANK_SET,
+  vanguard: HERO_FULL_RANK_SET,
+};
+
 function heroMoodKeyFromTaskCount(taskCount) {
   const count = Math.max(0, Number(taskCount) || 0);
   if (count <= 2) return "exhausted";
@@ -92,26 +139,56 @@ function safeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeHeroMoodKey(moodKey) {
+  const key = String(moodKey || "")
+    .trim()
+    .toLowerCase();
+
+  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
+    return "warming-up";
+  }
+  if (key === "locked-in" || key === "lockedin") return "locked-in";
+  if (key === "focused") return "focused";
+  if (key === "exhausted") return "exhausted";
+  return "";
+}
+
+function resolveStoredHeroMoodKey(...candidates) {
+  for (const candidate of candidates) {
+    const moodKey = normalizeHeroMoodKey(candidate);
+    if (moodKey) return moodKey;
+  }
+  return "";
+}
+
 function heroCharacterKeyFromProfile(profile) {
+  const title = safeString(profile?.title).toLowerCase();
+  if (title.includes("vanguard")) return "vanguard";
+  if (title.includes("phantom")) return "insightphantom";
+  if (title.includes("executioner")) return "executioner";
+  if (title.includes("emperor")) return "saint";
+  if (title.includes("saint")) return "saint";
+  if (title.includes("reaper")) return "reaper";
+
   const bySurveyKey = {
     Physical: "vanguard",
     Intellectual: "insightphantom",
-    Confidence: "emperor",
-    Discipline: "saint",
+    Confidence: "saint",
+    Discipline: "executioner",
     Mental: "reaper",
   };
 
   const surveyKey = safeString(profile?.titleSurvey?.titleKey);
   if (surveyKey && bySurveyKey[surveyKey]) return bySurveyKey[surveyKey];
 
-  const title = safeString(profile?.title);
   const surveyTitle = safeString(profile?.titleSurvey?.title);
   const legacyKey = safeString(profile?.titleSurvey?.titleKey);
   const combined = `${title} ${surveyTitle} ${legacyKey}`.toLowerCase();
 
   if (combined.includes("vanguard")) return "vanguard";
   if (combined.includes("phantom")) return "insightphantom";
-  if (combined.includes("emperor")) return "emperor";
+  if (combined.includes("executioner")) return "executioner";
+  if (combined.includes("emperor")) return "saint";
   if (combined.includes("saint")) return "saint";
   if (combined.includes("reaper")) return "reaper";
 
@@ -119,24 +196,58 @@ function heroCharacterKeyFromProfile(profile) {
 }
 
 function heroMoodFileKey(moodKey) {
-  const key = String(moodKey || "")
-    .trim()
-    .toLowerCase();
+  const key = normalizeHeroMoodKey(moodKey);
+  if (key === "warming-up") return "warmingup";
+  if (key === "locked-in") return "lockedin";
+  return key || "exhausted";
+}
 
-  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
-    return "warmingup";
+function hasHeroRankArt(characterKey, rank) {
+  if (!hasKnownRank(rank)) return false;
+  const key = safeString(characterKey).toLowerCase();
+  if (!key) return false;
+  const supportedRanks = HERO_RANK_ART_SUPPORT[key] || ["E"];
+  return supportedRanks.includes(normalizeRank(rank));
+}
+
+function heroCharacterAssetFileKeys(characterKey, rank, moodKey) {
+  const key = safeString(characterKey).toLowerCase();
+  if (!key) return [];
+  if (
+    key === "saint" &&
+    normalizeRank(rank) === "C" &&
+    heroMoodFileKey(moodKey) === "warmingup"
+  ) {
+    return [key, "sainit"];
   }
-  if (key === "locked-in" || key === "lockedin") return "lockedin";
-  if (key === "focused") return "focused";
-  return "exhausted";
+  if (
+    key === "insightphantom" &&
+    normalizeRank(rank) === "D" &&
+    heroMoodFileKey(moodKey) === "warmingup"
+  ) {
+    return [key, "insight_phantom"];
+  }
+  return [key];
+}
+
+function heroFigureSrcCandidatesFromProfileRankAndMoodKey(profile, rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const characterKey = heroCharacterKeyFromProfile(profile);
+  if (!characterKey || !hasHeroRankArt(characterKey, safeRank)) return [];
+  const moodFile = heroMoodFileKey(moodKey);
+  return heroCharacterAssetFileKeys(characterKey, safeRank, moodKey).map(
+    (assetKey) => `./${safeRank}_${assetKey}_${moodFile}.png`,
+  );
 }
 
 function heroFigureSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
-  const safeRank = normalizeRank(rank);
-  const characterKey = heroCharacterKeyFromProfile(profile);
-  if (!characterKey) return "./Unknown.png";
-  const moodFile = heroMoodFileKey(moodKey);
-  return `./${safeRank}_${characterKey}_${moodFile}.png`;
+  if (!heroCharacterKeyFromProfile(profile)) return "";
+  const candidates = heroFigureSrcCandidatesFromProfileRankAndMoodKey(
+    profile,
+    rank,
+    moodKey,
+  );
+  return candidates[0] || "";
 }
 
 function safeParseJSON(raw, fallback) {
@@ -279,10 +390,18 @@ function buildLocalState(uid, seed = {}) {
       legacyProfile.subtitle ??
       "",
     bio: seed.profile?.bio ?? cached.profile?.bio ?? legacyProfile.bio ?? "",
-    title: seed.profile?.title ?? cached.profile?.title ?? legacyProfile.title ?? "",
+    title:
+      seed.profile?.title ??
+      seed.title ??
+      cached.profile?.title ??
+      cached.title ??
+      legacyProfile.title ??
+      "",
     titleSurvey:
       seed.profile?.titleSurvey ??
+      seed.titleSurvey ??
       cached.profile?.titleSurvey ??
+      cached.titleSurvey ??
       legacyProfile.titleSurvey ??
       null,
     socials:
@@ -318,25 +437,46 @@ function buildLocalState(uid, seed = {}) {
       new Date().toISOString(),
   };
 
+  const statPoints = normalizeStatPoints(
+    seed.statPoints ?? cached.statPoints ?? legacyProfile.statPoints ?? null,
+  );
+  const statUpgrades = normalizeStatUpgrades(
+    seed.statUpgrades ?? cached.statUpgrades ?? null,
+  );
+
   const totalXPValue = Number.isFinite(Number(seed.totalXP))
     ? Number(seed.totalXP)
     : Number.isFinite(Number(cached.totalXP))
       ? Number(cached.totalXP)
       : totalXP;
   const levelInfo = getLevelInfo(totalXPValue);
-  const rank = rankFromAverage(averageStat(profile.stats));
+  const average = averageStat(profile.stats);
+  const derivedRank = rankFromAverage(average);
+  const storedHeroStatus = sanitizeObject(seed.heroStatus, {});
+  const storedRank = resolveStoredRank(
+    seed.rank,
+    seed.profile?.rank,
+    cached.rank,
+    cached.profile?.rank,
+  );
+  const rank = Number.isFinite(average)
+    ? derivedRank
+    : resolveStoredRank(storedRank, storedHeroStatus.rank) || derivedRank;
   const todayIso = getISODate();
   const quests = sanitizeObject(seed.quests ?? cached.quests ?? questState, {});
   const completed = sanitizeObject(quests.completed, {});
-  const tasksDone = Object.values(completed).filter(Boolean).length;
+  const derivedTasksDone = Object.values(completed).filter(Boolean).length;
+  const tasksDone = Math.max(0, derivedTasksDone);
   const heroRank = normalizeRank(rank);
   const moodKey = heroMoodKeyFromTaskCount(tasksDone);
-  const figureSrc = heroFigureSrcFromProfileRankAndMoodKey(
+  const computedFigureSrc = heroFigureSrcFromProfileRankAndMoodKey(
     profile,
     heroRank,
     moodKey,
   );
+  const figureSrc = computedFigureSrc || safeString(storedHeroStatus.figureSrc);
   const heroStatus = {
+    ...storedHeroStatus,
     date: todayIso,
     tasksDone,
     moodKey,
@@ -348,6 +488,8 @@ function buildLocalState(uid, seed = {}) {
     profile,
     displayName: profile.displayName,
     stats: profile.stats,
+    statPoints,
+    statUpgrades,
     survey: profile.survey,
     membership: profile.membership,
     totalXP: totalXPValue,
@@ -594,18 +736,173 @@ export async function syncUserState(uid) {
     return writeCachedUserDoc(uid, localState);
   }
 
+  const statBackfill = buildMissingCloudStatPayload(localState, cloud);
+  if (statBackfill) {
+    const mergedCloudState = mergeMirroredProfileFields(cloud, statBackfill);
+    await mergeUserDoc(uid, statBackfill);
+    return writeCachedUserDoc(uid, mergedCloudState);
+  }
+
   return writeCachedUserDoc(uid, cloud);
+}
+
+function mergeMirroredProfileFields(baseState, payload) {
+  const base = baseState && typeof baseState === "object" ? baseState : {};
+  const patch = payload && typeof payload === "object" ? payload : {};
+  const profilePatch = sanitizeObject(patch.profile, {});
+  const heroStatusPatch =
+    patch.heroStatus &&
+    typeof patch.heroStatus === "object" &&
+    !Array.isArray(patch.heroStatus)
+      ? patch.heroStatus
+      : null;
+  const profile = {
+    ...sanitizeObject(base.profile, {}),
+    ...profilePatch,
+  };
+
+  if (Object.prototype.hasOwnProperty.call(patch, "displayName")) {
+    profile.displayName = patch.displayName;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "membership")) {
+    profile.membership = patch.membership;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "stats")) {
+    profile.stats = patch.stats;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "survey")) {
+    profile.survey = patch.survey;
+  }
+
+  const next = {
+    ...base,
+    ...patch,
+    profile,
+  };
+  if (heroStatusPatch) {
+    next.heroStatus = {
+      ...sanitizeObject(base.heroStatus, {}),
+      ...heroStatusPatch,
+    };
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(profilePatch, "displayName") &&
+    !Object.prototype.hasOwnProperty.call(patch, "displayName")
+  ) {
+    next.displayName = profile.displayName;
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(profilePatch, "membership") &&
+    !Object.prototype.hasOwnProperty.call(patch, "membership")
+  ) {
+    next.membership = profile.membership;
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(profilePatch, "stats") &&
+    !Object.prototype.hasOwnProperty.call(patch, "stats")
+  ) {
+    next.stats = profile.stats;
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(profilePatch, "survey") &&
+    !Object.prototype.hasOwnProperty.call(patch, "survey")
+  ) {
+    next.survey = profile.survey;
+  }
+
+  return next;
+}
+
+function payloadTouchesDerivedRankSource(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  if (Object.prototype.hasOwnProperty.call(payload, "stats")) return true;
+
+  const profilePatch = payload.profile;
+  return (
+    profilePatch &&
+    typeof profilePatch === "object" &&
+    !Array.isArray(profilePatch) &&
+    Object.prototype.hasOwnProperty.call(profilePatch, "stats")
+  );
+}
+
+function isPlainObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasUsableStats(value) {
+  return (
+    isPlainObject(value) &&
+    STAT_KEYS.some((key) => Number.isFinite(Number(value[key])))
+  );
+}
+
+function resolvePersistedStatsSource(...candidates) {
+  for (const candidate of candidates) {
+    if (hasUsableStats(candidate)) {
+      return normalizeStats(candidate);
+    }
+  }
+  return null;
+}
+
+function buildMissingCloudStatPayload(localState, cloudState) {
+  const local = sanitizeObject(localState, {});
+  const cloud = sanitizeObject(cloudState, {});
+  const statsSource = resolvePersistedStatsSource(
+    cloud.stats,
+    cloud.profile?.stats,
+    local.stats,
+    local.profile?.stats,
+    cloud.baseline?.stats,
+    local.baseline?.stats,
+  );
+
+  const backfill = {};
+
+  if (!hasUsableStats(cloud.stats) && statsSource) {
+    backfill.stats = statsSource;
+  }
+
+  if (!hasUsableStats(cloud.profile?.stats) && statsSource) {
+    backfill.profile = { stats: statsSource };
+  }
+
+  if (
+    !isPlainObject(cloud.statPoints) &&
+    (statsSource || isPlainObject(local.statPoints))
+  ) {
+    backfill.statPoints = normalizeStatPoints(local.statPoints ?? null);
+  }
+
+  if (
+    !Array.isArray(cloud.statUpgrades) &&
+    (statsSource || Array.isArray(local.statUpgrades))
+  ) {
+    backfill.statUpgrades = normalizeStatUpgrades(local.statUpgrades ?? null);
+  }
+
+  return Object.keys(backfill).length ? backfill : null;
 }
 
 export async function mergeUserState(uid, payload) {
   if (!uid || !payload || typeof payload !== "object") return null;
 
-  const nextState = writeCachedUserDoc(uid, {
-    ...(readCachedAccountState(uid) || {}),
-    ...payload,
-  });
+  const nextPayload = mergeMirroredProfileFields(readCachedAccountState(uid), payload);
+  if (
+    payloadTouchesDerivedRankSource(payload) &&
+    !Object.prototype.hasOwnProperty.call(payload, "rank")
+  ) {
+    delete nextPayload.rank;
+  }
 
-  await mergeUserDoc(uid, nextState);
+  const nextState = writeCachedUserDoc(uid, nextPayload);
+  await mergeUserDoc(uid, {
+    ...nextPayload,
+    rank: nextState?.rank ?? nextPayload.rank,
+    heroStatus: nextState?.heroStatus ?? nextPayload.heroStatus,
+  });
   return nextState;
 }
 
@@ -660,3 +957,20 @@ export function logout() {
   localStorage.removeItem("aurakCurrentUser");
   window.location.href = "login.html";
 }
+
+export {
+  applyQuestPointChange,
+  applyQuestPointDelta,
+  applyStatUpgrade,
+  createEmptyStatPoints,
+  createEmptyStatUpgrades,
+  getMaxUpgradeLevels,
+  getStatKeyFromCategory,
+  getUpgradeCost,
+  normalizeStatPoints,
+  normalizeStatUpgrades,
+  normalizeStats,
+  spendStatPoints,
+  STAT_KEYS,
+  sumStatPoints,
+};

@@ -3,7 +3,9 @@ import {
   getStorageKey,
   logout,
   mergeUserState,
+  readCachedAccountState,
   readCachedUserProfile,
+  subscribeToUserState,
   syncUserState,
   writeCurrentUser,
 } from "./userStore.js";
@@ -14,7 +16,7 @@ const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 const TITLE_SURVEY_LOCK_MS = 7 * 24 * 60 * 60 * 1000;
-const TITLE_SURVEY_VERSION = "aurak-title-profile-v3";
+const TITLE_SURVEY_VERSION = "aurak-title-profile-v4";
 const TITLE_SURVEY_STORAGE_KEY = "aurak_title_survey_v1";
 
 const TITLE_SURVEY_STATS = [
@@ -28,8 +30,8 @@ const TITLE_SURVEY_STATS = [
 const TITLE_SURVEY_TITLE_BY_STAT = {
   Physical: "Savage Vanguard",
   Intellectual: "Insight Phantom",
-  Confidence: "Emperor of Fate",
-  Discipline: "Blade Saint",
+  Confidence: "Blade Saint",
+  Discipline: "Zenith Executioner",
   Mental: "Mind Reaper",
 };
 
@@ -38,6 +40,7 @@ const TITLE_SURVEY_TEMPLATE = {
   questions: [
     {
       id: "guild-plan",
+      icon: "fa-solid fa-map",
       title:
         "You have the opportunity to lead a guild entering a dangerous dungeon next week. What is your first plan?",
       subtitle: "Choose the option that fits you best.",
@@ -58,8 +61,7 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "c",
-          label:
-            "Always stay in the frontline of the team while in the dungeon.",
+          label: "Stay in the frontline of the team while in the dungeon.",
           sublabel: "Confidence",
           icon: "fa-solid fa-crown",
           stat: "Confidence",
@@ -82,6 +84,7 @@ const TITLE_SURVEY_TEMPLATE = {
     },
     {
       id: "boss-fight",
+      icon: "fa-solid fa-skull",
       title:
         "At the end of the dungeon, you and the team face a powerful boss. What is the first thing you do?",
       subtitle: "Choose the option that fits you best.",
@@ -102,7 +105,8 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "c",
-          label: "Set up the formation, assign roles, and lead the team.",
+          label:
+            "Break formation and push forward first to force openings for the team.",
           sublabel: "Confidence",
           icon: "fa-solid fa-crown",
           stat: "Confidence",
@@ -127,6 +131,7 @@ const TITLE_SURVEY_TEMPLATE = {
     },
     {
       id: "injured-ally",
+      icon: "fa-solid fa-user-injured",
       title: "A teammate got injured during the battle. What will you do?",
       subtitle: "Choose the option that fits you best.",
       options: [
@@ -146,9 +151,10 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "c",
-          label: "Help your teammate recover and continue.",
+          label:
+            "Move to the front line to protect teammates and create space for recovery.",
           sublabel: "Confidence",
-          icon: "fa-solid fa-hand-holding-heart",
+          icon: "fa-solid fa-crown",
           stat: "Confidence",
         },
         {
@@ -170,6 +176,7 @@ const TITLE_SURVEY_TEMPLATE = {
     },
     {
       id: "rare-ability",
+      icon: "fa-solid fa-wand-sparkles",
       title:
         "You receive a rare ability reward after clearing a dungeon. Which one do you choose?",
       subtitle: "Choose the option that fits you best.",
@@ -192,9 +199,9 @@ const TITLE_SURVEY_TEMPLATE = {
         },
         {
           key: "c",
-          label: "Sovereign's Command",
+          label: "Vanguard Breaker",
           sublabel:
-            "Instantly boost the strength and abilities of your entire team, giving them an edge in battle. After use, your confidence drops by 1 point temporarily from the exertion of controlling everyone.",
+            "Push to the front instantly, forcing enemy attention and creating openings for allies through direct engagement. After use, your Confidence stat drops by 1 point temporarily due to strain.",
           icon: "fa-solid fa-crown",
           stat: "Confidence",
         },
@@ -218,6 +225,7 @@ const TITLE_SURVEY_TEMPLATE = {
     },
     {
       id: "main-goal",
+      icon: "fa-solid fa-bullseye",
       title: "What is your main goal as a hunter?",
       subtitle: "Choose the option that fits you best.",
       options: [
@@ -248,6 +256,13 @@ const TITLE_SURVEY_TEMPLATE = {
           sublabel: "Discipline",
           icon: "fa-solid fa-shield-halved",
           stat: "Discipline",
+        },
+        {
+          key: "e",
+          label: "Know your limits and endure trials to strengthen your mind.",
+          sublabel: "Mental",
+          icon: "fa-solid fa-eye",
+          stat: "Mental",
         },
       ],
     },
@@ -292,6 +307,7 @@ function getTitleSurveyKey(uid) {
 function normalizeTitleState(value) {
   if (!value || typeof value !== "object") return null;
   if (!value.title) return null;
+  if (value.version && value.version !== TITLE_SURVEY_VERSION) return null;
 
   const scores = {};
   TITLE_SURVEY_STATS.forEach((key) => {
@@ -310,6 +326,72 @@ function normalizeTitleState(value) {
   };
 }
 
+function inferTitleKeyFromTitle(title) {
+  const value = sanitizeText(title, "").toLowerCase();
+  if (value.includes("vanguard")) return "Physical";
+  if (value.includes("phantom")) return "Intellectual";
+  if (value.includes("executioner")) return "Discipline";
+  if (value.includes("saint") || value.includes("emperor")) return "Confidence";
+  if (value.includes("reaper")) return "Mental";
+  return "";
+}
+
+function buildEmptyTitleScores() {
+  const scores = {};
+  TITLE_SURVEY_STATS.forEach((key) => {
+    scores[key] = 0;
+  });
+  return scores;
+}
+
+function titleStateFromProfile(profile) {
+  const explicitTitle = sanitizeText(profile?.title, "");
+  const base = normalizeTitleState(profile?.titleSurvey);
+
+  if (!explicitTitle) return base;
+  if (!base) {
+    const titleKey = inferTitleKeyFromTitle(explicitTitle) || explicitTitle;
+    return {
+      version: TITLE_SURVEY_VERSION,
+      title: explicitTitle,
+      titleKey,
+      description: "",
+      answers: [],
+      scores: buildEmptyTitleScores(),
+      completedAt: Date.now(),
+      lockedUntil: 0,
+    };
+  }
+
+  if (base.title === explicitTitle) return base;
+  return {
+    ...base,
+    title: explicitTitle,
+    titleKey: inferTitleKeyFromTitle(explicitTitle) || base.titleKey || explicitTitle,
+  };
+}
+
+function isSameTitleState(a, b) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (
+    a.title !== b.title ||
+    a.titleKey !== b.titleKey ||
+    a.description !== b.description ||
+    a.lockedUntil !== b.lockedUntil
+  ) {
+    return false;
+  }
+
+  const aAnswers = Array.isArray(a.answers) ? a.answers : [];
+  const bAnswers = Array.isArray(b.answers) ? b.answers : [];
+  if (JSON.stringify(aAnswers) !== JSON.stringify(bAnswers)) return false;
+
+  return TITLE_SURVEY_STATS.every(
+    (key) => Number(a.scores?.[key] || 0) === Number(b.scores?.[key] || 0),
+  );
+}
+
 function writeTitleState(uid, titleState) {
   const safe = normalizeTitleState(titleState);
   if (!uid || !safe) return null;
@@ -318,18 +400,20 @@ function writeTitleState(uid, titleState) {
 }
 
 function readTitleState(profile, uid) {
-  if (!uid) return normalizeTitleState(profile?.titleSurvey);
+  const profileState = titleStateFromProfile(profile);
+  if (!uid) return profileState;
 
   const localState = normalizeTitleState(
     safeParseJSON(localStorage.getItem(getTitleSurveyKey(uid)), null),
   );
-  if (localState) return localState;
-
-  const profileState = normalizeTitleState(profile?.titleSurvey);
   if (profileState) {
-    writeTitleState(uid, profileState);
+    if (!isSameTitleState(localState, profileState)) {
+      writeTitleState(uid, profileState);
+    }
     return profileState;
   }
+
+  if (localState) return localState;
 
   return null;
 }
@@ -382,10 +466,10 @@ function averageStat(stats) {
 function rankFromAverage(avg) {
   if (!Number.isFinite(avg)) return "—";
   if (avg >= 90) return "S";
-  if (avg >= 80) return "A";
+  if (avg >= 75) return "A";
   if (avg >= 60) return "B";
-  if (avg >= 40) return "C";
-  if (avg >= 20) return "D";
+  if (avg >= 45) return "C";
+  if (avg >= 25) return "D";
   return "E";
 }
 
@@ -637,6 +721,12 @@ function renderSurveyQuestion() {
     "tsStepLabel",
     `Question ${surveyState.step + 1} of ${TITLE_SURVEY_TEMPLATE.questions.length}`,
   );
+  const questionOrb = document.getElementById("tsQuestionOrb");
+  if (questionOrb) {
+    questionOrb.innerHTML = `<i class="${escapeHtml(
+      question.icon || "fa-solid fa-scroll",
+    )}"></i>`;
+  }
   setText("tsQuestionTitle", question.title);
   setText("tsQuestionSub", question.subtitle);
 
@@ -654,6 +744,7 @@ function renderSurveyQuestion() {
           }"
           type="button"
           data-option-key="${escapeHtml(option.key)}"
+          data-stat-key="${escapeHtml(String(option.stat || "").toLowerCase())}"
         >
           <span class="ts-chipIcon"><i class="${escapeHtml(option.icon)}"></i></span>
           <span class="ts-chipText">
@@ -1079,11 +1170,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const renderAll = (nextUser = user) => {
     user = nextUser || user;
+    const accountState = readCachedAccountState(user.uid);
     const profile = profileState.current;
-    const stats = user.stats || profile.stats || null;
+    const stats = accountState?.stats || user.stats || profile.stats || null;
     const avg = averageStat(stats);
-    const rank = rankFromAverage(avg);
-    const totalXP = readTotalXP(user.uid);
+    const rank =
+      typeof accountState?.rank === "string" && accountState.rank.trim()
+        ? accountState.rank.trim()
+        : rankFromAverage(avg);
+    const totalXP = Number.isFinite(Number(accountState?.totalXP))
+      ? Math.max(0, Number(accountState.totalXP) || 0)
+      : readTotalXP(user.uid);
     const levelInfo = getLevelInfo(totalXP);
     const journalEntries = readJournalEntries(user.uid);
     const streak = computeStreak(journalEntries);
@@ -1106,6 +1203,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   bindTitleSurvey(profileState, () => user);
+
+  if (user.uid) {
+    subscribeToUserState(
+      user.uid,
+      () => {
+        user = getCurrentUser() || user;
+        profileState.current = readUserProfile(user.uid);
+        renderAll(user);
+      },
+      (error) => {
+        console.warn("Profile realtime sync failed:", error);
+      },
+    );
+  }
 
   document.getElementById("pfUpgradeBtn")?.addEventListener("click", () => {
     window.location.href = "subscription.html";

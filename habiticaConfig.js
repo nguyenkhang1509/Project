@@ -23,7 +23,7 @@ const HABITICA_CONFIG = {
     "mental-1": "mental",
     "mental-2": "mental",
     "mental-3": "mental",
-    "mental-4": "mental",
+    "mental-4": "mental"
   },
 
   defaultXpPerCategory: {

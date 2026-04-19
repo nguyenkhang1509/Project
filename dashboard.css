@@ -716,6 +716,26 @@ input:focus-visible {
   filter: blur(10px);
 }
 
+.hunter-figure-backdrop {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  z-index: 0;
+  max-width: none;
+  max-height: 360px;
+  width: auto;
+  height: auto;
+  --hunter-backdrop-scale: 1.12;
+  --hunter-backdrop-x-nudge: -25px;
+  --hunter-backdrop-y: 0px;
+  --hunter-backdrop-y-nudge: 20px;
+  transform: translateX(calc(-50% + var(--hunter-backdrop-x-nudge)))
+    translateY(calc(var(--hunter-backdrop-y) + var(--hunter-backdrop-y-nudge)))
+    scale(var(--hunter-backdrop-scale));
+  transform-origin: center bottom;
+  pointer-events: none;
+}
+
 .hunter-xp-chip {
   position: absolute;
   top: 14px;
@@ -760,6 +780,12 @@ input:focus-visible {
   image-rendering: pixelated;
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45))
     drop-shadow(0 0 18px rgba(34, 211, 238, 0.12));
+}
+
+.hunter-tile[data-character="insightphantom"] .hunter-figure-backdrop {
+  --hunter-backdrop-scale: 1.25;
+  --hunter-backdrop-y: clamp(18px, 1vw, 10px);
+  bottom: clamp(88px, 16vw, 96px);
 }
 
 .hunter-tile[data-character="insightphantom"] .hunter-figure {

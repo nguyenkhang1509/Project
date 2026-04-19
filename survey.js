@@ -1,4 +1,6 @@
 import {
+  createEmptyStatPoints,
+  createEmptyStatUpgrades,
   mergeUserState,
   writeCachedUserDoc,
   writeCurrentUser,
@@ -147,6 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       displayName: updatedLocal.displayName || updatedLocal.name || "Player",
       stats,
+      statPoints: createEmptyStatPoints(),
+      statUpgrades: createEmptyStatUpgrades(),
       survey: surveyData,
       baseline: {
         stats,

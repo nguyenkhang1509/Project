@@ -1,9 +1,12 @@
 import {
+  applyQuestPointChange,
   getCurrentUser,
   getStorageKey,
   mergeUserState,
+  normalizeStats,
   readCachedAccountState,
   readCachedUserProfile,
+  STAT_KEYS,
   subscribeToUserState,
   syncUserState,
   writeCurrentUser,
@@ -41,6 +44,62 @@ function getLevelInfo(totalXp) {
   return { level, req, progress, remaining };
 }
 
+function ensureToastEl() {
+  let el = document.getElementById("aurak-toast");
+  if (el) return el;
+
+  el = document.createElement("div");
+  el.id = "aurak-toast";
+  el.setAttribute("aria-live", "polite");
+  Object.assign(el.style, {
+    position: "fixed",
+    left: "50%",
+    bottom: "22px",
+    transform: "translateX(-50%) translateY(8px)",
+    padding: "12px 16px",
+    borderRadius: "14px",
+    border: "1px solid rgba(148, 163, 184, 0.24)",
+    background: "rgba(2, 6, 23, 0.9)",
+    color: "#f8fafc",
+    fontWeight: "800",
+    boxShadow: "0 18px 36px rgba(0, 0, 0, 0.3)",
+    opacity: "0",
+    pointerEvents: "none",
+    transition: "opacity 160ms ease, transform 160ms ease",
+    zIndex: "220",
+  });
+  document.body.appendChild(el);
+  return el;
+}
+
+function toast(message) {
+  const el = ensureToastEl();
+  el.textContent = message;
+  clearTimeout(el._hideTimer);
+  el.style.opacity = "1";
+  el.style.transform = "translateX(-50%) translateY(0)";
+
+  el._hideTimer = setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translateX(-50%) translateY(8px)";
+  }, 1400);
+}
+
+function buildUndoReverseText(pointUpdate) {
+  const reversed = Number(pointUpdate?.autoReversedLevels) || 0;
+  const unresolved = Number(pointUpdate?.unresolvedShortfall) || 0;
+  if (reversed <= 0 && unresolved <= 0) return "";
+
+  let message = "";
+  if (reversed > 0) {
+    message += `, auto-reversed ${reversed} upgrade level${reversed === 1 ? "" : "s"}`;
+  }
+  if (unresolved > 0) {
+    message += `${message ? "," : ","} older upgrade history could not be fully traced`;
+  }
+  return message;
+}
+
 function averageStat(stats) {
   if (!stats) return null;
   const keys = [
@@ -67,7 +126,7 @@ function readTaskHistoryMap() {
   }
 }
 
-function writeTaskHistoryMap(map) {
+function writeTaskHistoryMap(map, syncCloud = true) {
   try {
     localStorage.setItem(
       getAccountStorageKey(TASK_HISTORY_KEY),
@@ -76,14 +135,14 @@ function writeTaskHistoryMap(map) {
   } catch {}
 
   const user = getCurrentUser();
-  if (user?.uid) {
+  if (syncCloud && user?.uid) {
     void mergeUserState(user.uid, { dailyTaskHistory: map }).catch((error) => {
       console.warn("Task history sync failed:", error);
     });
   }
 }
 
-function updateTaskHistoryForToday(qid, qname, isDone) {
+function updateTaskHistoryForToday(qid, qname, isDone, syncCloud = true) {
   const today =
     localStorage.getItem(getAccountStorageKey("dailyQuestResetDate")) ||
     getISODate();
@@ -96,7 +155,7 @@ function updateTaskHistoryForToday(qid, qname, isDone) {
   if (Object.keys(day).length > 0) map[today] = day;
   else delete map[today];
 
-  writeTaskHistoryMap(map);
+  writeTaskHistoryMap(map, syncCloud);
 }
 
 function prettifyQuestId(qid) {
@@ -145,10 +204,10 @@ function snapshotCompletedTasksForDate(dateStr, state) {
 function rankFromAverage(avg) {
   if (!Number.isFinite(avg)) return "—";
   if (avg >= 90) return "S";
-  if (avg >= 80) return "A";
+  if (avg >= 75) return "A";
   if (avg >= 60) return "B";
-  if (avg >= 40) return "C";
-  if (avg >= 20) return "D";
+  if (avg >= 45) return "C";
+  if (avg >= 25) return "D";
   return "E";
 }
 
@@ -165,30 +224,94 @@ function normalizeRank(rank) {
   return "E";
 }
 
+function hasKnownRank(rank) {
+  const val = String(rank || "")
+    .trim()
+    .toUpperCase();
+  return (
+    val === "S" ||
+    val === "A" ||
+    val === "B" ||
+    val === "C" ||
+    val === "D" ||
+    val === "E"
+  );
+}
+
 function safeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+const HERO_FULL_RANK_SET = ["E", "D", "C", "B", "A", "S"];
+
+const HERO_RANK_ART_SUPPORT = {
+  executioner: HERO_FULL_RANK_SET,
+  insightphantom: HERO_FULL_RANK_SET,
+  reaper: HERO_FULL_RANK_SET,
+  saint: HERO_FULL_RANK_SET,
+  vanguard: HERO_FULL_RANK_SET,
+};
+
+const HERO_LOCKED_IN_BACKDROP_SUPPORT = {};
+
+function normalizeHeroMoodKey(moodKey) {
+  const key = String(moodKey || "")
+    .trim()
+    .toLowerCase();
+
+  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
+    return "warming-up";
+  }
+  if (key === "locked-in" || key === "lockedin") return "locked-in";
+  if (key === "focused") return "focused";
+  if (key === "exhausted") return "exhausted";
+  return "";
+}
+
+function resolveHeroMoodKey(...candidates) {
+  for (const candidate of candidates) {
+    const moodKey = normalizeHeroMoodKey(candidate);
+    if (moodKey) return moodKey;
+  }
+  return "";
+}
+
+function heroMoodKeyFromTaskCount(taskCount) {
+  const count = Math.max(0, Number(taskCount) || 0);
+  if (count <= 2) return "exhausted";
+  if (count <= 5) return "warming-up";
+  if (count <= 10) return "focused";
+  return "locked-in";
+}
+
 function heroCharacterKeyFromProfile(profile) {
+  const title = safeString(profile?.title).toLowerCase();
+  if (title.includes("vanguard")) return "vanguard";
+  if (title.includes("phantom")) return "insightphantom";
+  if (title.includes("executioner")) return "executioner";
+  if (title.includes("emperor")) return "saint";
+  if (title.includes("saint")) return "saint";
+  if (title.includes("reaper")) return "reaper";
+
   const bySurveyKey = {
     Physical: "vanguard",
     Intellectual: "insightphantom",
-    Confidence: "emperor",
-    Discipline: "saint",
+    Confidence: "saint",
+    Discipline: "executioner",
     Mental: "reaper",
   };
 
   const surveyKey = safeString(profile?.titleSurvey?.titleKey);
   if (surveyKey && bySurveyKey[surveyKey]) return bySurveyKey[surveyKey];
 
-  const title = safeString(profile?.title);
   const surveyTitle = safeString(profile?.titleSurvey?.title);
   const legacyKey = safeString(profile?.titleSurvey?.titleKey);
   const combined = `${title} ${surveyTitle} ${legacyKey}`.toLowerCase();
 
   if (combined.includes("vanguard")) return "vanguard";
   if (combined.includes("phantom")) return "insightphantom";
-  if (combined.includes("emperor")) return "emperor";
+  if (combined.includes("executioner")) return "executioner";
+  if (combined.includes("emperor")) return "saint";
   if (combined.includes("saint")) return "saint";
   if (combined.includes("reaper")) return "reaper";
 
@@ -196,24 +319,79 @@ function heroCharacterKeyFromProfile(profile) {
 }
 
 function heroMoodFileKey(moodKey) {
-  const key = String(moodKey || "")
-    .trim()
-    .toLowerCase();
+  const key = normalizeHeroMoodKey(moodKey);
+  if (key === "warming-up") return "warmingup";
+  if (key === "locked-in") return "lockedin";
+  return key || "exhausted";
+}
 
-  if (key === "warming-up" || key === "warmingup" || key === "warmup") {
-    return "warmingup";
+function hasHeroRankArt(characterKey, rank) {
+  if (!hasKnownRank(rank)) return false;
+  const key = safeString(characterKey).toLowerCase();
+  if (!key) return false;
+  const supportedRanks = HERO_RANK_ART_SUPPORT[key] || ["E"];
+  return supportedRanks.includes(normalizeRank(rank));
+}
+
+function heroCharacterAssetFileKeys(characterKey, rank, moodKey) {
+  const key = safeString(characterKey).toLowerCase();
+  if (!key) return [];
+  if (
+    key === "saint" &&
+    normalizeRank(rank) === "C" &&
+    heroMoodFileKey(moodKey) === "warmingup"
+  ) {
+    return [key, "sainit"];
   }
-  if (key === "locked-in" || key === "lockedin") return "lockedin";
-  if (key === "focused") return "focused";
-  return "exhausted";
+  if (
+    key === "insightphantom" &&
+    normalizeRank(rank) === "D" &&
+    heroMoodFileKey(moodKey) === "warmingup"
+  ) {
+    return [key, "insight_phantom"];
+  }
+  return [key];
+}
+
+function hunterFigureSrcCandidatesFromProfileRankAndMoodKey(profile, rank, moodKey) {
+  const safeRank = normalizeRank(rank);
+  const characterKey = heroCharacterKeyFromProfile(profile);
+  if (!characterKey || !hasHeroRankArt(characterKey, safeRank)) return [];
+  const moodFile = heroMoodFileKey(moodKey);
+  return heroCharacterAssetFileKeys(characterKey, safeRank, moodKey).map(
+    (assetKey) => `./${safeRank}_${assetKey}_${moodFile}.png`,
+  );
 }
 
 function hunterFigureSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
+  if (!heroCharacterKeyFromProfile(profile)) return "";
+  const candidates = hunterFigureSrcCandidatesFromProfileRankAndMoodKey(
+    profile,
+    rank,
+    moodKey,
+  );
+  return candidates[0] || "";
+}
+
+function isLockedInMoodKey(moodKey) {
+  return heroMoodFileKey(moodKey) === "lockedin";
+}
+
+function hunterLockedInBackdropSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
   const safeRank = normalizeRank(rank);
   const characterKey = heroCharacterKeyFromProfile(profile);
-  if (!characterKey) return "./Unknown.png";
-  const moodFile = heroMoodFileKey(moodKey);
-  return `./${safeRank}_${characterKey}_${moodFile}.png`;
+  if (!characterKey) return "";
+  const supportedBackdropRanks =
+    HERO_LOCKED_IN_BACKDROP_SUPPORT[safeString(characterKey).toLowerCase()] || [];
+  if (
+    !hasHeroRankArt(characterKey, safeRank) ||
+    !isLockedInMoodKey(moodKey) ||
+    !supportedBackdropRanks.includes(safeRank)
+  ) {
+    return "";
+  }
+  const assetKeys = heroCharacterAssetFileKeys(characterKey, safeRank, moodKey);
+  return assetKeys[0] ? `./${safeRank}_${assetKeys[0]}_background.png` : "";
 }
 
 function setImageWithFallback(imgEl, candidates) {
@@ -221,13 +399,22 @@ function setImageWithFallback(imgEl, candidates) {
   const list = Array.isArray(candidates)
     ? candidates.map((s) => safeString(s)).filter(Boolean)
     : [];
-  if (!list.length) return;
+  if (!list.length) {
+    imgEl.onerror = null;
+    imgEl.removeAttribute("src");
+    imgEl.style.visibility = "hidden";
+    return;
+  }
+
+  imgEl.style.visibility = "";
 
   let index = 0;
   imgEl.onerror = () => {
     index += 1;
     if (index >= list.length) {
       imgEl.onerror = null;
+      imgEl.removeAttribute("src");
+      imgEl.style.visibility = "hidden";
       return;
     }
     imgEl.src = list[index];
@@ -240,10 +427,12 @@ function getTodayCompletedTaskCount() {
   const user = getCurrentUser();
   if (user?.uid) {
     const state = readCachedAccountState(user.uid);
-    const hero = state?.heroStatus;
-    const today = getISODate();
-    if (hero && hero.date === today) {
-      return Math.max(0, Number(hero.tasksDone) || 0);
+    const completed =
+      state?.quests?.completed && typeof state.quests.completed === "object"
+        ? state.quests.completed
+        : null;
+    if (completed) {
+      return Object.values(completed).filter(Boolean).length;
     }
   }
 
@@ -263,8 +452,10 @@ function getTodayCompletedTaskCount() {
   return questCount;
 }
 
-function getHunterMoodData(taskCount, level) {
-  if (taskCount <= 2) {
+function getHunterMoodDataFromKey(moodKey, level) {
+  const resolvedMoodKey = resolveHeroMoodKey(moodKey) || "exhausted";
+
+  if (resolvedMoodKey === "exhausted") {
     return {
       key: "exhausted",
       label: "Exhausted",
@@ -276,7 +467,7 @@ function getHunterMoodData(taskCount, level) {
     };
   }
 
-  if (taskCount <= 5) {
+  if (resolvedMoodKey === "warming-up") {
     return {
       key: "warming-up",
       label: "Warming Up",
@@ -288,7 +479,7 @@ function getHunterMoodData(taskCount, level) {
     };
   }
 
-  if (taskCount <= 10) {
+  if (resolvedMoodKey === "focused") {
     return {
       key: "focused",
       label: "Focused",
@@ -311,6 +502,10 @@ function getHunterMoodData(taskCount, level) {
   };
 }
 
+function getHunterMoodData(taskCount, level) {
+  return getHunterMoodDataFromKey(heroMoodKeyFromTaskCount(taskCount), level);
+}
+
 function renderHunterStatus(level, totalXP, xpProgress) {
   const tile = document.getElementById("hunterTile");
   const moodEl = document.getElementById("hunterMood");
@@ -323,6 +518,7 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   const xpValueEl = document.getElementById("hunterXpValue");
   const xpMiniTextEl = document.getElementById("hunterXpMiniText");
   const xpMiniFillEl = document.getElementById("hunterXpMiniFill");
+  const figureBackdropEl = document.getElementById("hunterFigureBackdrop");
   const figureEl = document.getElementById("hunterFigure");
 
   if (
@@ -337,56 +533,55 @@ function renderHunterStatus(level, totalXP, xpProgress) {
     !xpValueEl ||
     !xpMiniTextEl ||
     !xpMiniFillEl ||
+    !figureBackdropEl ||
     !figureEl
   ) {
     return;
   }
 
-  const taskCount = getTodayCompletedTaskCount();
-  const mood = getHunterMoodData(taskCount, level);
+  const localTaskCount = getTodayCompletedTaskCount();
   const user = getCurrentUser();
   const cached = user?.uid ? readCachedAccountState(user.uid) : null;
+  const storedHeroStatus =
+    cached?.heroStatus && typeof cached.heroStatus === "object"
+      ? cached.heroStatus
+      : null;
   const profile =
     (cached?.profile && typeof cached.profile === "object" ? cached.profile : null) ||
     readUserProfile(user?.uid);
-  const rank = normalizeRank(cached?.rank);
+  const taskCount = Math.max(0, localTaskCount);
+  const moodKey = heroMoodKeyFromTaskCount(taskCount);
+  const mood = getHunterMoodDataFromKey(moodKey, level);
+  const rawRank = String(cached?.rank || storedHeroStatus?.rank || "")
+    .trim()
+    .toUpperCase();
+  const rank = hasKnownRank(rawRank) ? rawRank : "";
   const characterKey = heroCharacterKeyFromProfile(profile);
   const hasTitle =
     !!safeString(profile?.title) || !!safeString(profile?.titleSurvey?.title);
+  const hasRankCharacterArt =
+    hasTitle && !!characterKey && hasHeroRankArt(characterKey, rank);
 
   const savedFigureSrc =
-    cached?.heroStatus?.date === getISODate() &&
-    typeof cached.heroStatus.figureSrc === "string"
-      ? cached.heroStatus.figureSrc
+    hasRankCharacterArt &&
+    typeof storedHeroStatus?.figureSrc === "string" &&
+    safeString(storedHeroStatus.figureSrc) !== "./Unknown.png"
+      ? storedHeroStatus.figureSrc
       : "";
-  const computedFigureSrc = hunterFigureSrcFromProfileRankAndMoodKey(
-    profile,
-    rank,
-    mood.key,
-  );
-  const fallbackRankFigureSrc =
-    characterKey && normalizeRank(rank) !== "E"
-      ? hunterFigureSrcFromProfileRankAndMoodKey(profile, "E", mood.key)
-      : "";
-  const genericMoodSrc =
-    mood.key === "focused"
-      ? "./Focused.png"
-      : mood.key === "warming-up"
-        ? "./Warming up.png"
-        : mood.key === "locked-in"
-          ? "./Locked in.png"
-          : "";
-  const candidates = [
-    savedFigureSrc,
-    computedFigureSrc,
-    fallbackRankFigureSrc,
-    genericMoodSrc,
-    "./Unknown.png",
-  ];
+  const computedFigureCandidates = hasRankCharacterArt
+    ? hunterFigureSrcCandidatesFromProfileRankAndMoodKey(profile, rank, moodKey)
+    : [];
+  const computedBackdropSrc = hasRankCharacterArt
+    ? hunterLockedInBackdropSrcFromProfileRankAndMoodKey(profile, rank, moodKey)
+    : "";
+  const candidates = hasRankCharacterArt
+    ? [...computedFigureCandidates, savedFigureSrc].filter(Boolean)
+    : [];
+  const backdropCandidates = computedBackdropSrc ? [computedBackdropSrc] : [];
 
   tile.dataset.mood = mood.key;
   tile.dataset.character = characterKey || "unknown";
-  tile.dataset.rank = rank || "E";
+  tile.dataset.rank = rank || "";
   moodEl.textContent = mood.label;
   pillEl.textContent = mood.pill;
   tasksEl.textContent = String(taskCount);
@@ -394,12 +589,58 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   hintEl.textContent = mood.hint;
   sublineEl.textContent = mood.subline;
   descEl.textContent = hasTitle
-    ? mood.desc
+    ? rank && !hasRankCharacterArt
+      ? `${mood.desc} Character art for rank ${rank} is not available yet.`
+      : mood.desc
     : "Select your title in the Profile page to unlock your character.";
   xpValueEl.textContent = String(totalXP);
   xpMiniTextEl.textContent = `${totalXP} XP`;
   xpMiniFillEl.style.width = `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`;
+  setImageWithFallback(figureBackdropEl, backdropCandidates);
   setImageWithFallback(figureEl, candidates);
+}
+
+function renderStatsPanel(accountState = null) {
+  const user = getCurrentUser();
+  const cached = accountState || (user?.uid ? readCachedAccountState(user.uid) : null);
+  const profile = readUserProfile(user?.uid);
+  const stats = normalizeStats(cached?.stats || user?.stats || profile?.stats);
+  const pillarRows = document.querySelectorAll(".pillar-row");
+
+  STAT_KEYS.forEach((key, index) => {
+    const row = pillarRows[index];
+    if (!row) return;
+
+    const nameEl = row.querySelector(".pillar-name");
+    const valEl = row.querySelector(".pillar-val");
+    const barFill = row.querySelector(".bar-fill");
+    const value = Math.max(0, Math.min(100, Number(stats[key]) || 0));
+
+    if (nameEl) nameEl.textContent = key;
+    if (valEl) valEl.textContent = `${value} / 100`;
+    if (barFill) barFill.style.width = `${value}%`;
+  });
+
+  const radar = document.getElementById("dashRadar");
+  if (!radar) return;
+
+  const outerPoints = [
+    { x: 100, y: 18 },
+    { x: 176, y: 72 },
+    { x: 148, y: 162 },
+    { x: 52, y: 162 },
+    { x: 24, y: 72 },
+  ];
+
+  const points = STAT_KEYS.map((key, index) => {
+    const pct = Math.max(0, Math.min(1, (Number(stats[key]) || 0) / 100));
+    const outer = outerPoints[index];
+    const x = 100 + pct * (outer.x - 100);
+    const y = 100 + pct * (outer.y - 100);
+    return `${x},${y}`;
+  }).join(" ");
+
+  radar.setAttribute("points", points);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -440,6 +681,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const legacyQuestRows = document.querySelectorAll(".quest-row:not(.qcard)");
   legacyQuestRows.forEach((row, i) => {
     row.setAttribute("data-qid", `legacy-${i}`);
+    row.dataset.slot = "physical";
     if (completedQuests[i]) {
       row.classList.add("is-complete");
       const check = row.querySelector(".quest-check");
@@ -450,52 +692,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  if (user.stats) {
-    const statKeys = [
-      "Physical",
-      "Intellectual",
-      "Mental",
-      "Confidence",
-      "Discipline",
-    ];
-    const pillarRows = document.querySelectorAll(".pillar-row");
-
-    statKeys.forEach((key, i) => {
-      const row = pillarRows[i];
-      if (!row) return;
-
-      const nameEl = row.querySelector(".pillar-name");
-      const valEl = row.querySelector(".pillar-val");
-      const barFill = row.querySelector(".bar-fill");
-
-      if (nameEl) nameEl.textContent = key;
-      if (valEl) valEl.textContent = `${user.stats[key]} / 100`;
-      if (barFill) barFill.style.width = `${user.stats[key]}%`;
-    });
-
-    const radar = document.getElementById("dashRadar");
-    if (radar) {
-      const outerPoints = [
-        { x: 100, y: 18 },
-        { x: 176, y: 72 },
-        { x: 148, y: 162 },
-        { x: 52, y: 162 },
-        { x: 24, y: 72 },
-      ];
-
-      const points = statKeys
-        .map((key, i) => {
-          const pct = user.stats[key] / 100;
-          const outer = outerPoints[i];
-          const x = 100 + pct * (outer.x - 100);
-          const y = 100 + pct * (outer.y - 100);
-          return `${x},${y}`;
-        })
-        .join(" ");
-
-      radar.setAttribute("points", points);
-    }
-  }
+  renderStatsPanel();
 
   updateGraph();
   updateXP();
@@ -505,7 +702,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (user.uid) {
     subscribeToUserState(
       user.uid,
-      async () => {
+      async (state) => {
+        renderStatsPanel(state);
         updateXP();
         updateGraph();
         await loadAndRenderPreviewTasks();
@@ -523,6 +721,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       e.key === getAccountStorageKey(XP_STORAGE_KEY) ||
       e.key === getAccountStorageKey(TASK_HISTORY_KEY)
     ) {
+      renderStatsPanel();
       updateXP();
       updateGraph();
       void loadAndRenderPreviewTasks();
@@ -570,6 +769,7 @@ async function loadAndRenderPreviewTasks() {
       row.className = "quest-row";
       row.setAttribute("data-qid", challenge.id);
       row.setAttribute("data-xp", xpReward);
+      row.dataset.slot = challenge.category || "physical";
       if (isDone) row.classList.add("is-complete");
 
       row.innerHTML = `
@@ -618,10 +818,26 @@ async function completePreviewQuest(checkEl) {
   const qid = row.getAttribute("data-qid");
   if (!qid) return;
 
-  const nowComplete = row.classList.toggle("is-complete");
+  const wasComplete = row.classList.contains("is-complete");
+  const nowComplete = !wasComplete;
+  const user = getCurrentUser();
+  const accountState = user?.uid ? readCachedAccountState(user.uid) : null;
+  const pointUpdate = applyQuestPointChange(
+    accountState?.stats,
+    accountState?.statPoints,
+    accountState?.statUpgrades,
+    row.dataset.slot || "physical",
+    nowComplete ? 1 : -1,
+  );
+
+  row.classList.toggle("is-complete", nowComplete);
 
   if (checkEl) {
     checkEl.setAttribute("aria-pressed", nowComplete ? "true" : "false");
+    checkEl.setAttribute(
+      "aria-label",
+      nowComplete ? "Mark quest as incomplete" : "Mark quest as complete",
+    );
   }
 
   let state = {};
@@ -639,7 +855,7 @@ async function completePreviewQuest(checkEl) {
   } catch {}
 
   const qname = row.querySelector("h4")?.textContent?.trim() || qid;
-  updateTaskHistoryForToday(qid, qname, nowComplete);
+  updateTaskHistoryForToday(qid, qname, nowComplete, false);
 
   let xpDelta = Number(row.getAttribute("data-xp"));
   if (!Number.isFinite(xpDelta)) {
@@ -659,36 +875,55 @@ async function completePreviewQuest(checkEl) {
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
 
-  const user = getCurrentUser();
   if (user?.uid) {
     await mergeUserState(user.uid, {
       quests: state,
+      stats: pointUpdate.stats,
       totalXP,
       dailyTaskHistory: readTaskHistoryMap(),
+      statPoints: pointUpdate.statPoints,
+      statUpgrades: pointUpdate.statUpgrades,
     }).catch((error) => {
       console.warn("Preview quest sync failed:", error);
     });
   }
 
+  toast(
+    nowComplete
+      ? `Quest completed +${xpDelta} XP, +1 ${pointUpdate.statKey} point`
+      : `Quest undone -${xpDelta} XP, -1 ${pointUpdate.statKey} point${buildUndoReverseText(pointUpdate)}`,
+  );
   updateGraph();
   updateXP();
 }
 
 function updateXP() {
-  let totalXP;
-  try {
-    const stored = localStorage.getItem(getAccountStorageKey(XP_STORAGE_KEY));
-    totalXP = stored ? Math.max(0, Number(stored) || 0) : 0;
-  } catch {
-    totalXP = 0;
+  const user = getCurrentUser();
+  const cached = user?.uid ? readCachedAccountState(user.uid) : null;
+  const profile =
+    (cached?.profile && typeof cached.profile === "object" ? cached.profile : null) ||
+    readUserProfile(user?.uid);
+  let totalXP = Number.isFinite(Number(cached?.totalXP))
+    ? Math.max(0, Number(cached.totalXP) || 0)
+    : 0;
+
+  if (!Number.isFinite(totalXP)) totalXP = 0;
+  if (!cached || !Number.isFinite(Number(cached?.totalXP))) {
+    try {
+      const stored = localStorage.getItem(getAccountStorageKey(XP_STORAGE_KEY));
+      totalXP = stored ? Math.max(0, Number(stored) || 0) : 0;
+    } catch {
+      totalXP = 0;
+    }
   }
 
   const info = getLevelInfo(totalXP);
-  const user = getCurrentUser();
-  const profile = readUserProfile(user?.uid);
-  const stats = (user && user.stats) || (profile && profile.stats) || null;
+  const stats = cached?.stats || (user && user.stats) || (profile && profile.stats) || null;
   const avg = averageStat(stats);
-  const rank = rankFromAverage(avg);
+  const rank =
+    typeof cached?.rank === "string" && cached.rank.trim()
+      ? cached.rank.trim()
+      : rankFromAverage(avg);
   const title =
     typeof profile?.title === "string" && profile.title.trim()
       ? profile.title.trim()
@@ -1033,7 +1268,19 @@ window.completeQuest = async function (checkEl) {
   const row = checkEl.closest(".quest-row");
   if (!row) return;
 
-  const nowComplete = row.classList.toggle("is-complete");
+  const wasComplete = row.classList.contains("is-complete");
+  const nowComplete = !wasComplete;
+  const user = getCurrentUser();
+  const accountState = user?.uid ? readCachedAccountState(user.uid) : null;
+  const pointUpdate = applyQuestPointChange(
+    accountState?.stats,
+    accountState?.statPoints,
+    accountState?.statUpgrades,
+    row.dataset.slot || "physical",
+    nowComplete ? 1 : -1,
+  );
+
+  row.classList.toggle("is-complete", nowComplete);
   if (nowComplete) {
     checkEl.setAttribute("aria-pressed", "true");
     checkEl.setAttribute("aria-label", "Mark quest as incomplete");
@@ -1066,7 +1313,7 @@ window.completeQuest = async function (checkEl) {
         );
       } catch {}
       const qname = row.querySelector("h4")?.textContent?.trim() || qid;
-      updateTaskHistoryForToday(qid, qname, nowComplete);
+      updateTaskHistoryForToday(qid, qname, nowComplete, false);
     }
 
     completedQuests[index] = nowComplete;
@@ -1094,18 +1341,25 @@ window.completeQuest = async function (checkEl) {
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
 
-  const user = getCurrentUser();
   if (user?.uid) {
     await mergeUserState(user.uid, {
       quests: state,
+      stats: pointUpdate.stats,
       totalXP,
       completedQuests,
       dailyTaskHistory: readTaskHistoryMap(),
+      statPoints: pointUpdate.statPoints,
+      statUpgrades: pointUpdate.statUpgrades,
     }).catch((error) => {
       console.warn("Quest sync failed:", error);
     });
   }
 
+  toast(
+    nowComplete
+      ? `Quest completed +${xpDelta} XP, +1 ${pointUpdate.statKey} point`
+      : `Quest undone -${xpDelta} XP, -1 ${pointUpdate.statKey} point${buildUndoReverseText(pointUpdate)}`,
+  );
   updateGraph();
   updateXP();
 };

@@ -2,7 +2,9 @@ import {
   getCurrentUser,
   getStorageKey,
   mergeUserState,
+  readCachedAccountState,
   readCachedUserProfile,
+  subscribeToUserState,
   syncUserState,
   writeCurrentUser,
 } from "./userStore.js";
@@ -114,10 +116,10 @@ function averageStat(stats) {
 function rankFromAverage(avg) {
   if (!Number.isFinite(avg)) return "—";
   if (avg >= 90) return "S";
-  if (avg >= 80) return "A";
+  if (avg >= 75) return "A";
   if (avg >= 60) return "B";
-  if (avg >= 40) return "C";
-  if (avg >= 20) return "D";
+  if (avg >= 45) return "C";
+  if (avg >= 25) return "D";
   return "E";
 }
 
@@ -132,6 +134,7 @@ function setActiveSidebar() {
 
 function hydrateIdentity() {
   const user = getCurrentUser();
+  const accountState = user?.uid ? readCachedAccountState(user.uid) : null;
   const sideUser = document.getElementById("sideUser");
   const sideSub = document.getElementById("sideSub");
   const dashName = document.getElementById("dashName");
@@ -140,6 +143,7 @@ function hydrateIdentity() {
   const dashXpFill = document.getElementById("dashXpFill");
 
   const display =
+    accountState?.displayName ||
     user?.displayName ||
     user?.name ||
     user?.username ||
@@ -150,12 +154,21 @@ function hydrateIdentity() {
   if (dashName) dashName.textContent = display;
 
   const xpKey = getStorageKey(XP_KEY_BASE);
-  const totalXp = Number(readJSON(xpKey, 0)) || 0;
+  const totalXp = Number.isFinite(Number(accountState?.totalXP))
+    ? Math.max(0, Number(accountState.totalXP) || 0)
+    : Number(readJSON(xpKey, 0)) || 0;
   const lvl = getLevelInfo(totalXp);
-  const profile = readUserProfile(user?.uid);
-  const stats = (user && user.stats) || (profile && profile.stats) || null;
+  const profile =
+    (accountState?.profile && typeof accountState.profile === "object"
+      ? accountState.profile
+      : null) || readUserProfile(user?.uid);
+  const stats =
+    accountState?.stats || (user && user.stats) || (profile && profile.stats) || null;
   const avg = averageStat(stats);
-  const rank = rankFromAverage(avg);
+  const rank =
+    typeof accountState?.rank === "string" && accountState.rank.trim()
+      ? accountState.rank.trim()
+      : rankFromAverage(avg);
 
   if (dashLevel) dashLevel.textContent = `Level ${lvl.level}`;
   if (dashXpText) dashXpText.textContent = `${lvl.remaining} / ${lvl.req} XP`;
@@ -1112,6 +1125,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         ...(profile.survey ? { survey: profile.survey } : {}),
       });
     }
+
+    subscribeToUserState(
+      user.uid,
+      () => {
+        hydrateIdentity();
+      },
+      (error) => {
+        console.warn("Journal realtime sync failed:", error);
+      },
+    );
   }
 
   setActiveSidebar();

@@ -161,6 +161,13 @@
             <section class="panel" aria-label="Pillars Radar">
               <div class="panel-head">
                 <h2 class="panel-appaea">Stats</h2>
+                <button
+                  class="stats-upgrade-btn"
+                  id="openUpgradeShop"
+                  type="button"
+                >
+                  Upgrade
+                </button>
               </div>
 
               <div class="balance-grid">
@@ -531,16 +538,72 @@
             </footer>
           </section>
         </div>
+
+        <div class="sup-modal" id="supModal" aria-hidden="true" hidden>
+          <div class="sup-backdrop" id="supBackdrop"></div>
+          <section
+            class="sup-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="supTitle"
+          >
+            <header class="sup-head">
+              <div>
+                <h3 id="supTitle">Upgrade Shop</h3>
+                <p class="sup-sub" id="supHint">
+                  Spend 1 matching point for +1 in the same stat, or spend 2
+                  points from one category to raise another stat by 1.
+                </p>
+              </div>
+              <button class="sup-close" id="supClose" type="button">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </header>
+
+            <div class="sup-builder">
+              <div class="sup-average-line" id="supAverageLine" aria-live="polite">
+                Average: --
+              </div>
+
+              <div
+                class="sup-stat-list"
+                id="supStatList"
+                aria-label="Stat upgrade planner"
+              ></div>
+
+              <div class="sup-preview" id="supPreview">
+                Complete more quests to earn stat points.
+              </div>
+            </div>
+
+            <footer class="sup-foot">
+              <div class="sup-total" id="supTotal">0 points available</div>
+              <button class="btn primary" id="supApply" type="button">
+                Apply Upgrade
+              </button>
+            </footer>
+          </section>
+        </div>
       </section>
     </main>
 
     <script type="module">
       import {
+        applyStatUpgrade,
         getCurrentUser,
         getStorageKey,
         getUserDocCacheKey,
+        getUpgradeCost,
+        getMaxUpgradeLevels,
+        mergeUserState,
+        normalizeStatPoints,
+        normalizeStatUpgrades,
+        normalizeStats,
         readCachedAccountState,
         readCachedUserProfile,
+        STAT_KEYS,
+        subscribeToUserState,
+        sumStatPoints,
         syncUserState,
       } from "./userStore.js";
 
@@ -679,10 +742,10 @@
       function rankFromAverage(avg) {
         if (!Number.isFinite(avg)) return "—";
         if (avg >= 90) return "S";
-        if (avg >= 80) return "A";
+        if (avg >= 75) return "A";
         if (avg >= 60) return "B";
-        if (avg >= 40) return "C";
-        if (avg >= 20) return "D";
+        if (avg >= 45) return "C";
+        if (avg >= 25) return "D";
         return "E";
       }
 
@@ -746,6 +809,788 @@
       function setText(id, txt) {
         const el = document.getElementById(id);
         if (el) el.textContent = txt;
+      }
+
+      const STAT_VISUALS = Object.freeze({
+        Physical: {
+          accent: "#60a5fa",
+          soft: "rgba(96, 165, 250, 0.16)",
+          preview: "rgba(191, 219, 254, 0.9)",
+        },
+        Intellectual: {
+          accent: "#a78bfa",
+          soft: "rgba(167, 139, 250, 0.16)",
+          preview: "rgba(221, 214, 254, 0.92)",
+        },
+        Mental: {
+          accent: "#4ade80",
+          soft: "rgba(74, 222, 128, 0.16)",
+          preview: "rgba(187, 247, 208, 0.92)",
+        },
+        Confidence: {
+          accent: "#f59e0b",
+          soft: "rgba(245, 158, 11, 0.18)",
+          preview: "rgba(253, 230, 138, 0.92)",
+        },
+        Discipline: {
+          accent: "#f87171",
+          soft: "rgba(248, 113, 113, 0.18)",
+          preview: "rgba(254, 202, 202, 0.92)",
+        },
+      });
+
+      const upgradeState = {
+        sourceKey: "Physical",
+        allocations: createEmptyUpgradePlan(),
+        saving: false,
+      };
+
+      let upgradeNotice = "";
+      let unsubscribeInfoState = () => {};
+
+      function formatPointText(count) {
+        return `${count} ${count === 1 ? "point" : "points"}`;
+      }
+
+      function getResolvedStatsState(stateOverride = null) {
+        const user = getCurrentUser();
+        const accountState = stateOverride || readAccountState(user?.uid);
+        const profile = readUserProfile(user?.uid);
+        const stats = normalizeStats(
+          accountState?.stats ||
+            (user && user.stats) ||
+            (profile && profile.stats),
+        );
+        const statPoints = normalizeStatPoints(accountState?.statPoints);
+        const statUpgrades = normalizeStatUpgrades(accountState?.statUpgrades);
+
+        return { user, accountState, profile, stats, statPoints, statUpgrades };
+      }
+
+      function legacyEnsureUpgradeSelection(stats, statPoints) {
+        const availableSources = STAT_KEYS.filter((key) => statPoints[key] > 0);
+
+        if (!availableSources.length) {
+          upgradeState.sourceKey = "Physical";
+          upgradeState.targetKey = "Physical";
+          upgradeState.amount = 0;
+          return 0;
+        }
+
+        if (!availableSources.includes(upgradeState.sourceKey)) {
+          upgradeState.sourceKey = availableSources[0];
+        }
+
+        const viableTargets = STAT_KEYS.filter(
+          (key) =>
+            getMaxUpgradeLevels(
+              stats,
+              statPoints,
+              upgradeState.sourceKey,
+              key,
+            ) > 0,
+        );
+
+        if (!viableTargets.includes(upgradeState.targetKey)) {
+          upgradeState.targetKey = viableTargets[0] || upgradeState.sourceKey;
+        }
+
+        const maxLevels = getMaxUpgradeLevels(
+          stats,
+          statPoints,
+          upgradeState.sourceKey,
+          upgradeState.targetKey,
+        );
+
+        upgradeState.amount =
+          maxLevels > 0
+            ? Math.max(1, Math.min(upgradeState.amount || 1, maxLevels))
+            : 0;
+
+        return maxLevels;
+      }
+
+      function legacyRenderUpgradeWallet(statPoints) {
+        const wallet = document.getElementById("supWallet");
+        if (!wallet) return;
+
+        wallet.innerHTML = "";
+
+        STAT_KEYS.forEach((key) => {
+          const count = Number(statPoints[key]) || 0;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "sup-wallet-card";
+          if (key === upgradeState.sourceKey) btn.classList.add("is-active");
+          if (count <= 0) btn.classList.add("is-empty");
+          btn.dataset.source = key;
+          btn.disabled = upgradeState.saving || count <= 0;
+          btn.innerHTML = `
+            <span class="sup-wallet-name">${key}</span>
+            <span class="sup-wallet-points">${formatPointText(count)}</span>
+            <span class="sup-wallet-rule">Same stat +${count} · Other stat +${Math.floor(count / 2)}</span>
+          `;
+          wallet.appendChild(btn);
+        });
+      }
+
+      function legacyRenderUpgradeTargets(stats, statPoints) {
+        const grid = document.getElementById("supTargetGrid");
+        if (!grid) return;
+
+        grid.innerHTML = "";
+
+        STAT_KEYS.forEach((key) => {
+          const maxLevels = getMaxUpgradeLevels(
+            stats,
+            statPoints,
+            upgradeState.sourceKey,
+            key,
+          );
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "sup-chip";
+          if (key === upgradeState.targetKey) btn.classList.add("is-active");
+          btn.dataset.target = key;
+          btn.disabled = upgradeState.saving || maxLevels <= 0;
+          btn.title = `${stats[key]} / 100`;
+          btn.textContent = key;
+          grid.appendChild(btn);
+        });
+      }
+
+      function legacyOpenUpgradeModal() {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+        upgradeNotice = "";
+        renderUpgradeModal();
+        modal.hidden = false;
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function legacyCloseUpgradeModal() {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+        modal.hidden = true;
+        modal.setAttribute("aria-hidden", "true");
+        upgradeNotice = "";
+      }
+
+      function legacyRenderUpgradeModal(stateOverride = null) {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+
+        const { stats, statPoints } = getResolvedStatsState(stateOverride);
+        const totalPoints = sumStatPoints(statPoints);
+        const maxLevels = ensureUpgradeSelection(stats, statPoints);
+        const currentValue = Number(stats[upgradeState.targetKey]) || 0;
+        const costPerLevel = getUpgradeCost(
+          upgradeState.sourceKey,
+          upgradeState.targetKey,
+        );
+        const totalCost = upgradeState.amount * costPerLevel;
+
+        renderUpgradeWallet(statPoints);
+        renderUpgradeTargets(stats, statPoints);
+
+        setText("supAmount", String(upgradeState.amount));
+        setText(
+          "supTotal",
+          `${formatPointText(totalPoints)} available across all wallets`,
+        );
+
+        const hint = document.getElementById("supHint");
+        if (hint) {
+          hint.textContent =
+            upgradeNotice ||
+            (totalPoints > 0
+              ? "Spend 1 matching point for +1 in the same stat, or spend 2 points from one category to raise another stat by 1."
+              : "Complete quests to earn stat points, then spend them here to shape your build.");
+        }
+
+        const amountMeta = document.getElementById("supAmountMeta");
+        if (amountMeta) {
+          if (maxLevels <= 0) {
+            amountMeta.textContent = totalPoints
+              ? "No upgrade available from this wallet"
+              : "No upgrade available";
+          } else {
+            amountMeta.textContent = `Max ${maxLevels} level${maxLevels === 1 ? "" : "s"} with ${upgradeState.sourceKey}`;
+          }
+        }
+
+        const preview = document.getElementById("supPreview");
+        if (preview) {
+          if (totalPoints <= 0) {
+            preview.textContent =
+              "Complete more quests to earn stat points for the shop.";
+          } else if (maxLevels <= 0 || upgradeState.amount <= 0) {
+            preview.textContent =
+              `${upgradeState.sourceKey} does not have enough spendable points for that upgrade right now.`;
+          } else {
+            const nextValue = Math.min(100, currentValue + upgradeState.amount);
+            preview.textContent =
+              `Spend ${formatPointText(totalCost)} from ${upgradeState.sourceKey} to raise ${upgradeState.targetKey} from ${currentValue} to ${nextValue}.`;
+          }
+        }
+
+        const minusBtn = document.getElementById("supMinus");
+        const plusBtn = document.getElementById("supPlus");
+        const applyBtn = document.getElementById("supApply");
+
+        if (minusBtn) {
+          minusBtn.disabled =
+            upgradeState.saving || upgradeState.amount <= 1 || maxLevels <= 0;
+        }
+        if (plusBtn) {
+          plusBtn.disabled =
+            upgradeState.saving || maxLevels <= 0 || upgradeState.amount >= maxLevels;
+        }
+        if (applyBtn) {
+          applyBtn.disabled =
+            upgradeState.saving || maxLevels <= 0 || upgradeState.amount <= 0;
+          applyBtn.textContent = upgradeState.saving
+            ? "Applying..."
+            : "Apply Upgrade";
+        }
+      }
+
+      async function legacyApplyUpgrade() {
+        const { user, stats, statPoints, statUpgrades } = getResolvedStatsState();
+        if (!user?.uid || upgradeState.saving) return;
+
+        const result = applyStatUpgrade(
+          stats,
+          statPoints,
+          statUpgrades,
+          upgradeState.sourceKey,
+          upgradeState.targetKey,
+          upgradeState.amount,
+        );
+
+        if (!result) {
+          upgradeNotice = "That upgrade is no longer available. Pick another option.";
+          renderUpgradeModal();
+          return;
+        }
+
+        upgradeState.saving = true;
+        upgradeNotice = "";
+        renderUpgradeModal();
+
+        try {
+          const nextState = await mergeUserState(user.uid, {
+            stats: result.stats,
+            statPoints: result.statPoints,
+            statUpgrades: result.statUpgrades,
+          });
+          closeUpgradeModal();
+          render(nextState);
+        } catch (error) {
+          console.warn("Stat upgrade sync failed:", error);
+          upgradeNotice = "We couldn't save that upgrade to Firestore. Please try again.";
+        } finally {
+          upgradeState.saving = false;
+          renderUpgradeModal();
+        }
+      }
+
+      function legacyInitUpgradeModal() {
+        const openBtn = document.getElementById("openUpgradeShop");
+        const closeBtn = document.getElementById("supClose");
+        const backdrop = document.getElementById("supBackdrop");
+        const wallet = document.getElementById("supWallet");
+        const targetGrid = document.getElementById("supTargetGrid");
+        const minusBtn = document.getElementById("supMinus");
+        const plusBtn = document.getElementById("supPlus");
+        const applyBtn = document.getElementById("supApply");
+
+        if (openBtn) openBtn.addEventListener("click", openUpgradeModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeUpgradeModal);
+        if (backdrop) backdrop.addEventListener("click", closeUpgradeModal);
+
+        wallet?.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-source]");
+          if (!btn) return;
+          upgradeState.sourceKey = btn.dataset.source || "Physical";
+          upgradeState.amount = 1;
+          upgradeNotice = "";
+          renderUpgradeModal();
+        });
+
+        targetGrid?.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-target]");
+          if (!btn) return;
+          upgradeState.targetKey = btn.dataset.target || "Physical";
+          upgradeState.amount = 1;
+          upgradeNotice = "";
+          renderUpgradeModal();
+        });
+
+        minusBtn?.addEventListener("click", () => {
+          upgradeState.amount = Math.max(1, upgradeState.amount - 1);
+          upgradeNotice = "";
+          renderUpgradeModal();
+        });
+
+        plusBtn?.addEventListener("click", () => {
+          const { stats, statPoints } = getResolvedStatsState();
+          const maxLevels = getMaxUpgradeLevels(
+            stats,
+            statPoints,
+            upgradeState.sourceKey,
+            upgradeState.targetKey,
+          );
+          upgradeState.amount = Math.min(maxLevels, upgradeState.amount + 1);
+          upgradeNotice = "";
+          renderUpgradeModal();
+        });
+
+        applyBtn?.addEventListener("click", applyUpgrade);
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeUpgradeModal();
+        });
+      }
+
+      function createEmptyUpgradePlan() {
+        const next = {};
+        STAT_KEYS.forEach((key) => {
+          next[key] = 0;
+        });
+        return next;
+      }
+
+      function resetUpgradePlan() {
+        upgradeState.allocations = createEmptyUpgradePlan();
+      }
+
+      function getPlannedLevels(targetKey) {
+        return Math.max(
+          0,
+          Math.floor(Number(upgradeState.allocations?.[targetKey]) || 0),
+        );
+      }
+
+      function getPlannedSpend(sourceKey = upgradeState.sourceKey) {
+        return STAT_KEYS.reduce(
+          (total, key) =>
+            total + getPlannedLevels(key) * getUpgradeCost(sourceKey, key),
+          0,
+        );
+      }
+
+      function getPreviewStats(stats) {
+        const preview = normalizeStats(stats);
+        STAT_KEYS.forEach((key) => {
+          preview[key] = clamp(
+            (Number(preview[key]) || 0) + getPlannedLevels(key),
+            0,
+            100,
+          );
+        });
+        return preview;
+      }
+
+      function getStatStyleVars(key) {
+        const visual = STAT_VISUALS[key] || STAT_VISUALS.Physical;
+        return `--sup-accent:${visual.accent};--sup-accent-soft:${visual.soft};--sup-preview:${visual.preview};`;
+      }
+
+      function formatAverageValue(avg) {
+        return Number.isFinite(avg) ? `${Math.round(avg)} / 100` : "--";
+      }
+
+      function formatSignedValue(value) {
+        const safe = Number(value) || 0;
+        return `${safe > 0 ? "+" : ""}${safe}`;
+      }
+
+      function ensureUpgradeSelection(stats, statPoints) {
+        const availableSources = STAT_KEYS.filter(
+          (key) => (Number(statPoints[key]) || 0) > 0,
+        );
+        const totalAvailable = sumStatPoints(statPoints);
+
+        if (!availableSources.length) {
+          upgradeState.sourceKey = "Physical";
+          resetUpgradePlan();
+          return {
+            totalAvailable,
+            selectedAvailable: 0,
+            remainingPoints: 0,
+          };
+        }
+
+        if (!availableSources.includes(upgradeState.sourceKey)) {
+          upgradeState.sourceKey = availableSources[0];
+          resetUpgradePlan();
+        }
+
+        const nextPlan = createEmptyUpgradePlan();
+        let remainingPoints = Math.max(
+          0,
+          Number(statPoints[upgradeState.sourceKey]) || 0,
+        );
+
+        STAT_KEYS.forEach((targetKey) => {
+          const desiredLevels = getPlannedLevels(targetKey);
+          const room = Math.max(0, 100 - (Number(stats[targetKey]) || 0));
+          const costPerLevel = getUpgradeCost(upgradeState.sourceKey, targetKey);
+          const affordableLevels = Math.floor(remainingPoints / costPerLevel);
+          const allowedLevels = Math.max(
+            0,
+            Math.min(desiredLevels, room, affordableLevels),
+          );
+
+          nextPlan[targetKey] = allowedLevels;
+          remainingPoints -= allowedLevels * costPerLevel;
+        });
+
+        upgradeState.allocations = nextPlan;
+
+        return {
+          totalAvailable,
+          selectedAvailable: Math.max(
+            0,
+            Number(statPoints[upgradeState.sourceKey]) || 0,
+          ),
+          remainingPoints,
+        };
+      }
+
+      function getMaxAdditionalLevels(stats, statPoints, targetKey) {
+        const previewStats = getPreviewStats(stats);
+        const selectedAvailable = Math.max(
+          0,
+          Number(statPoints[upgradeState.sourceKey]) || 0,
+        );
+        const remainingPoints = Math.max(
+          0,
+          selectedAvailable - getPlannedSpend(),
+        );
+        const costPerLevel = getUpgradeCost(upgradeState.sourceKey, targetKey);
+        const room = Math.max(0, 100 - (Number(previewStats[targetKey]) || 0));
+
+        return Math.max(
+          0,
+          Math.min(Math.floor(remainingPoints / costPerLevel), room),
+        );
+      }
+
+      function buildUpgradePlanSummary() {
+        return STAT_KEYS.filter((key) => getPlannedLevels(key) > 0)
+          .map((key) => `${key} +${getPlannedLevels(key)}`)
+          .join(" | ");
+      }
+
+      function renderUpgradeStatList(stats, statPoints) {
+        const list = document.getElementById("supStatList");
+        if (!list) return;
+
+        const previewStats = getPreviewStats(stats);
+        list.innerHTML = "";
+
+        STAT_KEYS.forEach((key) => {
+          const currentValue = Math.max(0, Number(stats[key]) || 0);
+          const nextValue = Math.max(0, Number(previewStats[key]) || 0);
+          const plannedLevels = getPlannedLevels(key);
+          const walletPoints = Math.max(0, Number(statPoints[key]) || 0);
+          const costPerLevel = getUpgradeCost(upgradeState.sourceKey, key);
+          const previewWidth = Math.max(0, nextValue - currentValue);
+          const canDecrease = !upgradeState.saving && plannedLevels > 0;
+          const canIncrease =
+            !upgradeState.saving &&
+            getMaxAdditionalLevels(stats, statPoints, key) > 0;
+          const isSource = key === upgradeState.sourceKey;
+          const row = document.createElement("article");
+
+          row.className = "sup-stat-card";
+          if (plannedLevels > 0) row.classList.add("is-planned");
+          if (isSource) row.classList.add("is-source");
+          if (walletPoints <= 0) row.classList.add("is-empty");
+          row.dataset.stat = key;
+          row.dataset.source = key;
+          row.setAttribute("style", getStatStyleVars(key));
+          row.innerHTML = `
+            <div class="sup-stat-top">
+              <div class="sup-stat-nameWrap">
+                <span class="sup-stat-dot" aria-hidden="true"></span>
+                <div class="sup-stat-copy">
+                  <div class="sup-stat-name">${key}</div>
+                  <div class="sup-stat-rule">${
+                    isSource
+                      ? "Selected wallet. Same-stat upgrades cost 1 point per level."
+                      : `Using ${upgradeState.sourceKey} here costs ${costPerLevel} point${costPerLevel === 1 ? "" : "s"} per level. Tap this row to switch wallets.`
+                  }</div>
+                </div>
+              </div>
+              <div class="sup-stat-badges">
+                <span class="sup-stat-badge">${formatPointText(walletPoints)}</span>
+                <span class="sup-stat-badge is-preview">${
+                  plannedLevels > 0
+                    ? `${formatSignedValue(plannedLevels)} planned`
+                    : isSource
+                      ? "Selected"
+                      : `${costPerLevel}/lvl`
+                }</span>
+              </div>
+            </div>
+            <div class="sup-stat-track pillar-bar" aria-hidden="true">
+              <span class="bar-fill sup-stat-current" style="width:${currentValue}%"></span>
+              <span class="sup-stat-previewFill" style="left:${currentValue}%;width:${previewWidth}%"></span>
+            </div>
+            <div class="sup-stat-bottom">
+              <div class="sup-stat-values">
+                <span>Current ${currentValue} / 100</span>
+                <span class="sup-stat-next">${
+                  plannedLevels > 0
+                    ? `Preview ${nextValue} / 100`
+                    : isSource
+                      ? `${formatPointText(walletPoints)} ready in this wallet`
+                      : `Tap row to spend ${key} points instead`
+                }</span>
+              </div>
+              <div class="sup-stat-controls">
+                <button
+                  class="sup-step"
+                  type="button"
+                  data-adjust="-1"
+                  data-target="${key}"
+                  aria-label="Decrease planned ${key} upgrade"
+                  ${canDecrease ? "" : "disabled"}
+                >
+                  -
+                </button>
+                <div class="sup-stat-amount">${formatSignedValue(
+                  plannedLevels,
+                )}</div>
+                <button
+                  class="sup-step"
+                  type="button"
+                  data-adjust="1"
+                  data-target="${key}"
+                  aria-label="Increase planned ${key} upgrade"
+                  ${canIncrease ? "" : "disabled"}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          `;
+          list.appendChild(row);
+        });
+      }
+
+      function openUpgradeModal() {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+        resetUpgradePlan();
+        upgradeNotice = "";
+        renderUpgradeModal();
+        modal.hidden = false;
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeUpgradeModal() {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+        modal.hidden = true;
+        modal.setAttribute("aria-hidden", "true");
+        upgradeNotice = "";
+      }
+
+      function renderUpgradeModal(stateOverride = null) {
+        const modal = document.getElementById("supModal");
+        if (!modal) return;
+
+        const { stats, statPoints } = getResolvedStatsState(stateOverride);
+        const totals = ensureUpgradeSelection(stats, statPoints);
+        const previewStats = getPreviewStats(stats);
+        const currentAvg = averageStat(stats);
+        const nextAvg = averageStat(previewStats);
+        const plannedSpend = getPlannedSpend();
+        const planSummary = buildUpgradePlanSummary();
+
+        renderUpgradeStatList(stats, statPoints);
+
+        setText(
+          "supTotal",
+          `${formatPointText(totals.totalAvailable)} available across all wallets`,
+        );
+        const averageLine = document.getElementById("supAverageLine");
+        if (averageLine) {
+          averageLine.textContent = planSummary
+            ? `Average: ${formatAverageValue(currentAvg)} -> ${formatAverageValue(nextAvg)}`
+            : `Average: ${formatAverageValue(currentAvg)}`;
+        }
+
+        const hint = document.getElementById("supHint");
+        if (hint) {
+          hint.textContent =
+            upgradeNotice ||
+            (totals.totalAvailable > 0
+              ? "Tap a stat row to choose the wallet, then use + or - to preview the bars."
+              : "Complete quests to earn stat points, then spend them here.");
+        }
+
+        const preview = document.getElementById("supPreview");
+        if (preview) {
+          if (upgradeNotice) {
+            preview.textContent = upgradeNotice;
+          } else if (totals.totalAvailable <= 0) {
+            preview.textContent = "Complete more quests to earn stat points.";
+          } else if (!planSummary) {
+            preview.textContent =
+              `${upgradeState.sourceKey} wallet selected with ${formatPointText(totals.selectedAvailable)} available.`;
+          } else {
+            preview.textContent =
+              `Using ${upgradeState.sourceKey} points for ${planSummary}. ${totals.remainingPoints} point${
+                totals.remainingPoints === 1 ? "" : "s"
+              } left after preview.`;
+          }
+        }
+
+        const applyBtn = document.getElementById("supApply");
+        if (applyBtn) {
+          applyBtn.disabled = upgradeState.saving || plannedSpend <= 0;
+          applyBtn.textContent = upgradeState.saving
+            ? "Applying..."
+            : "Apply Upgrades";
+        }
+      }
+
+      function adjustUpgradePlan(targetKey, direction) {
+        if (!STAT_KEYS.includes(targetKey) || !Number.isFinite(direction)) return;
+
+        const { stats, statPoints } = getResolvedStatsState();
+        ensureUpgradeSelection(stats, statPoints);
+
+        const currentLevels = getPlannedLevels(targetKey);
+
+        if (direction < 0) {
+          upgradeState.allocations[targetKey] = Math.max(0, currentLevels - 1);
+          upgradeNotice = "";
+          renderUpgradeModal();
+          return;
+        }
+
+        if (getMaxAdditionalLevels(stats, statPoints, targetKey) <= 0) return;
+
+        upgradeState.allocations[targetKey] = currentLevels + 1;
+        upgradeNotice = "";
+        renderUpgradeModal();
+      }
+
+      async function applyUpgrade() {
+        const { user, stats, statPoints, statUpgrades } = getResolvedStatsState();
+        if (!user?.uid || upgradeState.saving) return;
+
+        const totals = ensureUpgradeSelection(stats, statPoints);
+        const plannedTargets = STAT_KEYS.filter((key) => getPlannedLevels(key) > 0);
+
+        if (!plannedTargets.length) {
+          upgradeNotice =
+            totals.totalAvailable > 0
+              ? "Queue at least one upgrade before applying."
+              : "Complete quests to earn stat points first.";
+          renderUpgradeModal();
+          return;
+        }
+
+        let nextStats = normalizeStats(stats);
+        let nextPoints = normalizeStatPoints(statPoints);
+        let nextUpgrades = normalizeStatUpgrades(statUpgrades);
+
+        for (const targetKey of plannedTargets) {
+          const result = applyStatUpgrade(
+            nextStats,
+            nextPoints,
+            nextUpgrades,
+            upgradeState.sourceKey,
+            targetKey,
+            getPlannedLevels(targetKey),
+          );
+
+          if (!result) {
+            upgradeNotice =
+              "That preview is no longer available. Please review the rows and try again.";
+            renderUpgradeModal();
+            return;
+          }
+
+          nextStats = result.stats;
+          nextPoints = result.statPoints;
+          nextUpgrades = result.statUpgrades;
+        }
+
+        upgradeState.saving = true;
+        upgradeNotice = "";
+        renderUpgradeModal();
+
+        try {
+          const nextState = await mergeUserState(user.uid, {
+            stats: nextStats,
+            statPoints: nextPoints,
+            statUpgrades: nextUpgrades,
+          });
+          resetUpgradePlan();
+          closeUpgradeModal();
+          render(nextState);
+        } catch (error) {
+          console.warn("Stat upgrade sync failed:", error);
+          upgradeNotice = "We couldn't save that upgrade to Firestore. Please try again.";
+        } finally {
+          upgradeState.saving = false;
+          renderUpgradeModal();
+        }
+      }
+
+      function initUpgradeModal() {
+        const openBtn = document.getElementById("openUpgradeShop");
+        const closeBtn = document.getElementById("supClose");
+        const backdrop = document.getElementById("supBackdrop");
+        const statList = document.getElementById("supStatList");
+        const applyBtn = document.getElementById("supApply");
+
+        if (openBtn) openBtn.addEventListener("click", openUpgradeModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeUpgradeModal);
+        if (backdrop) backdrop.addEventListener("click", closeUpgradeModal);
+
+        statList?.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-adjust][data-target]");
+          if (btn) {
+            adjustUpgradePlan(
+              btn.getAttribute("data-target") || "Physical",
+              Number(btn.getAttribute("data-adjust")) || 0,
+            );
+            return;
+          }
+
+          const row = event.target.closest("[data-source]");
+          if (!row || upgradeState.saving) return;
+
+          const nextSource = row.getAttribute("data-source") || "Physical";
+          if (nextSource === upgradeState.sourceKey) return;
+
+          const { statPoints } = getResolvedStatsState();
+          if ((Number(statPoints?.[nextSource]) || 0) <= 0) {
+            upgradeNotice = `No ${nextSource} points available yet.`;
+            renderUpgradeModal();
+            return;
+          }
+
+          upgradeState.sourceKey = nextSource;
+          resetUpgradePlan();
+          upgradeNotice = "";
+          renderUpgradeModal();
+        });
+
+        applyBtn?.addEventListener("click", applyUpgrade);
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closeUpgradeModal();
+        });
       }
 
       let calCursor = localNoon(new Date());
@@ -1105,10 +1950,9 @@
         }
       }
 
-      function render() {
-        const user = getCurrentUser();
-        const accountState = readAccountState(user?.uid);
-        const profile = readUserProfile(user?.uid);
+      function render(stateOverride = null) {
+        const { user, accountState, profile, stats, statPoints } =
+          getResolvedStatsState(stateOverride);
 
         const displayName =
           accountState?.displayName ||
@@ -1135,26 +1979,18 @@
           statsXpFill.style.width = `${Math.min(levelInfo.progress * 100, 100)}%`;
         }
 
-        const statKeys = [
-          "Physical",
-          "Intellectual",
-          "Mental",
-          "Confidence",
-          "Discipline",
-        ];
-
-        const stats = accountState?.stats ||
-          (user && user.stats) ||
-          (profile && profile.stats) || {
-            Physical: 0,
-            Intellectual: 0,
-            Mental: 0,
-            Confidence: 0,
-            Discipline: 0,
-          };
-
         const avg = averageStat(stats);
-        setText("sideSub", `Rank ${rankFromAverage(avg)}`);
+        const rank =
+          typeof accountState?.rank === "string" && accountState.rank.trim()
+            ? accountState.rank.trim()
+            : rankFromAverage(avg);
+        setText("sideSub", `Rank ${rank}`);
+        const totalPoints = sumStatPoints(statPoints);
+        const upgradeBtn = document.getElementById("openUpgradeShop");
+        if (upgradeBtn) {
+          upgradeBtn.textContent =
+            totalPoints > 0 ? `Upgrade (${totalPoints})` : "Upgrade";
+        }
         if (avg !== null)
           setText("avgStat", `Average ${Math.round(avg)} / 100`);
         else setText("avgStat", "Average —");
@@ -1169,7 +2005,7 @@
 
         const radar = document.getElementById("dashRadar");
         if (radar) {
-          const points = statKeys
+          const points = STAT_KEYS
             .map((key, i) => {
               const pct = clamp((Number(stats[key]) || 0) / 100, 0, 1);
               const outer = outerPoints[i];
@@ -1189,7 +2025,7 @@
           Discipline: ["barDiscipline", "valDiscipline"],
         };
 
-        statKeys.forEach((k) => {
+        STAT_KEYS.forEach((k) => {
           const [barId, valId] = idMap[k];
           const v = clamp(parseInt(stats[k] || 0, 10) || 0, 0, 100);
           const bar = document.getElementById(barId);
@@ -1226,6 +2062,11 @@
 
         renderCalendar(dailyMap);
         renderDopamine();
+
+        const modal = document.getElementById("supModal");
+        if (modal && modal.getAttribute("aria-hidden") === "false") {
+          renderUpgradeModal(stateOverride);
+        }
       }
 
       document.addEventListener("DOMContentLoaded", async () => {
@@ -1240,8 +2081,23 @@
         }
 
         initDplModal();
+        initUpgradeModal();
         initCalendarNav();
         render();
+
+        if (user?.uid) {
+          unsubscribeInfoState();
+          unsubscribeInfoState = subscribeToUserState(
+            user.uid,
+            (state) => {
+              render(state);
+            },
+            (error) => {
+              console.warn("Info realtime sync failed:", error);
+            },
+          );
+        }
+
         setInterval(renderDopamine, 30000);
       });
 

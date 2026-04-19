@@ -11,6 +11,7 @@
   const XP_STORAGE_KEY = "totalXP";
   const DAILY_RESET_KEY = "dailyQuestResetDate";
   const TASK_HISTORY_KEY = "dailyTaskHistory";
+  const USER_DOC_CACHE_BASE = "aurak_user_doc_cache_v1";
 
   const BASE_XP_PER_LEVEL = 500;
   const LEVEL_GROWTH = 1.2;
@@ -68,9 +69,59 @@
     }
   }
 
+  function readAccountState(uid) {
+    if (!uid) return null;
+    try {
+      const raw = localStorage.getItem(`${USER_DOC_CACHE_BASE}_${uid}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeOptimisticAccountState(uid, patch) {
+    if (!uid || !patch || typeof patch !== "object") return null;
+
+    const current = readAccountState(uid) || {};
+    const profile = {
+      ...(current.profile && typeof current.profile === "object"
+        ? current.profile
+        : {}),
+      ...(patch.profile && typeof patch.profile === "object" ? patch.profile : {}),
+    };
+
+    if (Object.prototype.hasOwnProperty.call(patch, "displayName")) {
+      profile.displayName = patch.displayName;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, "stats")) {
+      profile.stats = patch.stats;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, "survey")) {
+      profile.survey = patch.survey;
+    }
+
+    const next = {
+      ...current,
+      ...patch,
+      profile,
+    };
+
+    try {
+      localStorage.setItem(`${USER_DOC_CACHE_BASE}_${uid}`, JSON.stringify(next));
+      return next;
+    } catch {
+      return current;
+    }
+  }
+
   async function syncCloudState(patch = null) {
+    const cachedUser = readCurrentUser();
+    if (patch && cachedUser?.uid) {
+      writeOptimisticAccountState(cachedUser.uid, patch);
+    }
+
     const api = await getStoreApi();
-    const user = api?.getCurrentUser?.() || readCurrentUser();
+    const user = api?.getCurrentUser?.() || cachedUser;
     if (!api || !user?.uid) return;
 
     if (patch && typeof api.mergeUserState === "function") {
@@ -81,6 +132,104 @@
     if (typeof api.syncUserState === "function") {
       await api.syncUserState(user.uid);
     }
+  }
+
+  function createEmptyStatPoints() {
+    return {
+      Physical: 0,
+      Intellectual: 0,
+      Mental: 0,
+      Confidence: 0,
+      Discipline: 0,
+    };
+  }
+
+  function createEmptyStats() {
+    return {
+      Physical: 0,
+      Intellectual: 0,
+      Mental: 0,
+      Confidence: 0,
+      Discipline: 0,
+    };
+  }
+
+  function normalizeStatPoints(api, value) {
+    if (typeof api?.normalizeStatPoints === "function") {
+      return api.normalizeStatPoints(value);
+    }
+
+    const next = createEmptyStatPoints();
+    if (!value || typeof value !== "object") return next;
+
+    Object.keys(next).forEach((key) => {
+      const num = Math.floor(Number(value[key]));
+      next[key] = Number.isFinite(num) ? Math.max(0, num) : 0;
+    });
+
+    return next;
+  }
+
+  function getStatKeyFromCategory(api, category) {
+    if (typeof api?.getStatKeyFromCategory === "function") {
+      return api.getStatKeyFromCategory(category);
+    }
+
+    const map = {
+      physical: "Physical",
+      intellectual: "Intellectual",
+      mental: "Mental",
+      confidence: "Confidence",
+      discipline: "Discipline",
+    };
+    const safeCategory = String(category || "")
+      .trim()
+      .toLowerCase();
+    return map[safeCategory] || "Physical";
+  }
+
+  function applyQuestPointChange(api, stats, statPoints, statUpgrades, category, delta) {
+    if (typeof api?.applyQuestPointChange === "function") {
+      return api.applyQuestPointChange(
+        stats,
+        statPoints,
+        statUpgrades,
+        category,
+        delta,
+      );
+    }
+
+    const next = normalizeStatPoints(api, statPoints);
+    const statKey = getStatKeyFromCategory(api, category);
+    const nextValue = next[statKey] + Math.floor(Number(delta) || 0);
+    const safeStats =
+      stats && typeof stats === "object" ? { ...createEmptyStats(), ...stats } : createEmptyStats();
+
+    next[statKey] = Math.max(0, nextValue);
+    return {
+      stats: safeStats,
+      statPoints: next,
+      statUpgrades: Array.isArray(statUpgrades) ? statUpgrades.slice() : [],
+      statKey,
+      autoReversedLevels: 0,
+      autoReversedTargets: {},
+      unresolvedShortfall: nextValue < 0 ? Math.abs(nextValue) : 0,
+    };
+  }
+
+  function buildUndoReverseText(pointUpdate) {
+    const reversed = Number(pointUpdate?.autoReversedLevels) || 0;
+    const unresolved = Number(pointUpdate?.unresolvedShortfall) || 0;
+    if (reversed <= 0 && unresolved <= 0) return "";
+
+    let message = "";
+    if (reversed > 0) {
+      message += `, auto-reversed ${reversed} upgrade level${reversed === 1 ? "" : "s"}`;
+    }
+    if (unresolved > 0) {
+      message += `${message ? "," : ","} older upgrade history could not be fully traced`;
+    }
+    return message;
   }
 
   function averageStat(stats) {
@@ -102,11 +251,19 @@
   function rankFromAverage(avg) {
     if (!Number.isFinite(avg)) return "—";
     if (avg >= 90) return "S";
-    if (avg >= 80) return "A";
+    if (avg >= 75) return "A";
     if (avg >= 60) return "B";
-    if (avg >= 40) return "C";
-    if (avg >= 20) return "D";
+    if (avg >= 45) return "C";
+    if (avg >= 25) return "D";
     return "E";
+  }
+
+  function resolveRank(accountState, stats) {
+    const rank = String(accountState?.rank || "")
+      .trim()
+      .toUpperCase();
+    if (["S", "A", "B", "C", "D", "E"].includes(rank)) return rank;
+    return rankFromAverage(averageStat(stats));
   }
 
   function getISODate(d = new Date()) {
@@ -221,10 +378,11 @@
     }
   }
 
-  function saveState(state) {
+  function saveState(state, syncCloud = true) {
     try {
       localStorage.setItem(getAccountKey(STORAGE_KEY), JSON.stringify(state));
     } catch {}
+    if (!syncCloud) return;
     void syncCloudState({ quests: state }).catch((error) => {
       console.warn("Quest state sync failed:", error);
     });
@@ -240,19 +398,20 @@
     }
   }
 
-  function writeTaskHistoryMap(map) {
+  function writeTaskHistoryMap(map, syncCloud = true) {
     try {
       localStorage.setItem(
         getAccountKey(TASK_HISTORY_KEY),
         JSON.stringify(map),
       );
     } catch {}
+    if (!syncCloud) return;
     void syncCloudState({ dailyTaskHistory: map }).catch((error) => {
       console.warn("Task history sync failed:", error);
     });
   }
 
-  function updateTaskHistoryForToday(qid, qname, isDone) {
+  function updateTaskHistoryForToday(qid, qname, isDone, syncCloud = true) {
     const today = localStorage.getItem(getAccountKey(DAILY_RESET_KEY)) || getISODate();
     const map = readTaskHistoryMap();
     const day = map[today] && typeof map[today] === "object" ? map[today] : {};
@@ -266,7 +425,7 @@
     if (Object.keys(day).length > 0) map[today] = day;
     else delete map[today];
 
-    writeTaskHistoryMap(map);
+    writeTaskHistoryMap(map, syncCloud);
   }
 
   function prettifyQuestId(qid) {
@@ -316,7 +475,7 @@
 
     if (lastReset) snapshotCompletedTasksForDate(state, lastReset);
     state.completed = {};
-    saveState(state);
+    saveState(state, false);
     try {
       localStorage.setItem(
         getAccountKey("completedQuests"),
@@ -415,10 +574,16 @@
     const xp = Number.isFinite(totalXp) ? totalXp : 0;
     const info = getLevelInfo(xp);
     const user = readCurrentUser();
-    const profile = readUserProfile(user?.uid);
-    const stats = (user && user.stats) || (profile && profile.stats) || null;
-    const avg = averageStat(stats);
-    const rank = rankFromAverage(avg);
+    const accountState = readAccountState(user?.uid);
+    const profile =
+      (accountState?.profile &&
+      typeof accountState.profile === "object" &&
+      !Array.isArray(accountState.profile)
+        ? accountState.profile
+        : null) || readUserProfile(user?.uid);
+    const stats =
+      accountState?.stats || (user && user.stats) || (profile && profile.stats) || null;
+    const rank = resolveRank(accountState, stats);
     const sideSub = document.getElementById("sideSub");
 
     dashLevel.textContent = `LVL ${info.level}`;
@@ -464,6 +629,9 @@
     try {
       localStorage.setItem(getAccountKey(XP_STORAGE_KEY), String(total));
     } catch {}
+  }
+
+  function syncXpTotal(total) {
     void syncCloudState({ totalXP: total }).catch((error) => {
       console.warn("XP sync failed:", error);
     });
@@ -583,13 +751,29 @@
   if (!Number.isFinite(xpTotal)) xpTotal = recomputeXpTotal();
   renderXp(xpTotal);
   persistXpTotal(xpTotal);
+  syncXpTotal(xpTotal);
 
-  function setCardCompleted(card, makeDone) {
+  async function setCardCompleted(card, makeDone) {
     const qid = card.getAttribute("data-qid");
     if (!qid) return;
 
     const wasDone = card.dataset.completed === "true";
     if (wasDone === makeDone) return;
+
+    const api = await getStoreApi();
+    const currentUser = api?.getCurrentUser?.() || readCurrentUser();
+    const accountState =
+      typeof api?.readCachedAccountState === "function" && currentUser?.uid
+        ? api.readCachedAccountState(currentUser.uid)
+        : null;
+    const pointUpdate = applyQuestPointChange(
+      api,
+      accountState?.stats,
+      accountState?.statPoints,
+      accountState?.statUpgrades,
+      card.dataset.slot || getSlotByIndex(0),
+      makeDone ? 1 : -1,
+    );
 
     card.dataset.completed = makeDone ? "true" : "false";
     card.classList.toggle("is-done", makeDone);
@@ -601,24 +785,41 @@
     const btn = card.querySelector(".qbtn");
     if (btn) btn.textContent = makeDone ? "Completed" : "Complete";
 
-    saveState(state);
+    saveState(state, false);
     const qname = card.querySelector(".qname")?.textContent?.trim() || qid;
-    updateTaskHistoryForToday(qid, qname, makeDone);
+    updateTaskHistoryForToday(qid, qname, makeDone, false);
 
     const xpDelta = parseExp(card);
     const signedDelta = makeDone ? xpDelta : -xpDelta;
     xpTotal = Math.max(0, xpTotal + signedDelta);
     persistXpTotal(xpTotal);
+    const nextPoints = pointUpdate.statPoints;
+
+    void syncCloudState({
+      quests: state,
+      totalXP: xpTotal,
+      dailyTaskHistory: readTaskHistoryMap(),
+      stats: pointUpdate.stats,
+      statPoints: nextPoints,
+      statUpgrades: pointUpdate.statUpgrades,
+    }).catch((error) => {
+      console.warn("Quest progress sync failed:", error);
+    });
     renderXp(xpTotal);
 
+    const pointLabel = pointUpdate.statKey;
     if (signedDelta !== 0) {
       toast(
         signedDelta > 0
-          ? `Quest completed +${signedDelta} XP`
-          : `Quest undone ${signedDelta} XP`,
+          ? `Quest completed +${signedDelta} XP, +1 ${pointLabel} point`
+          : `Quest undone ${signedDelta} XP, -1 ${pointLabel} point${buildUndoReverseText(pointUpdate)}`,
       );
     } else {
-      toast(makeDone ? "Quest completed" : "Quest marked incomplete");
+      toast(
+        makeDone
+          ? `Quest completed +1 ${pointLabel} point`
+          : `Quest marked incomplete -1 ${pointLabel} point${buildUndoReverseText(pointUpdate)}`,
+      );
     }
 
     pulse(card);
@@ -639,7 +840,7 @@
     if (!card) return;
 
     const isDone = card.dataset.completed === "true";
-    setCardCompleted(card, !isDone);
+    void setCardCompleted(card, !isDone);
   }
 
   questList.addEventListener("click", handleQuestClick);
