@@ -87,7 +87,9 @@
       ...(current.profile && typeof current.profile === "object"
         ? current.profile
         : {}),
-      ...(patch.profile && typeof patch.profile === "object" ? patch.profile : {}),
+      ...(patch.profile && typeof patch.profile === "object"
+        ? patch.profile
+        : {}),
     };
 
     if (Object.prototype.hasOwnProperty.call(patch, "displayName")) {
@@ -107,7 +109,10 @@
     };
 
     try {
-      localStorage.setItem(`${USER_DOC_CACHE_BASE}_${uid}`, JSON.stringify(next));
+      localStorage.setItem(
+        `${USER_DOC_CACHE_BASE}_${uid}`,
+        JSON.stringify(next),
+      );
       return next;
     } catch {
       return current;
@@ -188,7 +193,14 @@
     return map[safeCategory] || "Physical";
   }
 
-  function applyQuestPointChange(api, stats, statPoints, statUpgrades, category, delta) {
+  function applyQuestPointChange(
+    api,
+    stats,
+    statPoints,
+    statUpgrades,
+    category,
+    delta,
+  ) {
     if (typeof api?.applyQuestPointChange === "function") {
       return api.applyQuestPointChange(
         stats,
@@ -203,7 +215,9 @@
     const statKey = getStatKeyFromCategory(api, category);
     const nextValue = next[statKey] + Math.floor(Number(delta) || 0);
     const safeStats =
-      stats && typeof stats === "object" ? { ...createEmptyStats(), ...stats } : createEmptyStats();
+      stats && typeof stats === "object"
+        ? { ...createEmptyStats(), ...stats }
+        : createEmptyStats();
 
     next[statKey] = Math.max(0, nextValue);
     return {
@@ -412,7 +426,8 @@
   }
 
   function updateTaskHistoryForToday(qid, qname, isDone, syncCloud = true) {
-    const today = localStorage.getItem(getAccountKey(DAILY_RESET_KEY)) || getISODate();
+    const today =
+      localStorage.getItem(getAccountKey(DAILY_RESET_KEY)) || getISODate();
     const map = readTaskHistoryMap();
     const day = map[today] && typeof map[today] === "object" ? map[today] : {};
 
@@ -545,11 +560,93 @@
     card.animate(
       [
         { transform: "scale(1)" },
-        { transform: "scale(1.01)" },
+        { transform: "scale(1.015)" },
         { transform: "scale(1)" },
       ],
       { duration: 180, easing: "ease-out" },
     );
+  }
+
+  function burstParticles(card) {
+    if (prefersReducedMotion) return;
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = [
+      "rgba(34,211,238,.9)",
+      "rgba(168,85,247,.9)",
+      "rgba(96,165,250,.9)",
+      "rgba(52,211,153,.9)",
+      "rgba(34,211,238,.6)",
+      "rgba(168,85,247,.6)",
+    ];
+    for (let i = 0; i < 14; i++) {
+      const dot = document.createElement("div");
+      const size = 4 + Math.random() * 4;
+      const dist = 55 + Math.random() * 50;
+      const angle = (360 / 14) * i + Math.random() * 8;
+      const dx = Math.cos((angle * Math.PI) / 180) * dist;
+      const dy = Math.sin((angle * Math.PI) / 180) * dist;
+      Object.assign(dot.style, {
+        position: "fixed",
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: "50%",
+        background: colors[i % colors.length],
+        left: `${cx}px`,
+        top: `${cy}px`,
+        pointerEvents: "none",
+        zIndex: "9999",
+        transform: "translate(-50%,-50%)",
+      });
+      document.body.appendChild(dot);
+      dot
+        .animate(
+          [
+            { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+            {
+              transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0)`,
+              opacity: 0,
+            },
+          ],
+          {
+            duration: 550 + Math.random() * 150,
+            delay: Math.random() * 50,
+            easing: "cubic-bezier(0,0,0.2,1)",
+            fill: "forwards",
+          },
+        )
+        .addEventListener("finish", () => dot.remove());
+    }
+    const chip = document.createElement("div");
+    const xpText = card.querySelector(".reward")?.textContent?.trim() || "+XP";
+    Object.assign(chip.style, {
+      position: "fixed",
+      left: `${cx}px`,
+      top: `${cy - 20}px`,
+      transform: "translate(-50%,0)",
+      background: "rgba(34,211,238,0.15)",
+      border: "1px solid rgba(34,211,238,0.5)",
+      color: "rgba(34,211,238,1)",
+      fontSize: "13px",
+      fontWeight: "700",
+      padding: "4px 12px",
+      borderRadius: "999px",
+      pointerEvents: "none",
+      zIndex: "9999",
+      whiteSpace: "nowrap",
+    });
+    chip.textContent = xpText;
+    document.body.appendChild(chip);
+    chip
+      .animate(
+        [
+          { transform: "translate(-50%,0)", opacity: 1 },
+          { transform: "translate(-50%,-52px)", opacity: 0 },
+        ],
+        { duration: 750, easing: "cubic-bezier(0,0,0.2,1)", fill: "forwards" },
+      )
+      .addEventListener("finish", () => chip.remove());
   }
 
   function getLevelInfo(totalXp) {
@@ -582,7 +679,10 @@
         ? accountState.profile
         : null) || readUserProfile(user?.uid);
     const stats =
-      accountState?.stats || (user && user.stats) || (profile && profile.stats) || null;
+      accountState?.stats ||
+      (user && user.stats) ||
+      (profile && profile.stats) ||
+      null;
     const rank = resolveRank(accountState, stats);
     const sideSub = document.getElementById("sideSub");
 
@@ -823,6 +923,7 @@
     }
 
     pulse(card);
+    if (makeDone) burstParticles(card);
     applyFilter();
   }
 

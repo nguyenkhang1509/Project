@@ -353,7 +353,11 @@ function heroCharacterAssetFileKeys(characterKey, rank, moodKey) {
   return [key];
 }
 
-function hunterFigureSrcCandidatesFromProfileRankAndMoodKey(profile, rank, moodKey) {
+function hunterFigureSrcCandidatesFromProfileRankAndMoodKey(
+  profile,
+  rank,
+  moodKey,
+) {
   const safeRank = normalizeRank(rank);
   const characterKey = heroCharacterKeyFromProfile(profile);
   if (!characterKey || !hasHeroRankArt(characterKey, safeRank)) return [];
@@ -377,12 +381,17 @@ function isLockedInMoodKey(moodKey) {
   return heroMoodFileKey(moodKey) === "lockedin";
 }
 
-function hunterLockedInBackdropSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
+function hunterLockedInBackdropSrcFromProfileRankAndMoodKey(
+  profile,
+  rank,
+  moodKey,
+) {
   const safeRank = normalizeRank(rank);
   const characterKey = heroCharacterKeyFromProfile(profile);
   if (!characterKey) return "";
   const supportedBackdropRanks =
-    HERO_LOCKED_IN_BACKDROP_SUPPORT[safeString(characterKey).toLowerCase()] || [];
+    HERO_LOCKED_IN_BACKDROP_SUPPORT[safeString(characterKey).toLowerCase()] ||
+    [];
   if (
     !hasHeroRankArt(characterKey, safeRank) ||
     !isLockedInMoodKey(moodKey) ||
@@ -547,8 +556,9 @@ function renderHunterStatus(level, totalXP, xpProgress) {
       ? cached.heroStatus
       : null;
   const profile =
-    (cached?.profile && typeof cached.profile === "object" ? cached.profile : null) ||
-    readUserProfile(user?.uid);
+    (cached?.profile && typeof cached.profile === "object"
+      ? cached.profile
+      : null) || readUserProfile(user?.uid);
   const taskCount = Math.max(0, localTaskCount);
   const moodKey = heroMoodKeyFromTaskCount(taskCount);
   const mood = getHunterMoodDataFromKey(moodKey, level);
@@ -602,7 +612,8 @@ function renderHunterStatus(level, totalXP, xpProgress) {
 
 function renderStatsPanel(accountState = null) {
   const user = getCurrentUser();
-  const cached = accountState || (user?.uid ? readCachedAccountState(user.uid) : null);
+  const cached =
+    accountState || (user?.uid ? readCachedAccountState(user.uid) : null);
   const profile = readUserProfile(user?.uid);
   const stats = normalizeStats(cached?.stats || user?.stats || profile?.stats);
   const pillarRows = document.querySelectorAll(".pillar-row");
@@ -617,8 +628,87 @@ function renderStatsPanel(accountState = null) {
     const value = Math.max(0, Math.min(100, Number(stats[key]) || 0));
 
     if (nameEl) nameEl.textContent = key;
-    if (valEl) valEl.textContent = `${value} / 100`;
-    if (barFill) barFill.style.width = `${value}%`;
+
+    if (valEl) {
+      valEl.dataset.suffix = " / 100";
+      setTimeout(() => {
+        let start = performance.now();
+        function tick(now) {
+          const prog = Math.min((now - start) / 850, 1);
+          const eased = 1 - Math.pow(1 - prog, 3);
+          valEl.textContent = Math.round(eased * value) + " / 100";
+          if (prog < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }, index * 100);
+    }
+
+    if (barFill) {
+      barFill.style.width = "0%";
+      setTimeout(() => {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            barFill.style.width = `${value}%`;
+          }),
+        );
+      }, index * 80);
+    }
+
+    if (!row.dataset.pillarBound) {
+      row.dataset.pillarBound = "1";
+      const pillarDescs = {
+        Physical: "Core strength, endurance & body control.",
+        Intellectual: "Learning depth, focus & cognitive sharpness.",
+        Mental: "Emotional resilience & mindset clarity.",
+        Confidence: "Self-belief, presence & communication.",
+        Discipline: "Consistency, habits & follow-through.",
+      };
+      const pRank = (v) =>
+        v >= 85
+          ? "Elite"
+          : v >= 70
+            ? "Advanced"
+            : v >= 50
+              ? "Developing"
+              : v >= 30
+                ? "Beginner"
+                : "Rookie";
+      const pClass = (v) => pRank(v).toLowerCase();
+
+      let pCard = document.getElementById("pillarFloatCard");
+      if (!pCard) {
+        pCard = document.createElement("div");
+        pCard.id = "pillarFloatCard";
+        pCard.className = "pillar-float-card";
+        document.body.appendChild(pCard);
+      }
+
+      row.addEventListener("mouseenter", () => {
+        pCard.innerHTML = `
+          <div class="pfc-name">${key}</div>
+          <div class="pfc-value-row"><span class="pfc-value-big">${value}</span><span class="pfc-value-max">/ 100</span></div>
+          <div class="pfc-bar-track"><div class="pfc-bar-fill" style="width:0%"></div></div>
+          <div class="pfc-rank ${pClass(value)}">${pRank(value)}</div>
+          <div class="pfc-desc">${pillarDescs[key] || ""}</div>
+        `;
+        pCard.classList.add("visible");
+        const rect = row.getBoundingClientRect();
+        let left = rect.right + 14;
+        let top = rect.top + rect.height / 2 - 90;
+        if (left + 246 > window.innerWidth - 8) left = rect.left - 252;
+        if (top < 8) top = 8;
+        if (top + 200 > window.innerHeight - 8) top = window.innerHeight - 208;
+        pCard.style.left = `${Math.round(left)}px`;
+        pCard.style.top = `${Math.round(top)}px`;
+        requestAnimationFrame(() => {
+          const b = pCard.querySelector(".pfc-bar-fill");
+          if (b) b.style.width = `${value}%`;
+        });
+      });
+      row.addEventListener("mouseleave", () =>
+        pCard.classList.remove("visible"),
+      );
+    }
   });
 
   const radar = document.getElementById("dashRadar");
@@ -641,11 +731,213 @@ function renderStatsPanel(accountState = null) {
   }).join(" ");
 
   radar.setAttribute("points", points);
+
+  const svgEl = radar.closest("svg");
+  if (!svgEl) return;
+
+  svgEl.querySelectorAll(".vertex-hit").forEach((el) => el.remove());
+
+  let vCard = document.getElementById("vertexFloatCard");
+  if (!vCard) {
+    vCard = document.createElement("div");
+    vCard.id = "vertexFloatCard";
+    vCard.className = "vertex-float-card";
+    document.body.appendChild(vCard);
+  }
+
+  const vRank = (v) =>
+    v >= 85
+      ? "Elite"
+      : v >= 70
+        ? "Advanced"
+        : v >= 50
+          ? "Developing"
+          : v >= 30
+            ? "Beginner"
+            : "Rookie";
+  const vClass = (v) => vRank(v).toLowerCase();
+
+  STAT_KEYS.forEach((key, i) => {
+    const value = Math.max(0, Math.min(100, Number(stats[key]) || 0));
+    const outer = outerPoints[i];
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.classList.add("vertex-hit");
+
+    const ring = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "circle",
+    );
+    ring.setAttribute("cx", outer.x);
+    ring.setAttribute("cy", outer.y);
+    ring.setAttribute("r", "10");
+    ring.setAttribute("fill", "rgba(34,211,238,0.14)");
+    ring.setAttribute("stroke", "rgba(34,211,238,0.7)");
+    ring.setAttribute("stroke-width", "1.5");
+    ring.style.opacity = "0";
+    ring.style.transition = "opacity 0.15s ease";
+    ring.style.pointerEvents = "none";
+
+    const hit = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "circle",
+    );
+    hit.setAttribute("cx", outer.x);
+    hit.setAttribute("cy", outer.y);
+    hit.setAttribute("r", "18");
+    hit.setAttribute("fill", "transparent");
+    hit.style.cursor = "pointer";
+
+    g.appendChild(ring);
+    g.appendChild(hit);
+
+    hit.addEventListener("mouseenter", () => {
+      ring.style.opacity = "1";
+      vCard.innerHTML = `
+        <div class="vfc-name">${key}</div>
+        <div class="vfc-value">${value}</div>
+        <div class="vfc-max">/ 100</div>
+        <div class="vfc-rank ${vClass(value)}">${vRank(value)}</div>
+      `;
+      vCard.classList.add("visible");
+      const sr = svgEl.getBoundingClientRect();
+      const sx = sr.left + outer.x * (sr.width / 200);
+      const sy = sr.top + outer.y * (sr.height / 200);
+      let left = sx + 16;
+      let top = sy - 70;
+      if (left + 162 > window.innerWidth - 8) left = sx - 178;
+      if (top < 8) top = sy + 16;
+      if (top + 150 > window.innerHeight - 8) top = window.innerHeight - 158;
+      vCard.style.left = `${Math.round(left)}px`;
+      vCard.style.top = `${Math.round(top)}px`;
+    });
+    hit.addEventListener("mouseleave", () => {
+      ring.style.opacity = "0";
+      vCard.classList.remove("visible");
+    });
+    svgEl.appendChild(g);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
   let user = getCurrentUser();
   if (!user) return;
+
+  const figShell = document.querySelector(".hunter-figure-shell");
+  if (figShell) {
+    const overlay = document.createElement("div");
+    overlay.className = "hunter-stat-overlay";
+    overlay.innerHTML = `
+      <div class="hso-label">Character Stats</div>
+      <div class="hso-grid">
+        <div class="hso-chip"><div class="hso-chip-k">Mood</div><div class="hso-chip-v" id="hsoMood">—</div></div>
+        <div class="hso-chip"><div class="hso-chip-k">Total XP</div><div class="hso-chip-v hso-aqua" id="hsoXp">—</div></div>
+        <div class="hso-chip"><div class="hso-chip-k">Today</div><div class="hso-chip-v hso-green" id="hsoTasks">—</div></div>
+        <div class="hso-chip"><div class="hso-chip-k">Mode</div><div class="hso-chip-v hso-violet" id="hsoMode">—</div></div>
+      </div>
+    `;
+    figShell.appendChild(overlay);
+
+    figShell.addEventListener("mousemove", (e) => {
+      const r = figShell.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      figShell.style.transition = "transform 0.08s ease-out";
+      figShell.style.transform = `perspective(700px) rotateX(${(-y * 10).toFixed(2)}deg) rotateY(${(x * 14).toFixed(2)}deg) scale(1.012)`;
+    });
+
+    figShell.addEventListener("mouseleave", () => {
+      figShell.style.transition = "transform 0.65s cubic-bezier(0.16,1,0.3,1)";
+      figShell.style.transform =
+        "perspective(700px) rotateX(0deg) rotateY(0deg) scale(1)";
+    });
+
+    figShell.addEventListener("mouseenter", () => {
+      const moodEl = document.getElementById("hunterMood");
+      const xpEl = document.getElementById("hunterXpValue");
+      const tasksEl = document.getElementById("hunterTasksDone");
+      const modeEl = document.getElementById("hunterMode");
+      const hMood = document.getElementById("hsoMood");
+      const hXp = document.getElementById("hsoXp");
+      const hTasks = document.getElementById("hsoTasks");
+      const hMode = document.getElementById("hsoMode");
+      if (hMood) hMood.textContent = moodEl?.textContent?.trim() || "—";
+      if (hXp)
+        hXp.textContent = (() => {
+          const n = Number(xpEl?.textContent?.trim());
+          return Number.isFinite(n) ? n.toLocaleString() : "—";
+        })();
+      if (hTasks)
+        hTasks.textContent = (tasksEl?.textContent?.trim() || "0") + " quests";
+      if (hMode) hMode.textContent = modeEl?.textContent?.trim() || "—";
+    });
+  }
+
+  const hunterTile = document.getElementById("hunterTile");
+  if (hunterTile) {
+    const bgA = hunterTile.querySelector(".hunter-bg-aqua");
+    const bgV = hunterTile.querySelector(".hunter-bg-violet");
+    hunterTile.addEventListener("mousemove", (e) => {
+      const r = hunterTile.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5;
+      const ny = (e.clientY - r.top) / r.height - 0.5;
+      if (bgA) {
+        bgA.style.transform = `translate(${nx * 40}px,${ny * 30}px)`;
+        bgA.style.transition = "transform 0.12s ease-out";
+      }
+      if (bgV) {
+        bgV.style.transform = `translate(${-nx * 35}px,${-ny * 25}px)`;
+        bgV.style.transition = "transform 0.12s ease-out";
+      }
+    });
+    hunterTile.addEventListener("mouseleave", () => {
+      if (bgA) {
+        bgA.style.transform = "";
+        bgA.style.transition = "transform 0.6s ease-out";
+      }
+      if (bgV) {
+        bgV.style.transform = "";
+        bgV.style.transition = "transform 0.6s ease-out";
+      }
+    });
+  }
+
+  const revealTargets = document.querySelectorAll(
+    ".panel, .wide-tile, .line-graph, .checkin-card, .focus-card",
+  );
+  revealTargets.forEach((el, i) => {
+    el.classList.add("reveal");
+    el.dataset.delay = String((i % 5) + 1);
+  });
+  const revealObs = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("revealed");
+          revealObs.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.08 },
+  );
+  revealTargets.forEach((el) => revealObs.observe(el));
+
+  const cursorGlow = document.createElement("div");
+  cursorGlow.id = "cursor-glow";
+  document.body.appendChild(cursorGlow);
+  let mX = window.innerWidth / 2,
+    mY = window.innerHeight / 2,
+    gX = mX,
+    gY = mY;
+  document.addEventListener("mousemove", (e) => {
+    mX = e.clientX;
+    mY = e.clientY;
+  });
+  (function lerp() {
+    gX += (mX - gX) * 0.07;
+    gY += (mY - gY) * 0.07;
+    cursorGlow.style.transform = `translate(${Math.round(gX)}px,${Math.round(gY)}px)`;
+    requestAnimationFrame(lerp);
+  })();
 
   try {
     await syncUserState(user.uid);
@@ -901,8 +1193,9 @@ function updateXP() {
   const user = getCurrentUser();
   const cached = user?.uid ? readCachedAccountState(user.uid) : null;
   const profile =
-    (cached?.profile && typeof cached.profile === "object" ? cached.profile : null) ||
-    readUserProfile(user?.uid);
+    (cached?.profile && typeof cached.profile === "object"
+      ? cached.profile
+      : null) || readUserProfile(user?.uid);
   let totalXP = Number.isFinite(Number(cached?.totalXP))
     ? Math.max(0, Number(cached.totalXP) || 0)
     : 0;
@@ -918,7 +1211,8 @@ function updateXP() {
   }
 
   const info = getLevelInfo(totalXP);
-  const stats = cached?.stats || (user && user.stats) || (profile && profile.stats) || null;
+  const stats =
+    cached?.stats || (user && user.stats) || (profile && profile.stats) || null;
   const avg = averageStat(stats);
   const rank =
     typeof cached?.rank === "string" && cached.rank.trim()
@@ -940,8 +1234,19 @@ function updateXP() {
 
   if (dashLevel) dashLevel.textContent = `LVL ${info.level}`;
   if (dashXpText) dashXpText.textContent = `${info.remaining} / ${info.req} XP`;
-  if (dashXpFill)
-    dashXpFill.style.width = `${Math.min(info.progress * 100, 100)}%`;
+  if (dashXpFill) {
+    dashXpFill.style.width = "0%";
+    const targetW = `${Math.min(info.progress * 100, 100)}%`;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        dashXpFill.style.width = targetW;
+      }),
+    );
+    const xpBarEl = dashXpFill.closest(".xpbar");
+    if (xpBarEl) {
+      xpBarEl.dataset.tip = `${info.remaining.toLocaleString()} / ${info.req.toLocaleString()} XP  ·  ${Math.max(0, info.req - info.remaining).toLocaleString()} more to level up`;
+    }
+  }
   if (sideSub) sideSub.textContent = title || `Rank ${rank}`;
   if (hunterTitle) hunterTitle.textContent = title || "Unassigned";
 
@@ -962,7 +1267,9 @@ function updateGraph() {
     getISODate();
 
   let questDayDate = new Date();
-  const parts = String(questDayIso).split("-").map((v) => Number(v));
+  const parts = String(questDayIso)
+    .split("-")
+    .map((v) => Number(v));
   if (
     parts.length === 3 &&
     parts.every((v) => Number.isFinite(v)) &&
@@ -1025,7 +1332,9 @@ function updateGraph() {
       questState.completed && typeof questState.completed === "object"
         ? questState.completed
         : {};
-    todayCompletedIds = Object.keys(completed).filter((qid) => !!completed[qid]);
+    todayCompletedIds = Object.keys(completed).filter(
+      (qid) => !!completed[qid],
+    );
   } catch {}
 
   const todayNames =
@@ -1133,26 +1442,95 @@ function updateGraph() {
       yLabels.appendChild(text);
     });
 
+    let areaPath = svg.querySelector(".graph-area-fill");
+    if (!areaPath) {
+      let defs = svg.querySelector("defs");
+      if (!defs) {
+        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        svg.insertBefore(defs, svg.firstChild);
+      }
+      if (!defs.querySelector("#graphGrad")) {
+        const grad = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "linearGradient",
+        );
+        grad.setAttribute("id", "graphGrad");
+        grad.setAttribute("x1", "0");
+        grad.setAttribute("y1", "0");
+        grad.setAttribute("x2", "0");
+        grad.setAttribute("y2", "1");
+        const s1 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "stop",
+        );
+        s1.setAttribute("offset", "0%");
+        s1.setAttribute("stop-color", "rgba(34,211,238,0.22)");
+        const s2 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "stop",
+        );
+        s2.setAttribute("offset", "100%");
+        s2.setAttribute("stop-color", "rgba(34,211,238,0)");
+        grad.appendChild(s1);
+        grad.appendChild(s2);
+        defs.appendChild(grad);
+      }
+      areaPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      areaPath.classList.add("graph-area-fill");
+      areaPath.setAttribute("fill", "url(#graphGrad)");
+      areaPath.setAttribute("stroke", "none");
+      areaPath.style.opacity = "0";
+      svg.insertBefore(areaPath, svg.children[1] || null);
+    }
+
     let path = svg.querySelector(".data-line");
     if (!path) {
       path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.classList.add("data-line");
       path.setAttribute("fill", "none");
       path.setAttribute("stroke", "var(--aqua)");
-      path.setAttribute("stroke-width", "3");
+      path.setAttribute("stroke-width", "2.5");
       path.setAttribute("stroke-linecap", "round");
       path.setAttribute("stroke-linejoin", "round");
       svg.appendChild(path);
     }
 
-    const points = weeklyData.map((val, i) => {
-      const x = 60 + i * 100;
-      const y = mapY(val);
-      return `${x},${y}`;
-    });
-
-    const d = points.length > 0 ? "M" + points.join(" L") : "";
+    const rawPts = weeklyData.map((val, i) => ({
+      x: 60 + i * 100,
+      y: mapY(val),
+    }));
+    const d =
+      rawPts.length > 0
+        ? "M" + rawPts.map((p) => `${p.x},${p.y}`).join(" L")
+        : "";
     path.setAttribute("d", d);
+
+    if (rawPts.length > 0) {
+      const first = rawPts[0];
+      const last = rawPts[rawPts.length - 1];
+      areaPath.setAttribute(
+        "d",
+        `M${first.x},220 ` +
+          rawPts.map((p) => `L${p.x},${p.y}`).join(" ") +
+          ` L${last.x},220 Z`,
+      );
+    }
+
+    const totalLen = path.getTotalLength();
+    path.style.transition = "none";
+    path.style.strokeDasharray = String(totalLen);
+    path.style.strokeDashoffset = String(totalLen);
+    areaPath.style.transition = "none";
+    areaPath.style.opacity = "0";
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        path.style.transition =
+          "stroke-dashoffset 1.3s cubic-bezier(0.16,1,0.3,1)";
+        path.style.strokeDashoffset = "0";
+        areaPath.style.transition = "opacity 0.9s ease 0.35s";
+        areaPath.style.opacity = "1";
+      }),
+    );
 
     let tooltip = document.getElementById("taskGraphTooltip");
     if (!tooltip) {
@@ -1166,6 +1544,15 @@ function updateGraph() {
       }
     }
 
+    const lgContainer = svg.closest(".line-graph");
+    let colHL = lgContainer?.querySelector(".graph-col-hl");
+    if (!colHL && lgContainer) {
+      lgContainer.style.position = "relative";
+      colHL = document.createElement("div");
+      colHL.className = "graph-col-hl";
+      lgContainer.insertBefore(colHL, svg);
+    }
+
     let group = svg.querySelector(".data-points");
     if (!group) {
       group = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -1177,17 +1564,31 @@ function updateGraph() {
     weeklyData.forEach((val, i) => {
       const x = 60 + i * 100;
       const y = mapY(val);
+      const isToday = i === dayIndex;
 
-      const circle = document.createElementNS(
+      const ring = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "circle",
       );
-      circle.setAttribute("cx", String(x));
-      circle.setAttribute("cy", String(y));
-      circle.setAttribute("r", "5");
-      circle.setAttribute("fill", "var(--aqua)");
-      circle.setAttribute("opacity", "0.95");
-      group.appendChild(circle);
+      ring.setAttribute("cx", String(x));
+      ring.setAttribute("cy", String(y));
+      ring.setAttribute("r", "9");
+      ring.setAttribute("fill", "rgba(34,211,238,0.12)");
+      ring.setAttribute("stroke", "rgba(34,211,238,0.28)");
+      ring.setAttribute("stroke-width", "1");
+      group.appendChild(ring);
+
+      const dot = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle",
+      );
+      dot.setAttribute("cx", String(x));
+      dot.setAttribute("cy", String(y));
+      dot.setAttribute("r", "4.5");
+      dot.setAttribute("fill", "var(--aqua)");
+      dot.setAttribute("opacity", "0.95");
+      if (isToday) dot.style.animation = "dot-pulse 2s ease-in-out infinite";
+      group.appendChild(dot);
     });
 
     let hitGroup = svg.querySelector(".data-hitboxes");
@@ -1202,12 +1603,32 @@ function updateGraph() {
       if (!tooltip) return;
       const tasks = weeklyTasks[i] || [];
       const count = Number(weeklyData[i] || 0);
-      const lines =
-        tasks.length > 0 ? tasks : count > 0 ? [] : ["No tasks completed"];
+      const maxDay = Math.max(1, ...weeklyData.map((v) => Number(v) || 0));
+      const pct = Math.round((count / maxDay) * 100);
+      const isToday = i === dayIndex;
 
       tooltip.innerHTML = `
-        <div class="gtt-day">${dayLabels[i]} - ${count} done</div>
-        ${lines.map((t) => `<div class="gtt-item">${t}</div>`).join("")}
+        <div class="gtt-top">
+          <div class="gtt-day-label">${dayLabels[i]}${isToday ? `<span class="gtt-today-dot"></span>` : ""}</div>
+          <div class="gtt-count-chip">${count} done</div>
+        </div>
+        <div class="gtt-bar-section">
+          <div class="gtt-bar-track"><div class="gtt-bar-fill" style="width:0%"></div></div>
+          <div class="gtt-bar-meta">${pct}% of best day &middot; +${count * 50} XP est.</div>
+        </div>
+        <div class="gtt-task-list">
+          ${
+            tasks.length > 0
+              ? tasks
+                  .slice(0, 4)
+                  .map((t) => `<div class="gtt-pill">${t}</div>`)
+                  .join("") +
+                (tasks.length > 4
+                  ? `<div class="gtt-more">+${tasks.length - 4} more</div>`
+                  : "")
+              : `<div class="gtt-no-tasks">No quests completed</div>`
+          }
+        </div>
       `;
 
       tooltip.hidden = false;
@@ -1216,25 +1637,35 @@ function updateGraph() {
       const container = svg.closest(".line-graph");
       const containerRect =
         container?.getBoundingClientRect() || svg.getBoundingClientRect();
-      const tooltipW = tooltip.offsetWidth || 220;
-      const tooltipH = tooltip.offsetHeight || 120;
+      const tooltipW = tooltip.offsetWidth || 228;
+      const tooltipH = tooltip.offsetHeight || 160;
       const pad = 8;
-
       const anchorX = evt.clientX - containerRect.left;
       const anchorY = evt.clientY - containerRect.top;
-
-      let left = anchorX - tooltipW - 14;
-      let top = anchorY - tooltipH / 2;
-
-      const maxLeft = Math.max(pad, containerRect.width - tooltipW - pad);
-      const maxTop = Math.max(pad, containerRect.height - tooltipH - pad);
-
-      left = Math.min(Math.max(pad, left), maxLeft);
-      top = Math.min(Math.max(pad, top), maxTop);
-
+      let left = Math.min(
+        Math.max(pad, anchorX - tooltipW - 14),
+        Math.max(pad, containerRect.width - tooltipW - pad),
+      );
+      let top = Math.min(
+        Math.max(pad, anchorY - tooltipH / 2),
+        Math.max(pad, containerRect.height - tooltipH - pad),
+      );
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
       tooltip.style.visibility = "visible";
+
+      requestAnimationFrame(() => {
+        const bar = tooltip.querySelector(".gtt-bar-fill");
+        if (bar) bar.style.width = `${pct}%`;
+      });
+
+      if (colHL) {
+        const sr = svg.getBoundingClientRect();
+        const scaleX = sr.width / 720;
+        colHL.style.left = `${Math.round(sr.left - containerRect.left + (60 + i * 100 - 45) * scaleX)}px`;
+        colHL.style.width = `${Math.round(90 * scaleX)}px`;
+        colHL.classList.add("visible");
+      }
     };
 
     const hideTooltip = () => {
@@ -1242,6 +1673,7 @@ function updateGraph() {
         tooltip.hidden = true;
         tooltip.style.visibility = "";
       }
+      if (colHL) colHL.classList.remove("visible");
     };
 
     for (let i = 0; i < 7; i++) {

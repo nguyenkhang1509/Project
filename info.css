@@ -1649,3 +1649,16 @@
     border-radius: 14px;
   }
 }
+
+.streak-pill {
+  animation: streak-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes streak-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251,146,60,0); }
+  50%       { box-shadow: 0 0 14px 3px rgba(251,146,60,0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-pill { animation: none; }
+}
