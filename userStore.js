@@ -31,6 +31,7 @@ const XP_STORAGE_KEY = "totalXP";
 const TASK_HISTORY_KEY = "dailyTaskHistory";
 const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
+const HUNTER_CELEBRATION_QUEUE_BASE = "aurak_hunter_celebrations_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
 
@@ -137,6 +138,46 @@ function heroMoodKeyFromTaskCount(taskCount) {
 
 function safeString(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeHunterCelebrationType(value) {
+  const type = safeString(value).toLowerCase();
+  return type === "locked-in" || type === "rank-up" ? type : "";
+}
+
+function normalizeHunterCelebrationEvent(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const type = normalizeHunterCelebrationType(value.type);
+  if (!type) return null;
+
+  const createdAt = Number(value.createdAt);
+  const taskCount = Number(value.taskCount);
+
+  return {
+    id:
+      safeString(value.id) ||
+      `hunter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
+    characterKey: safeString(value.characterKey).toLowerCase(),
+    displayName: safeString(value.displayName),
+    rank: hasKnownRank(value.rank) ? normalizeRank(value.rank) : "",
+    previousRank: hasKnownRank(value.previousRank)
+      ? normalizeRank(value.previousRank)
+      : "",
+    nextRank: hasKnownRank(value.nextRank) ? normalizeRank(value.nextRank) : "",
+    taskCount: Number.isFinite(taskCount) ? Math.max(0, Math.floor(taskCount)) : 0,
+    moodKey: normalizeHeroMoodKey(value.moodKey),
+  };
+}
+
+function normalizeHunterCelebrationQueue(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => normalizeHunterCelebrationEvent(item))
+    .filter(Boolean)
+    .slice(-12);
 }
 
 function normalizeHeroMoodKey(moodKey) {
@@ -724,6 +765,43 @@ export function readCachedAccountState(uid) {
   return buildLocalState(uid, cached || {});
 }
 
+export function readHunterCelebrationQueue(uid) {
+  if (!uid) return [];
+  return normalizeHunterCelebrationQueue(
+    readScopedValue(HUNTER_CELEBRATION_QUEUE_BASE, uid, []),
+  );
+}
+
+export function enqueueHunterCelebration(uid, payload) {
+  if (!uid || !payload || typeof payload !== "object") return [];
+
+  const queue = readHunterCelebrationQueue(uid);
+  const event = normalizeHunterCelebrationEvent(payload);
+  if (!event) return queue;
+
+  const nextQueue = [...queue, event].slice(-12);
+  writeLocalJSON(getStorageKey(HUNTER_CELEBRATION_QUEUE_BASE, uid), nextQueue);
+  return nextQueue;
+}
+
+export function shiftHunterCelebration(uid, eventId = "") {
+  if (!uid) return null;
+
+  const queue = readHunterCelebrationQueue(uid);
+  if (!queue.length) return null;
+
+  const targetId = safeString(eventId);
+  const index = targetId
+    ? queue.findIndex((item) => item.id === targetId)
+    : 0;
+  if (index < 0) return null;
+
+  const nextQueue = queue.slice();
+  const [removed] = nextQueue.splice(index, 1);
+  writeLocalJSON(getStorageKey(HUNTER_CELEBRATION_QUEUE_BASE, uid), nextQueue);
+  return removed || null;
+}
+
 export async function syncUserState(uid) {
   if (!uid) return null;
 
@@ -938,6 +1016,7 @@ export function clearAccountData(uid) {
     "aurak_user_profile",
     "aurak_membership",
     "aurakDashboard",
+    HUNTER_CELEBRATION_QUEUE_BASE,
     USER_DOC_CACHE_BASE,
   ];
 

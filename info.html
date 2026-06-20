@@ -606,6 +606,10 @@
         sumStatPoints,
         syncUserState,
       } from "./userStore.js";
+      import {
+        pumpHunterCelebrationQueue,
+        queueHunterRankUpCelebration,
+      } from "./hunterCelebrations.js";
 
       const DAILY_DONE_KEY = "aurak_daily_done_v1";
       const DPL_TRACK_KEY = "aurak_dpl_tracking_v1";
@@ -809,6 +813,23 @@
       function setText(id, txt) {
         const el = document.getElementById(id);
         if (el) el.textContent = txt;
+      }
+
+      function getStatsCelebrationTarget() {
+        return (
+          document.getElementById("openUpgradeShop") ||
+          document.querySelector(".stats-main") ||
+          document.querySelector(".main")
+        );
+      }
+
+      function pumpStatsCelebrations(uid = getCurrentUser()?.uid) {
+        if (!uid) return false;
+        return pumpHunterCelebrationQueue({
+          uid,
+          returnTargetEl: getStatsCelebrationTarget(),
+          returnLabel: "Back to Stats",
+        });
       }
 
       const STAT_VISUALS = Object.freeze({
@@ -1483,11 +1504,17 @@
       }
 
       async function applyUpgrade() {
-        const { user, stats, statPoints, statUpgrades } = getResolvedStatsState();
+        const { user, accountState, stats, statPoints, statUpgrades } =
+          getResolvedStatsState();
         if (!user?.uid || upgradeState.saving) return;
 
         const totals = ensureUpgradeSelection(stats, statPoints);
         const plannedTargets = STAT_KEYS.filter((key) => getPlannedLevels(key) > 0);
+        const previousRank =
+          typeof accountState?.rank === "string" && accountState.rank.trim()
+            ? accountState.rank.trim()
+            : rankFromAverage(averageStat(stats));
+        const completedToday = readQuestStateCompletedCountToday();
 
         if (!plannedTargets.length) {
           upgradeNotice =
@@ -1524,6 +1551,7 @@
           nextUpgrades = result.statUpgrades;
         }
 
+        const nextRank = rankFromAverage(averageStat(nextStats));
         upgradeState.saving = true;
         upgradeNotice = "";
         renderUpgradeModal();
@@ -1534,9 +1562,23 @@
             statPoints: nextPoints,
             statUpgrades: nextUpgrades,
           });
+          const nextProfile =
+            nextState?.profile &&
+            typeof nextState.profile === "object" &&
+            !Array.isArray(nextState.profile)
+              ? nextState.profile
+              : readUserProfile(user.uid);
+          queueHunterRankUpCelebration({
+            uid: user.uid,
+            profile: nextProfile,
+            previousRank,
+            nextRank,
+            taskCount: completedToday,
+          });
           resetUpgradePlan();
           closeUpgradeModal();
           render(nextState);
+          pumpStatsCelebrations(user.uid);
         } catch (error) {
           console.warn("Stat upgrade sync failed:", error);
           upgradeNotice = "We couldn't save that upgrade to Firestore. Please try again.";
@@ -2084,6 +2126,7 @@
         initUpgradeModal();
         initCalendarNav();
         render();
+        pumpStatsCelebrations(user?.uid);
 
         if (user?.uid) {
           unsubscribeInfoState();
@@ -2091,6 +2134,7 @@
             user.uid,
             (state) => {
               render(state);
+              pumpStatsCelebrations(user.uid);
             },
             (error) => {
               console.warn("Info realtime sync failed:", error);

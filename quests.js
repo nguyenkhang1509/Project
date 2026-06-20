@@ -2,9 +2,16 @@
   "use strict";
 
   const storeApiPromise = import("./userStore.js").catch(() => null);
+  const hunterCelebrationApiPromise = import("./hunterCelebrations.js").catch(
+    () => null,
+  );
 
   async function getStoreApi() {
     return storeApiPromise;
+  }
+
+  async function getHunterCelebrationApi() {
+    return hunterCelebrationApiPromise;
   }
 
   const STORAGE_KEY = "aurak_quests_v4";
@@ -67,6 +74,52 @@
     } catch {
       return null;
     }
+  }
+
+  async function pumpQuestCelebrations(targetEl = null) {
+    const celebrationApi = await getHunterCelebrationApi();
+    const currentUser = readCurrentUser();
+    if (!celebrationApi?.pumpHunterCelebrationQueue || !currentUser?.uid) {
+      return false;
+    }
+
+    return celebrationApi.pumpHunterCelebrationQueue({
+      uid: currentUser.uid,
+      returnTargetEl:
+        targetEl ||
+        document.querySelector(".qbar") ||
+        document.querySelector(".main") ||
+        questList,
+      returnLabel: "Back to Quests",
+    });
+  }
+
+  async function maybeQueueQuestLockedInCelebration(
+    previousTaskCount,
+    nowComplete,
+    user,
+    accountState,
+  ) {
+    if (!nowComplete || !user?.uid) return false;
+
+    const celebrationApi = await getHunterCelebrationApi();
+    if (!celebrationApi?.queueHunterLockedInCelebration) return false;
+
+    const profile =
+      (accountState?.profile &&
+      typeof accountState.profile === "object" &&
+      !Array.isArray(accountState.profile)
+        ? accountState.profile
+        : null) || readUserProfile(user.uid);
+    const stats = accountState?.stats || user.stats || profile?.stats || null;
+
+    return celebrationApi.queueHunterLockedInCelebration({
+      uid: user.uid,
+      profile,
+      rank: resolveRank(accountState, stats),
+      previousTaskCount,
+      nextTaskCount: previousTaskCount + 1,
+    });
   }
 
   function readAccountState(uid) {
@@ -859,6 +912,9 @@
 
     const wasDone = card.dataset.completed === "true";
     if (wasDone === makeDone) return;
+    const previousTaskCount = Object.values(state.completed || {}).filter(
+      Boolean,
+    ).length;
 
     const api = await getStoreApi();
     const currentUser = api?.getCurrentUser?.() || readCurrentUser();
@@ -925,6 +981,13 @@
     pulse(card);
     if (makeDone) burstParticles(card);
     applyFilter();
+    await maybeQueueQuestLockedInCelebration(
+      previousTaskCount,
+      makeDone,
+      currentUser,
+      accountState,
+    );
+    void pumpQuestCelebrations();
   }
 
   showCompleted.addEventListener("change", () => {
@@ -1016,6 +1079,7 @@
       persistXpTotal(xpTotal);
       renderXp(xpTotal);
       applyFilter();
+      void pumpQuestCelebrations();
     } catch (error) {
       console.error("Error loading challenges:", error);
       questList.innerHTML =

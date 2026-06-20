@@ -1,16 +1,26 @@
 import {
+  applyStatUpgrade,
   applyQuestPointChange,
   getCurrentUser,
+  getUpgradeCost,
   getStorageKey,
   mergeUserState,
+  normalizeStatPoints,
+  normalizeStatUpgrades,
   normalizeStats,
   readCachedAccountState,
   readCachedUserProfile,
   STAT_KEYS,
   subscribeToUserState,
+  sumStatPoints,
   syncUserState,
   writeCurrentUser,
 } from "./userStore.js";
+import {
+  pumpHunterCelebrationQueue,
+  queueHunterLockedInCelebration,
+  queueHunterRankUpCelebration,
+} from "./hunterCelebrations.js";
 
 const QUEST_STORAGE_KEY = "aurak_quests_v4";
 const XP_STORAGE_KEY = "totalXP";
@@ -19,6 +29,45 @@ const JOURNAL_KEY_BASE = "aurak_journal_v1";
 const DASH_REFLECTION_KEY_BASE = "aurak_dashboard_reflection_v1";
 const BASE_XP_PER_LEVEL = 500;
 const LEVEL_GROWTH = 1.2;
+const HUNTER_LOCKED_IN_OPENINGS = {
+  executioner: {
+    src: "./executioner_opening.mp4",
+    figureFallback: "./S_executioner_lockedin.png",
+    label: "Executioner",
+  },
+  insightphantom: {
+    src: "./phantom_opening.mp4",
+    figureFallback: "./S_insightphantom_lockedin.png",
+    label: "Insight Phantom",
+  },
+  saint: {
+    src: "./saint_opening.mp4",
+    figureFallback: "./S_saint_lockedin.png",
+    label: "Saint",
+  },
+  vanguard: {
+    src: "./vanguard_opening.mp4",
+    figureFallback: "./S_vanguard_lockedin.png",
+    label: "Vanguard",
+  },
+  reaper: {
+    src: "./reaper_opening.mp4",
+    figureFallback: "./S_reaper_lockedin.png",
+    label: "Mind Reaper",
+  },
+};
+const HUNTER_OPENING_DEFAULT_DURATION_SECONDS = 5.04;
+const HUNTER_OPENING_PRIME_REMAINING_SECONDS = 0.62;
+const HUNTER_OPENING_RETURN_MS = 940;
+const HUNTER_OPENING_PENDING_TTL_MS = 15000;
+const HUNTER_RANK_ORDER = ["E", "D", "C", "B", "A", "S"];
+const HUNTER_RANK_UP_SWAP_DELAY_MS = 260;
+
+let pendingHunterLockedInOpeningAt = 0;
+let pendingHunterRankUp = null;
+let hunterOpeningToken = 0;
+let lastObservedHunterRank = "";
+let lastObservedHunterRankUserKey = "";
 
 function getAccountStorageKey(baseKey) {
   return getStorageKey(baseKey);
@@ -26,6 +75,561 @@ function getAccountStorageKey(baseKey) {
 
 function readUserProfile(uid) {
   return uid ? readCachedUserProfile(uid) : null;
+}
+
+function getDashboardCelebrationTarget() {
+  return (
+    document.querySelector(".hunter-figure-shell") ||
+    document.querySelector(".wide-stats") ||
+    document.querySelector(".main")
+  );
+}
+
+function pumpDashboardCelebrations() {
+  const user = getCurrentUser();
+  if (!user?.uid) return false;
+
+  const activeFigure = document.getElementById("hunterFigure");
+  return pumpHunterCelebrationQueue({
+    uid: user.uid,
+    returnTargetEl: getDashboardCelebrationTarget(),
+    returnLabel: "Return to Dashboard",
+    activeFigureSrc: activeFigure?.currentSrc || activeFigure?.src || "",
+  });
+}
+
+function maybeQueueDashboardLockedInCelebration(
+  previousTaskCount,
+  nowComplete,
+  user,
+  accountState,
+) {
+  if (!nowComplete || !user?.uid) return false;
+
+  const profile =
+    (accountState?.profile &&
+    typeof accountState.profile === "object" &&
+    !Array.isArray(accountState.profile)
+      ? accountState.profile
+      : null) || readUserProfile(user.uid);
+  const stats = accountState?.stats || user.stats || profile?.stats || null;
+  const rawRank = String(accountState?.rank || "")
+    .trim()
+    .toUpperCase();
+  const rank = hasKnownRank(rawRank)
+    ? rawRank
+    : rankFromAverage(averageStat(stats));
+
+  return queueHunterLockedInCelebration({
+    uid: user.uid,
+    profile,
+    rank,
+    previousTaskCount,
+    nextTaskCount: previousTaskCount + 1,
+  });
+}
+
+const STAT_VISUALS = Object.freeze({
+  Physical: {
+    accent: "#60a5fa",
+    soft: "rgba(96, 165, 250, 0.16)",
+    preview: "rgba(191, 219, 254, 0.9)",
+  },
+  Intellectual: {
+    accent: "#a78bfa",
+    soft: "rgba(167, 139, 250, 0.16)",
+    preview: "rgba(221, 214, 254, 0.92)",
+  },
+  Mental: {
+    accent: "#4ade80",
+    soft: "rgba(74, 222, 128, 0.16)",
+    preview: "rgba(187, 247, 208, 0.92)",
+  },
+  Confidence: {
+    accent: "#f59e0b",
+    soft: "rgba(245, 158, 11, 0.18)",
+    preview: "rgba(253, 230, 138, 0.92)",
+  },
+  Discipline: {
+    accent: "#f87171",
+    soft: "rgba(248, 113, 113, 0.18)",
+    preview: "rgba(254, 202, 202, 0.92)",
+  },
+});
+
+const upgradeState = {
+  sourceKey: "Physical",
+  allocations: createEmptyUpgradePlan(),
+  saving: false,
+};
+
+let upgradeNotice = "";
+
+function clampValue(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function formatPointText(count) {
+  return `${count} ${count === 1 ? "point" : "points"}`;
+}
+
+function getResolvedStatsState(stateOverride = null) {
+  const user = getCurrentUser();
+  const accountState = stateOverride || readCachedAccountState(user?.uid);
+  const profile = readUserProfile(user?.uid);
+  const stats = normalizeStats(
+    accountState?.stats || (user && user.stats) || (profile && profile.stats),
+  );
+  const statPoints = normalizeStatPoints(accountState?.statPoints);
+  const statUpgrades = normalizeStatUpgrades(accountState?.statUpgrades);
+
+  return { user, accountState, profile, stats, statPoints, statUpgrades };
+}
+
+function createEmptyUpgradePlan() {
+  const next = {};
+  STAT_KEYS.forEach((key) => {
+    next[key] = 0;
+  });
+  return next;
+}
+
+function resetUpgradePlan() {
+  upgradeState.allocations = createEmptyUpgradePlan();
+}
+
+function getPlannedLevels(targetKey) {
+  return Math.max(
+    0,
+    Math.floor(Number(upgradeState.allocations?.[targetKey]) || 0),
+  );
+}
+
+function getPlannedSpend(sourceKey = upgradeState.sourceKey) {
+  return STAT_KEYS.reduce(
+    (total, key) => total + getPlannedLevels(key) * getUpgradeCost(sourceKey, key),
+    0,
+  );
+}
+
+function getPreviewStats(stats) {
+  const preview = normalizeStats(stats);
+  STAT_KEYS.forEach((key) => {
+    preview[key] = clampValue(
+      (Number(preview[key]) || 0) + getPlannedLevels(key),
+      0,
+      100,
+    );
+  });
+  return preview;
+}
+
+function getStatStyleVars(key) {
+  const visual = STAT_VISUALS[key] || STAT_VISUALS.Physical;
+  return `--sup-accent:${visual.accent};--sup-accent-soft:${visual.soft};--sup-preview:${visual.preview};`;
+}
+
+function ensureUpgradeSelection(stats, statPoints) {
+  const availableSources = STAT_KEYS.filter(
+    (key) => (Number(statPoints[key]) || 0) > 0,
+  );
+  const totalAvailable = sumStatPoints(statPoints);
+
+  if (!availableSources.length) {
+    upgradeState.sourceKey = "Physical";
+    resetUpgradePlan();
+    return {
+      totalAvailable,
+      selectedAvailable: 0,
+      remainingPoints: 0,
+    };
+  }
+
+  if (!availableSources.includes(upgradeState.sourceKey)) {
+    upgradeState.sourceKey = availableSources[0];
+    resetUpgradePlan();
+  }
+
+  const nextPlan = createEmptyUpgradePlan();
+  let remainingPoints = Math.max(
+    0,
+    Number(statPoints[upgradeState.sourceKey]) || 0,
+  );
+
+  STAT_KEYS.forEach((targetKey) => {
+    const desiredLevels = getPlannedLevels(targetKey);
+    const room = Math.max(0, 100 - (Number(stats[targetKey]) || 0));
+    const costPerLevel = getUpgradeCost(upgradeState.sourceKey, targetKey);
+    const affordableLevels = Math.floor(remainingPoints / costPerLevel);
+    const allowedLevels = Math.max(
+      0,
+      Math.min(desiredLevels, room, affordableLevels),
+    );
+
+    nextPlan[targetKey] = allowedLevels;
+    remainingPoints -= allowedLevels * costPerLevel;
+  });
+
+  upgradeState.allocations = nextPlan;
+
+  return {
+    totalAvailable,
+    selectedAvailable: Math.max(
+      0,
+      Number(statPoints[upgradeState.sourceKey]) || 0,
+    ),
+    remainingPoints,
+  };
+}
+
+function getMaxAdditionalLevels(stats, statPoints, targetKey) {
+  const previewStats = getPreviewStats(stats);
+  const selectedAvailable = Math.max(
+    0,
+    Number(statPoints[upgradeState.sourceKey]) || 0,
+  );
+  const remainingPoints = Math.max(0, selectedAvailable - getPlannedSpend());
+  const costPerLevel = getUpgradeCost(upgradeState.sourceKey, targetKey);
+  const room = Math.max(0, 100 - (Number(previewStats[targetKey]) || 0));
+
+  return Math.max(
+    0,
+    Math.min(Math.floor(remainingPoints / costPerLevel), room),
+  );
+}
+
+function buildUpgradePlanSummary() {
+  return STAT_KEYS.filter((key) => getPlannedLevels(key) > 0)
+    .map((key) => `${key} +${getPlannedLevels(key)}`)
+    .join(" | ");
+}
+
+function renderUpgradeStatList(stats, statPoints) {
+  const list = document.getElementById("supStatList");
+  if (!list) return;
+
+  const previewStats = getPreviewStats(stats);
+  list.innerHTML = "";
+
+  STAT_KEYS.forEach((key) => {
+    const currentValue = Math.max(0, Number(stats[key]) || 0);
+    const nextValue = Math.max(0, Number(previewStats[key]) || 0);
+    const plannedLevels = getPlannedLevels(key);
+    const walletPoints = Math.max(0, Number(statPoints[key]) || 0);
+    const costPerLevel = getUpgradeCost(upgradeState.sourceKey, key);
+    const previewWidth = Math.max(0, nextValue - currentValue);
+    const canDecrease = !upgradeState.saving && plannedLevels > 0;
+    const canIncrease =
+      !upgradeState.saving && getMaxAdditionalLevels(stats, statPoints, key) > 0;
+    const isSource = key === upgradeState.sourceKey;
+
+    const card = document.createElement("article");
+    card.className = "sup-stat-card";
+    card.style.cssText = getStatStyleVars(key);
+    if (plannedLevels > 0) card.classList.add("is-planned");
+    if (isSource) card.classList.add("is-source");
+    if (!walletPoints && !plannedLevels) card.classList.add("is-empty");
+    card.dataset.source = key;
+    card.innerHTML = `
+      <div class="sup-stat-top">
+        <div class="sup-stat-nameWrap">
+          <span class="sup-stat-dot" aria-hidden="true"></span>
+          <div class="sup-stat-copy">
+            <div class="sup-stat-name">${key}</div>
+            <div class="sup-stat-rule">
+              ${
+                isSource
+                  ? `Source wallet: ${formatPointText(walletPoints)} available.`
+                  : `Costs ${costPerLevel} ${costPerLevel === 1 ? "point" : "points"} from ${upgradeState.sourceKey}.`
+              }
+            </div>
+          </div>
+        </div>
+        <div class="sup-stat-badges">
+          <span class="sup-stat-badge">${walletPoints} banked</span>
+          ${
+            plannedLevels > 0
+              ? `<span class="sup-stat-badge is-preview">+${plannedLevels} queued</span>`
+              : ""
+          }
+        </div>
+      </div>
+      <div class="sup-stat-track" aria-hidden="true">
+        <div class="sup-stat-current" style="width:${currentValue}%"></div>
+        ${
+          previewWidth > 0
+            ? `<div class="sup-stat-previewFill" style="left:${currentValue}%;width:${previewWidth}%"></div>`
+            : ""
+        }
+      </div>
+      <div class="sup-stat-bottom">
+        <div class="sup-stat-values">
+          <span>${currentValue} / 100</span>
+          ${
+            plannedLevels > 0
+              ? `<span class="sup-stat-next">${nextValue} after upgrade</span>`
+              : `<span>${100 - currentValue} levels until cap</span>`
+          }
+        </div>
+        <div class="sup-stat-controls">
+          <button
+            class="sup-step"
+            type="button"
+            data-adjust="-1"
+            data-target="${key}"
+            ${canDecrease ? "" : "disabled"}
+            aria-label="Remove ${key} upgrade"
+          >
+            -
+          </button>
+          <div class="sup-stat-amount">${plannedLevels}</div>
+          <button
+            class="sup-step"
+            type="button"
+            data-adjust="1"
+            data-target="${key}"
+            ${canIncrease ? "" : "disabled"}
+            aria-label="Add ${key} upgrade"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function openUpgradeModal() {
+  const modal = document.getElementById("supModal");
+  if (!modal) return;
+  upgradeNotice = "";
+  renderUpgradeModal();
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+}
+
+function closeUpgradeModal() {
+  const modal = document.getElementById("supModal");
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  upgradeNotice = "";
+}
+
+function renderUpgradeModal(stateOverride = null) {
+  const modal = document.getElementById("supModal");
+  if (!modal) return;
+
+  const { stats, statPoints } = getResolvedStatsState(stateOverride);
+  const totals = ensureUpgradeSelection(stats, statPoints);
+  const previewStats = getPreviewStats(stats);
+  const previewAverage = averageStat(previewStats);
+  const averageLine = document.getElementById("supAverageLine");
+  const preview = document.getElementById("supPreview");
+  const totalEl = document.getElementById("supTotal");
+  const hint = document.getElementById("supHint");
+  const applyBtn = document.getElementById("supApply");
+
+  renderUpgradeStatList(stats, statPoints);
+
+  if (averageLine) {
+    averageLine.textContent = Number.isFinite(previewAverage)
+      ? `Average: ${Math.round(previewAverage)} / 100`
+      : "Average: --";
+  }
+
+  if (totalEl) {
+    totalEl.textContent =
+      totals.totalAvailable > 0
+        ? `${formatPointText(totals.totalAvailable)} available`
+        : "0 points available";
+  }
+
+  if (hint) {
+    hint.textContent =
+      upgradeNotice ||
+      (totals.totalAvailable > 0
+        ? "Spend 1 matching point for +1 in the same stat, or spend 2 points from one category to raise another stat by 1."
+        : "Complete quests to earn stat points, then spend them here to shape your build.");
+  }
+
+  const planSummary = buildUpgradePlanSummary();
+  if (preview) {
+    if (totals.totalAvailable <= 0) {
+      preview.textContent =
+        "Complete more quests to earn stat points for the shop.";
+    } else if (!planSummary) {
+      preview.textContent =
+        `${upgradeState.sourceKey} is selected. Queue one or more stat upgrades to spend its points.`;
+    } else {
+      preview.textContent = `${planSummary} using ${upgradeState.sourceKey}. ${totals.remainingPoints} ${totals.remainingPoints === 1 ? "point remains" : "points remain"} in that wallet.`;
+    }
+  }
+
+  if (applyBtn) {
+    applyBtn.disabled = upgradeState.saving || !planSummary;
+    applyBtn.textContent = upgradeState.saving
+      ? "Applying..."
+      : "Apply Upgrade";
+  }
+}
+
+function adjustUpgradePlan(targetKey, direction) {
+  if (!STAT_KEYS.includes(targetKey) || !Number.isFinite(direction)) return;
+
+  const { stats, statPoints } = getResolvedStatsState();
+  ensureUpgradeSelection(stats, statPoints);
+
+  const currentLevels = getPlannedLevels(targetKey);
+
+  if (direction < 0) {
+    upgradeState.allocations[targetKey] = Math.max(0, currentLevels - 1);
+    upgradeNotice = "";
+    renderUpgradeModal();
+    return;
+  }
+
+  if (getMaxAdditionalLevels(stats, statPoints, targetKey) <= 0) return;
+
+  upgradeState.allocations[targetKey] = currentLevels + 1;
+  upgradeNotice = "";
+  renderUpgradeModal();
+}
+
+async function applyDashboardUpgrade() {
+  const { user, accountState, stats, statPoints, statUpgrades } =
+    getResolvedStatsState();
+  if (!user?.uid || upgradeState.saving) return;
+
+  const totals = ensureUpgradeSelection(stats, statPoints);
+  const plannedTargets = STAT_KEYS.filter((key) => getPlannedLevels(key) > 0);
+  const previousRank =
+    typeof accountState?.rank === "string" && accountState.rank.trim()
+      ? accountState.rank.trim()
+      : rankFromAverage(averageStat(stats));
+  const taskCount = getTodayCompletedTaskCount();
+
+  if (!plannedTargets.length) {
+    upgradeNotice =
+      totals.totalAvailable > 0
+        ? "Queue at least one upgrade before applying."
+        : "Complete quests to earn stat points first.";
+    renderUpgradeModal();
+    return;
+  }
+
+  let nextStats = normalizeStats(stats);
+  let nextPoints = normalizeStatPoints(statPoints);
+  let nextUpgrades = normalizeStatUpgrades(statUpgrades);
+
+  for (const targetKey of plannedTargets) {
+    const result = applyStatUpgrade(
+      nextStats,
+      nextPoints,
+      nextUpgrades,
+      upgradeState.sourceKey,
+      targetKey,
+      getPlannedLevels(targetKey),
+    );
+
+    if (!result) {
+      upgradeNotice =
+        "That preview is no longer available. Please review the rows and try again.";
+      renderUpgradeModal();
+      return;
+    }
+
+    nextStats = result.stats;
+    nextPoints = result.statPoints;
+    nextUpgrades = result.statUpgrades;
+  }
+
+  const nextRank = rankFromAverage(averageStat(nextStats));
+  upgradeState.saving = true;
+  upgradeNotice = "";
+  renderUpgradeModal();
+
+  try {
+    const nextState = await mergeUserState(user.uid, {
+      stats: nextStats,
+      statPoints: nextPoints,
+      statUpgrades: nextUpgrades,
+    });
+    const nextProfile =
+      nextState?.profile &&
+      typeof nextState.profile === "object" &&
+      !Array.isArray(nextState.profile)
+        ? nextState.profile
+        : readUserProfile(user.uid);
+    queueHunterRankUpCelebration({
+      uid: user.uid,
+      profile: nextProfile,
+      previousRank,
+      nextRank,
+      taskCount,
+    });
+    resetUpgradePlan();
+    closeUpgradeModal();
+    renderStatsPanel(nextState);
+    updateXP();
+    renderDailyCheckin();
+    pumpDashboardCelebrations();
+  } catch (error) {
+    console.warn("Dashboard stat upgrade sync failed:", error);
+    upgradeNotice =
+      "We couldn't save that upgrade to Firestore. Please try again.";
+  } finally {
+    upgradeState.saving = false;
+    renderUpgradeModal();
+  }
+}
+
+function initUpgradeModal() {
+  const openBtn = document.getElementById("openUpgradeShop");
+  const closeBtn = document.getElementById("supClose");
+  const backdrop = document.getElementById("supBackdrop");
+  const statList = document.getElementById("supStatList");
+  const applyBtn = document.getElementById("supApply");
+
+  if (openBtn) openBtn.addEventListener("click", openUpgradeModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeUpgradeModal);
+  if (backdrop) backdrop.addEventListener("click", closeUpgradeModal);
+
+  statList?.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-adjust][data-target]");
+    if (btn) {
+      adjustUpgradePlan(
+        btn.getAttribute("data-target") || "Physical",
+        Number(btn.getAttribute("data-adjust")) || 0,
+      );
+      return;
+    }
+
+    const card = event.target.closest("[data-source]");
+    if (!card || upgradeState.saving) return;
+
+    const nextSource = card.getAttribute("data-source") || "Physical";
+    if (nextSource === upgradeState.sourceKey) return;
+
+    const { statPoints } = getResolvedStatsState();
+    if ((Number(statPoints?.[nextSource]) || 0) <= 0) {
+      upgradeNotice = `No ${nextSource} points available yet.`;
+      renderUpgradeModal();
+      return;
+    }
+
+    upgradeState.sourceKey = nextSource;
+    resetUpgradePlan();
+    upgradeNotice = "";
+    renderUpgradeModal();
+  });
+
+  applyBtn?.addEventListener("click", applyDashboardUpgrade);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeUpgradeModal();
+  });
 }
 
 function getLevelInfo(totalXp) {
@@ -242,6 +846,10 @@ function safeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function rankProgressIndex(rank) {
+  return HUNTER_RANK_ORDER.indexOf(normalizeRank(rank));
+}
+
 const HERO_FULL_RANK_SET = ["E", "D", "C", "B", "A", "S"];
 
 const HERO_RANK_ART_SUPPORT = {
@@ -379,6 +987,618 @@ function hunterFigureSrcFromProfileRankAndMoodKey(profile, rank, moodKey) {
 
 function isLockedInMoodKey(moodKey) {
   return heroMoodFileKey(moodKey) === "lockedin";
+}
+
+function getHunterLockedInOpeningConfig(characterKey, rank) {
+  const key = safeString(characterKey).toLowerCase();
+  if (normalizeRank(rank) !== "S" || !key) return null;
+  return HUNTER_LOCKED_IN_OPENINGS[key] || null;
+}
+
+function getHunterDisplayName(profile, characterKey) {
+  const title = safeString(profile?.title) || safeString(profile?.titleSurvey?.title);
+  if (title) return title;
+
+  const key = safeString(characterKey).toLowerCase();
+  return (
+    HUNTER_LOCKED_IN_OPENINGS[key]?.label ||
+    {
+      vanguard: "Vanguard",
+      insightphantom: "Insight Phantom",
+      executioner: "Executioner",
+      saint: "Saint",
+      reaper: "Mind Reaper",
+    }[key] ||
+    "Hunter"
+  );
+}
+
+function getHunterCinematicEls() {
+  return {
+    overlay: document.getElementById("hunterCinematic"),
+    stage: document.getElementById("hunterCinematicStage"),
+    video: document.getElementById("hunterCinematicVideo"),
+    figure: document.getElementById("hunterCinematicFigure"),
+    figureNext: document.getElementById("hunterCinematicFigureNext"),
+    popup: document.getElementById("hunterLockPopup"),
+    popupKicker: document.getElementById("hunterLockPopupKicker"),
+    popupTitle: document.getElementById("hunterLockPopupTitle"),
+    popupSubtitle: document.getElementById("hunterLockPopupSubtitle"),
+    popupRank: document.getElementById("hunterLockPopupRank"),
+    popupCharacter: document.getElementById("hunterLockPopupCharacter"),
+    popupTasks: document.getElementById("hunterLockPopupTasks"),
+    popupButton: document.getElementById("hunterLockPopupButton"),
+    shell: document.querySelector(".hunter-figure-shell"),
+  };
+}
+
+function prepareHunterCinematicVideo(characterKey, rank) {
+  const { overlay, video } = getHunterCinematicEls();
+  if (!video) return;
+
+  const openingConfig = getHunterLockedInOpeningConfig(characterKey, rank);
+  if (openingConfig) {
+    if (video.dataset.srcReady !== openingConfig.src) {
+      video.src = openingConfig.src;
+      video.dataset.srcReady = openingConfig.src;
+      video.load();
+    }
+    return;
+  }
+
+  if (overlay?.classList.contains("is-active")) return;
+  if (video.dataset.srcReady) {
+    video.pause();
+    video.removeAttribute("src");
+    delete video.dataset.srcReady;
+    video.load();
+  }
+}
+
+function queueHunterLockedInOpeningIfNeeded(previousTaskCount, nowComplete) {
+  const previousCount = Math.max(0, Number(previousTaskCount) || 0);
+  const nextCount = Math.max(0, previousCount + (nowComplete ? 1 : -1));
+  if (
+    nowComplete &&
+    !isLockedInMoodKey(heroMoodKeyFromTaskCount(previousCount)) &&
+    isLockedInMoodKey(heroMoodKeyFromTaskCount(nextCount))
+  ) {
+    pendingHunterLockedInOpeningAt = Date.now();
+  }
+}
+
+function hasPendingHunterLockedInOpening() {
+  if (!pendingHunterLockedInOpeningAt) return false;
+  if (Date.now() - pendingHunterLockedInOpeningAt > HUNTER_OPENING_PENDING_TTL_MS) {
+    pendingHunterLockedInOpeningAt = 0;
+    return false;
+  }
+  return true;
+}
+
+function clearHunterCinematicState(overlay, stage, shell) {
+  if (overlay) {
+    overlay.classList.remove(
+      "is-active",
+      "is-prime",
+      "is-floating",
+      "is-returning",
+      "is-popup-live",
+      "is-rank-up-mode",
+      "is-rank-up-live",
+      "is-rank-up-evolving",
+    );
+    overlay.setAttribute("aria-hidden", "true");
+    clearTimeout(overlay._hunterRankUpSwapTimer);
+    delete overlay.dataset.character;
+  }
+  if (stage) {
+    stage.style.setProperty("--cinematic-return-x", "0px");
+    stage.style.setProperty("--cinematic-return-y", "0px");
+    stage.style.setProperty("--cinematic-return-scale", "1");
+  }
+  if (shell) shell.classList.remove("is-cinematic-anchor");
+}
+
+function setHunterCinematicReturnTarget(stage, shell) {
+  if (!stage || !shell) return;
+
+  const stageRect = stage.getBoundingClientRect();
+  const shellRect = shell.getBoundingClientRect();
+  const stageCenterX = stageRect.left + stageRect.width / 2;
+  const stageCenterY = stageRect.top + stageRect.height / 2;
+  const shellCenterX = shellRect.left + shellRect.width / 2;
+  const shellCenterY = shellRect.top + shellRect.height / 2;
+  const scale = Math.max(
+    0.18,
+    Math.min(
+      shellRect.width / Math.max(stageRect.width, 1),
+      shellRect.height / Math.max(stageRect.height, 1),
+      0.52,
+    ),
+  );
+
+  stage.style.setProperty(
+    "--cinematic-return-x",
+    `${Math.round(shellCenterX - stageCenterX)}px`,
+  );
+  stage.style.setProperty(
+    "--cinematic-return-y",
+    `${Math.round(shellCenterY - stageCenterY)}px`,
+  );
+  stage.style.setProperty("--cinematic-return-scale", String(scale));
+}
+
+function populateHunterLockedInPopup({
+  overlay,
+  popupKicker,
+  popupTitle,
+  popupSubtitle,
+  popupRank,
+  popupCharacter,
+  popupTasks,
+  popupButton,
+  displayName,
+  rank,
+  taskCount,
+  characterKey,
+}) {
+  if (!overlay) return;
+  overlay.dataset.character = safeString(characterKey).toLowerCase();
+  if (popupKicker) popupKicker.textContent = "Congratulations";
+  if (popupTitle) popupTitle.textContent = "Locked In State Reached";
+  if (popupSubtitle) {
+    popupSubtitle.textContent = `${displayName} has awakened at peak focus. ${taskCount} quests cleared today.`;
+  }
+  if (popupRank) popupRank.textContent = `Rank ${rank}`;
+  if (popupCharacter) popupCharacter.textContent = displayName;
+  if (popupTasks) {
+    popupTasks.textContent = `${taskCount} Quest${taskCount === 1 ? "" : "s"}`;
+  }
+  if (popupButton) popupButton.textContent = "Return to Dashboard";
+}
+
+function populateHunterRankUpPopup({
+  overlay,
+  popupKicker,
+  popupTitle,
+  popupSubtitle,
+  popupRank,
+  popupCharacter,
+  popupTasks,
+  popupButton,
+  displayName,
+  previousRank,
+  nextRank,
+  characterKey,
+}) {
+  if (!overlay) return;
+  overlay.dataset.character = safeString(characterKey).toLowerCase();
+  if (popupKicker) popupKicker.textContent = "Rank Up";
+  if (popupTitle) popupTitle.textContent = `Rank ${nextRank} Unlocked`;
+  if (popupSubtitle) {
+    popupSubtitle.textContent = `${displayName} advanced from Rank ${previousRank} to Rank ${nextRank}.`;
+  }
+  if (popupRank) popupRank.textContent = `New Rank ${nextRank}`;
+  if (popupCharacter) popupCharacter.textContent = displayName;
+  if (popupTasks) popupTasks.textContent = `${previousRank} -> ${nextRank}`;
+  if (popupButton) popupButton.textContent = "Return to Dashboard";
+}
+
+function queueHunterRankUpIfNeeded({
+  userKey,
+  profile,
+  characterKey,
+  previousRank,
+  nextRank,
+  moodKey,
+  displayName,
+}) {
+  if (!userKey || !characterKey || !hasKnownRank(previousRank) || !hasKnownRank(nextRank)) {
+    return;
+  }
+
+  const safePreviousRank = normalizeRank(previousRank);
+  const safeNextRank = normalizeRank(nextRank);
+  if (rankProgressIndex(safeNextRank) <= rankProgressIndex(safePreviousRank)) return;
+
+  const previousFigureCandidates = hunterFigureSrcCandidatesFromProfileRankAndMoodKey(
+    profile,
+    safePreviousRank,
+    moodKey,
+  );
+  const nextFigureCandidates = hunterFigureSrcCandidatesFromProfileRankAndMoodKey(
+    profile,
+    safeNextRank,
+    moodKey,
+  );
+  if (!previousFigureCandidates.length || !nextFigureCandidates.length) return;
+
+  pendingHunterRankUp = {
+    userKey,
+    characterKey,
+    displayName,
+    previousRank: safePreviousRank,
+    nextRank: safeNextRank,
+    previousFigureCandidates,
+    nextFigureCandidates,
+  };
+}
+
+function maybeQueueHunterRankUp({
+  userKey,
+  profile,
+  characterKey,
+  rank,
+  moodKey,
+  displayName,
+}) {
+  const safeRank = hasKnownRank(rank) ? normalizeRank(rank) : "";
+  if (!userKey) return;
+
+  if (lastObservedHunterRankUserKey !== userKey) {
+    lastObservedHunterRankUserKey = userKey;
+    lastObservedHunterRank = safeRank;
+    return;
+  }
+
+  const previousRank = lastObservedHunterRank;
+  lastObservedHunterRank = safeRank;
+
+  if (!previousRank || !safeRank || previousRank === safeRank) return;
+
+  queueHunterRankUpIfNeeded({
+    userKey,
+    profile,
+    characterKey,
+    previousRank,
+    nextRank: safeRank,
+    moodKey,
+    displayName,
+  });
+}
+
+function maybePlayPendingHunterRankUp() {
+  const { overlay } = getHunterCinematicEls();
+  if (!pendingHunterRankUp || overlay?.classList.contains("is-active")) return;
+
+  const queuedRankUp = pendingHunterRankUp;
+  pendingHunterRankUp = null;
+  requestAnimationFrame(() => playHunterRankUpSequence(queuedRankUp));
+}
+
+function playHunterLockedInOpeningSequence(options = {}) {
+  const {
+    overlay,
+    stage,
+    video,
+    figure,
+    figureNext,
+    popup,
+    popupKicker,
+    popupTitle,
+    popupSubtitle,
+    popupRank,
+    popupCharacter,
+    popupTasks,
+    popupButton,
+    shell,
+  } = getHunterCinematicEls();
+  const cardFigure = document.getElementById("hunterFigure");
+  if (!overlay || !stage || !video || !figure || !shell) return;
+
+  const openingConfig = getHunterLockedInOpeningConfig(
+    options.characterKey,
+    options.rank,
+  );
+  if (!openingConfig) return;
+
+  const taskCount = Math.max(0, Number(options.taskCount) || 0);
+  const displayName = safeString(options.displayName) || openingConfig.label;
+
+  const token = hunterOpeningToken + 1;
+  hunterOpeningToken = token;
+
+  clearTimeout(overlay._hunterOpeningFallbackTimer);
+  clearTimeout(overlay._hunterOpeningFloatTimer);
+  clearTimeout(overlay._hunterOpeningReturnTimer);
+  if (overlay._hunterReturnHandler && popupButton) {
+    popupButton.removeEventListener("click", overlay._hunterReturnHandler);
+    delete overlay._hunterReturnHandler;
+  }
+  if (overlay._hunterKeydownHandler) {
+    overlay.removeEventListener("keydown", overlay._hunterKeydownHandler);
+    delete overlay._hunterKeydownHandler;
+  }
+  clearHunterCinematicState(overlay, stage, shell);
+  populateHunterLockedInPopup({
+    overlay,
+    popup,
+    popupKicker,
+    popupTitle,
+    popupSubtitle,
+    popupRank,
+    popupCharacter,
+    popupTasks,
+    popupButton,
+    displayName,
+    rank: normalizeRank(options.rank),
+    taskCount,
+    characterKey: options.characterKey,
+  });
+
+  figure.src =
+    cardFigure?.currentSrc ||
+    cardFigure?.src ||
+    openingConfig.figureFallback;
+  if (typeof figure.decode === "function") {
+    void figure.decode().catch(() => {});
+  }
+  void overlay.offsetWidth;
+  overlay.setAttribute("aria-hidden", "false");
+  overlay.classList.add("is-active");
+  shell.classList.add("is-cinematic-anchor");
+
+  const prefersReducedMotion =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const cleanup = () => {
+    if (hunterOpeningToken !== token) return;
+    video.removeEventListener("timeupdate", onTimeUpdate);
+    video.removeEventListener("ended", showFloatingFigure);
+    video.removeEventListener("error", showFloatingFigure);
+    if (overlay._hunterReturnHandler && popupButton) {
+      popupButton.removeEventListener("click", overlay._hunterReturnHandler);
+      delete overlay._hunterReturnHandler;
+    }
+    if (overlay._hunterKeydownHandler) {
+      overlay.removeEventListener("keydown", overlay._hunterKeydownHandler);
+      delete overlay._hunterKeydownHandler;
+    }
+    clearTimeout(overlay._hunterOpeningFallbackTimer);
+    clearTimeout(overlay._hunterOpeningFloatTimer);
+    clearTimeout(overlay._hunterOpeningReturnTimer);
+    clearHunterCinematicState(overlay, stage, shell);
+    if (figureNext) {
+      figureNext.onerror = null;
+      figureNext.removeAttribute("src");
+      figureNext.style.visibility = "hidden";
+    }
+    video.pause();
+    try {
+      video.currentTime = 0;
+    } catch {}
+    maybePlayPendingHunterRankUp();
+  };
+
+  const returnToCard = () => {
+    if (hunterOpeningToken !== token) return;
+    overlay.classList.remove("is-popup-live");
+    setHunterCinematicReturnTarget(stage, shell);
+    void stage.offsetWidth;
+    overlay.classList.add("is-returning");
+    overlay._hunterOpeningReturnTimer = setTimeout(
+      cleanup,
+      HUNTER_OPENING_RETURN_MS,
+    );
+  };
+
+  const showFloatingFigure = () => {
+    if (hunterOpeningToken !== token) return;
+    clearTimeout(overlay._hunterOpeningFallbackTimer);
+    overlay.classList.add("is-prime", "is-floating");
+    if (popup) {
+      overlay.classList.add("is-popup-live");
+      if (popupButton) {
+        popupButton.focus({ preventScroll: true });
+      }
+    }
+  };
+
+  const onOverlayKeyDown = (event) => {
+    if (hunterOpeningToken !== token) return;
+    if (event.key === "Escape" && overlay.classList.contains("is-popup-live")) {
+      event.preventDefault();
+      returnToCard();
+    }
+  };
+
+  overlay._hunterReturnHandler = returnToCard;
+  overlay._hunterKeydownHandler = onOverlayKeyDown;
+  popupButton?.addEventListener("click", returnToCard);
+  overlay.addEventListener("keydown", onOverlayKeyDown);
+
+  const onTimeUpdate = () => {
+    const duration =
+      Number(video.duration) || HUNTER_OPENING_DEFAULT_DURATION_SECONDS;
+    if (duration - video.currentTime <= HUNTER_OPENING_PRIME_REMAINING_SECONDS) {
+      overlay.classList.add("is-prime");
+    }
+  };
+
+  if (prefersReducedMotion) {
+    overlay.classList.add("is-prime", "is-floating");
+    if (popup) {
+      overlay.classList.add("is-popup-live");
+      if (popupButton) {
+        popupButton.focus({ preventScroll: true });
+      }
+    }
+    return;
+  }
+
+  if (video.dataset.srcReady !== openingConfig.src) {
+    video.src = openingConfig.src;
+    video.dataset.srcReady = openingConfig.src;
+  }
+
+  video.muted = true;
+  video.playsInline = true;
+  video.addEventListener("timeupdate", onTimeUpdate);
+  video.addEventListener("ended", showFloatingFigure, { once: true });
+  video.addEventListener("error", showFloatingFigure, { once: true });
+
+  const startFallbackTimer = () => {
+    const duration =
+      Number(video.duration) || HUNTER_OPENING_DEFAULT_DURATION_SECONDS;
+    overlay._hunterOpeningFallbackTimer = setTimeout(
+      showFloatingFigure,
+      duration * 1000 + 220,
+    );
+  };
+
+  const startPlayback = () => {
+    if (hunterOpeningToken !== token) return;
+    try {
+      video.currentTime = 0;
+    } catch {}
+
+    startFallbackTimer();
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(showFloatingFigure);
+    }
+  };
+
+  if (video.readyState >= 1) {
+    startPlayback();
+  } else {
+    video.addEventListener("loadedmetadata", startPlayback, { once: true });
+    video.load();
+  }
+}
+
+function playHunterRankUpSequence(options = {}) {
+  const {
+    overlay,
+    stage,
+    video,
+    figure,
+    figureNext,
+    popupKicker,
+    popupTitle,
+    popupSubtitle,
+    popupRank,
+    popupCharacter,
+    popupTasks,
+    popupButton,
+    shell,
+  } = getHunterCinematicEls();
+  if (!overlay || !stage || !video || !figure || !figureNext || !shell) return;
+
+  const displayName = safeString(options.displayName) || "Hunter";
+  const previousRank = normalizeRank(options.previousRank);
+  const nextRank = normalizeRank(options.nextRank);
+
+  const token = hunterOpeningToken + 1;
+  hunterOpeningToken = token;
+
+  clearTimeout(overlay._hunterOpeningFallbackTimer);
+  clearTimeout(overlay._hunterOpeningFloatTimer);
+  clearTimeout(overlay._hunterOpeningReturnTimer);
+  clearTimeout(overlay._hunterRankUpSwapTimer);
+  if (overlay._hunterReturnHandler && popupButton) {
+    popupButton.removeEventListener("click", overlay._hunterReturnHandler);
+    delete overlay._hunterReturnHandler;
+  }
+  if (overlay._hunterKeydownHandler) {
+    overlay.removeEventListener("keydown", overlay._hunterKeydownHandler);
+    delete overlay._hunterKeydownHandler;
+  }
+
+  clearHunterCinematicState(overlay, stage, shell);
+  populateHunterRankUpPopup({
+    overlay,
+    popupKicker,
+    popupTitle,
+    popupSubtitle,
+    popupRank,
+    popupCharacter,
+    popupTasks,
+    popupButton,
+    displayName,
+    previousRank,
+    nextRank,
+    characterKey: options.characterKey,
+  });
+
+  setImageWithFallback(figure, options.previousFigureCandidates);
+  setImageWithFallback(figureNext, options.nextFigureCandidates);
+
+  video.pause();
+  if (video.dataset.srcReady) {
+    video.removeAttribute("src");
+    delete video.dataset.srcReady;
+    video.load();
+  }
+
+  void overlay.offsetWidth;
+  overlay.setAttribute("aria-hidden", "false");
+  overlay.classList.add("is-active", "is-rank-up-mode", "is-rank-up-live", "is-popup-live");
+  shell.classList.add("is-cinematic-anchor");
+
+  const cleanup = () => {
+    if (hunterOpeningToken !== token) return;
+    if (overlay._hunterReturnHandler && popupButton) {
+      popupButton.removeEventListener("click", overlay._hunterReturnHandler);
+      delete overlay._hunterReturnHandler;
+    }
+    if (overlay._hunterKeydownHandler) {
+      overlay.removeEventListener("keydown", overlay._hunterKeydownHandler);
+      delete overlay._hunterKeydownHandler;
+    }
+    clearTimeout(overlay._hunterOpeningReturnTimer);
+    clearTimeout(overlay._hunterRankUpSwapTimer);
+    clearHunterCinematicState(overlay, stage, shell);
+    figure.onerror = null;
+    figureNext.onerror = null;
+    figureNext.removeAttribute("src");
+    figureNext.style.visibility = "hidden";
+    maybePlayPendingHunterRankUp();
+  };
+
+  const returnToCard = () => {
+    if (hunterOpeningToken !== token) return;
+    overlay.classList.remove("is-popup-live");
+    setHunterCinematicReturnTarget(stage, shell);
+    void stage.offsetWidth;
+    overlay.classList.add("is-returning");
+    overlay._hunterOpeningReturnTimer = setTimeout(
+      cleanup,
+      HUNTER_OPENING_RETURN_MS,
+    );
+  };
+
+  const onOverlayKeyDown = (event) => {
+    if (hunterOpeningToken !== token) return;
+    if (event.key === "Escape" && overlay.classList.contains("is-popup-live")) {
+      event.preventDefault();
+      returnToCard();
+    }
+  };
+
+  overlay._hunterReturnHandler = returnToCard;
+  overlay._hunterKeydownHandler = onOverlayKeyDown;
+  popupButton?.addEventListener("click", returnToCard);
+  overlay.addEventListener("keydown", onOverlayKeyDown);
+
+  const prefersReducedMotion =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (prefersReducedMotion) {
+    overlay.classList.add("is-rank-up-evolving");
+    popupButton?.focus({ preventScroll: true });
+    return;
+  }
+
+  overlay._hunterRankUpSwapTimer = setTimeout(() => {
+    if (hunterOpeningToken !== token) return;
+    overlay.classList.add("is-rank-up-evolving");
+  }, HUNTER_RANK_UP_SWAP_DELAY_MS);
+
+  popupButton?.focus({ preventScroll: true });
 }
 
 function hunterLockedInBackdropSrcFromProfileRankAndMoodKey(
@@ -571,7 +1791,6 @@ function renderHunterStatus(level, totalXP, xpProgress) {
     !!safeString(profile?.title) || !!safeString(profile?.titleSurvey?.title);
   const hasRankCharacterArt =
     hasTitle && !!characterKey && hasHeroRankArt(characterKey, rank);
-
   const savedFigureSrc =
     hasRankCharacterArt &&
     typeof storedHeroStatus?.figureSrc === "string" &&
@@ -588,6 +1807,8 @@ function renderHunterStatus(level, totalXP, xpProgress) {
     ? [...computedFigureCandidates, savedFigureSrc].filter(Boolean)
     : [];
   const backdropCandidates = computedBackdropSrc ? [computedBackdropSrc] : [];
+
+  prepareHunterCinematicVideo(characterKey, rank);
 
   tile.dataset.mood = mood.key;
   tile.dataset.character = characterKey || "unknown";
@@ -608,6 +1829,8 @@ function renderHunterStatus(level, totalXP, xpProgress) {
   xpMiniFillEl.style.width = `${Math.min(Math.max(xpProgress * 100, 0), 100)}%`;
   setImageWithFallback(figureBackdropEl, backdropCandidates);
   setImageWithFallback(figureEl, candidates);
+
+  pumpDashboardCelebrations();
 }
 
 function renderStatsPanel(accountState = null) {
@@ -616,7 +1839,15 @@ function renderStatsPanel(accountState = null) {
     accountState || (user?.uid ? readCachedAccountState(user.uid) : null);
   const profile = readUserProfile(user?.uid);
   const stats = normalizeStats(cached?.stats || user?.stats || profile?.stats);
+  const statPoints = normalizeStatPoints(cached?.statPoints);
+  const totalPoints = sumStatPoints(statPoints);
   const pillarRows = document.querySelectorAll(".pillar-row");
+  const upgradeBtn = document.getElementById("openUpgradeShop");
+
+  if (upgradeBtn) {
+    upgradeBtn.textContent =
+      totalPoints > 0 ? `Upgrade (${totalPoints})` : "Upgrade";
+  }
 
   STAT_KEYS.forEach((key, index) => {
     const row = pillarRows[index];
@@ -732,6 +1963,11 @@ function renderStatsPanel(accountState = null) {
 
   radar.setAttribute("points", points);
 
+  const modal = document.getElementById("supModal");
+  if (modal && modal.getAttribute("aria-hidden") === "false") {
+    renderUpgradeModal(cached);
+  }
+
   const svgEl = radar.closest("svg");
   if (!svgEl) return;
 
@@ -838,6 +2074,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     figShell.appendChild(overlay);
 
     figShell.addEventListener("mousemove", (e) => {
+      if (figShell.classList.contains("is-cinematic-anchor")) return;
       const r = figShell.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width - 0.5;
       const y = (e.clientY - r.top) / r.height - 0.5;
@@ -852,6 +2089,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     figShell.addEventListener("mouseenter", () => {
+      if (figShell.classList.contains("is-cinematic-anchor")) return;
       const moodEl = document.getElementById("hunterMood");
       const xpEl = document.getElementById("hunterXpValue");
       const tasksEl = document.getElementById("hunterTasksDone");
@@ -955,6 +2193,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   ensureDailyQuestReset();
+  initUpgradeModal();
 
   const displayName = user.displayName || user.name || user.username || "User";
 
@@ -990,6 +2229,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateXP();
   await loadAndRenderPreviewTasks();
   renderDailyCheckin();
+  pumpDashboardCelebrations();
 
   if (user.uid) {
     subscribeToUserState(
@@ -1000,6 +2240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateGraph();
         await loadAndRenderPreviewTasks();
         renderDailyCheckin();
+        pumpDashboardCelebrations();
       },
       (error) => {
         console.warn("Dashboard realtime sync failed:", error);
@@ -1017,6 +2258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateXP();
       updateGraph();
       void loadAndRenderPreviewTasks();
+      pumpDashboardCelebrations();
     }
   });
 });
@@ -1112,6 +2354,7 @@ async function completePreviewQuest(checkEl) {
 
   const wasComplete = row.classList.contains("is-complete");
   const nowComplete = !wasComplete;
+  const previousTaskCount = getTodayCompletedTaskCount();
   const user = getCurrentUser();
   const accountState = user?.uid ? readCachedAccountState(user.uid) : null;
   const pointUpdate = applyQuestPointChange(
@@ -1167,8 +2410,8 @@ async function completePreviewQuest(checkEl) {
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
 
-  if (user?.uid) {
-    await mergeUserState(user.uid, {
+  const syncPromise = user?.uid
+    ? mergeUserState(user.uid, {
       quests: state,
       stats: pointUpdate.stats,
       totalXP,
@@ -1177,16 +2420,25 @@ async function completePreviewQuest(checkEl) {
       statUpgrades: pointUpdate.statUpgrades,
     }).catch((error) => {
       console.warn("Preview quest sync failed:", error);
-    });
-  }
+    })
+    : null;
 
   toast(
     nowComplete
       ? `Quest completed +${xpDelta} XP, +1 ${pointUpdate.statKey} point`
       : `Quest undone -${xpDelta} XP, -1 ${pointUpdate.statKey} point${buildUndoReverseText(pointUpdate)}`,
   );
+  maybeQueueDashboardLockedInCelebration(
+    previousTaskCount,
+    nowComplete,
+    user,
+    accountState,
+  );
   updateGraph();
   updateXP();
+  renderStatsPanel();
+  pumpDashboardCelebrations();
+  if (syncPromise) await syncPromise;
 }
 
 function updateXP() {
@@ -1702,6 +2954,7 @@ window.completeQuest = async function (checkEl) {
 
   const wasComplete = row.classList.contains("is-complete");
   const nowComplete = !wasComplete;
+  const previousTaskCount = getTodayCompletedTaskCount();
   const user = getCurrentUser();
   const accountState = user?.uid ? readCachedAccountState(user.uid) : null;
   const pointUpdate = applyQuestPointChange(
@@ -1773,8 +3026,8 @@ window.completeQuest = async function (checkEl) {
 
   localStorage.setItem(getAccountStorageKey(XP_STORAGE_KEY), `${totalXP}`);
 
-  if (user?.uid) {
-    await mergeUserState(user.uid, {
+  const syncPromise = user?.uid
+    ? mergeUserState(user.uid, {
       quests: state,
       stats: pointUpdate.stats,
       totalXP,
@@ -1784,16 +3037,25 @@ window.completeQuest = async function (checkEl) {
       statUpgrades: pointUpdate.statUpgrades,
     }).catch((error) => {
       console.warn("Quest sync failed:", error);
-    });
-  }
+    })
+    : null;
 
   toast(
     nowComplete
       ? `Quest completed +${xpDelta} XP, +1 ${pointUpdate.statKey} point`
       : `Quest undone -${xpDelta} XP, -1 ${pointUpdate.statKey} point${buildUndoReverseText(pointUpdate)}`,
   );
+  maybeQueueDashboardLockedInCelebration(
+    previousTaskCount,
+    nowComplete,
+    user,
+    accountState,
+  );
   updateGraph();
   updateXP();
+  renderStatsPanel();
+  pumpDashboardCelebrations();
+  if (syncPromise) await syncPromise;
 };
 
 function getISODate(d = new Date()) {

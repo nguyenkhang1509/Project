@@ -245,6 +245,13 @@
             <section class="panel" aria-label="Balance Panel Preview">
               <div class="panel-head">
                 <h2 class="panel-title">Stats</h2>
+                <button
+                  class="stats-upgrade-btn"
+                  id="openUpgradeShop"
+                  type="button"
+                >
+                  Upgrade
+                </button>
               </div>
 
               <div class="balance-grid">
@@ -553,6 +560,115 @@
         </section>
       </section>
     </main>
+
+    <div class="sup-modal" id="supModal" aria-hidden="true" hidden>
+      <div class="sup-backdrop" id="supBackdrop"></div>
+      <section
+        class="sup-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="supTitle"
+      >
+        <header class="sup-head">
+          <div>
+            <h3 id="supTitle">Upgrade Shop</h3>
+            <p class="sup-sub" id="supHint">
+              Spend 1 matching point for +1 in the same stat, or spend 2 points
+              from one category to raise another stat by 1.
+            </p>
+          </div>
+          <button class="sup-close" id="supClose" type="button">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </header>
+
+        <div class="sup-builder">
+          <div class="sup-average-line" id="supAverageLine" aria-live="polite">
+            Average: --
+          </div>
+
+          <div
+            class="sup-stat-list"
+            id="supStatList"
+            aria-label="Stat upgrade planner"
+          ></div>
+
+          <div class="sup-preview" id="supPreview">
+            Complete more quests to earn stat points.
+          </div>
+        </div>
+
+        <footer class="sup-foot">
+          <div class="sup-total" id="supTotal">0 points available</div>
+          <button class="btn primary" id="supApply" type="button">
+            Apply Upgrade
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div class="hunter-cinematic" id="hunterCinematic" aria-hidden="true">
+      <div class="hunter-cinematic-stage" id="hunterCinematicStage">
+        <video
+          class="hunter-cinematic-video"
+          id="hunterCinematicVideo"
+          muted
+          playsinline
+          preload="auto"
+          aria-hidden="true"
+        ></video>
+        <div class="hunter-cinematic-aura" aria-hidden="true"></div>
+        <img
+          class="hunter-cinematic-figure"
+          id="hunterCinematicFigure"
+          alt=""
+        />
+        <img
+          class="hunter-cinematic-figure-next"
+          id="hunterCinematicFigureNext"
+          alt=""
+        />
+        <div
+          class="hunter-lock-popup"
+          id="hunterLockPopup"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div class="hunter-lock-popup-spark" aria-hidden="true"></div>
+          <p class="hunter-lock-popup-kicker" id="hunterLockPopupKicker">
+            Congratulations
+          </p>
+          <h2 class="hunter-lock-popup-title" id="hunterLockPopupTitle">
+            Locked In State Reached
+          </h2>
+          <p class="hunter-lock-popup-subtitle" id="hunterLockPopupSubtitle">
+            Your hunter has entered peak focus.
+          </p>
+          <div class="hunter-lock-popup-tags">
+            <span class="hunter-lock-popup-tag" id="hunterLockPopupRank"
+              >Rank S</span
+            >
+            <span class="hunter-lock-popup-tag" id="hunterLockPopupCharacter"
+              >Mind Reaper</span
+            >
+            <span class="hunter-lock-popup-tag" id="hunterLockPopupTasks"
+              >11 Quests</span
+            >
+          </div>
+          <div class="hunter-lock-popup-actions">
+            <button
+              type="button"
+              class="hunter-lock-popup-button"
+              id="hunterLockPopupButton"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+        <div class="hunter-cinematic-flare" aria-hidden="true"></div>
+      </div>
+    </div>
 
     <script src="habiticaConfig.js"></script>
     <script src="habiticaAPI.js"></script>
