@@ -1501,6 +1501,10 @@ html[data-theme="light"] .hunter-lock-popup-button {
     scale(var(--hunter-figure-scale));
 }
 
+.hunter-tile[data-character="insightphantom"][data-rank="E"] .hunter-figure {
+  left:43%;
+}
+
 .hunter-xp-inline {
   position: absolute;
   left: 20px;
